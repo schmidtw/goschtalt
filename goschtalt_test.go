@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package gestalt
+package goschtalt
 
 import (
 	iofs "io/fs"
@@ -54,7 +54,7 @@ const (
 }`
 )
 
-func makeGestaltTestFs(t *testing.T) iofs.FS {
+func makeGoschtaltTestFs(t *testing.T) iofs.FS {
 	require := require.New(t)
 	fs := memfs.New()
 	require.NoError(fs.MkdirAll("conf", 0777))
@@ -81,7 +81,7 @@ func TestReadAll(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			tc.group.FS = makeGestaltTestFs(t)
+			tc.group.FS = makeGoschtaltTestFs(t)
 			g, err := New(WithFileGroup(tc.group))
 			require.NotNil(g)
 			require.NoError(err)

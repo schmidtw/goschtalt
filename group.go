@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package gestalt
+package goschtalt
 
 import (
 	"bytes"
@@ -26,7 +26,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/schmidtw/gestalt/internal/encoding"
+	"github.com/schmidtw/goschtalt/internal/encoding"
 )
 
 // Group is a filesystem and paths to examine for configuration files.

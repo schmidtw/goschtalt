@@ -14,13 +14,13 @@
  * limitations under the License.
  *
  */
-package gestalt
+package goschtalt
 
 import (
 	"sync"
 
-	"github.com/schmidtw/gestalt/internal/encoding"
-	"github.com/schmidtw/gestalt/internal/encoding/json"
+	"github.com/schmidtw/goschtalt/internal/encoding"
+	"github.com/schmidtw/goschtalt/internal/encoding/json"
 )
 
 type raw struct {
@@ -28,24 +28,24 @@ type raw struct {
 	values *map[string]any
 }
 
-// Gestalt is a configurable, prioritized, merging configuration registry.
-type Gestalt struct {
+// Goschtalt is a configurable, prioritized, merging configuration registry.
+type Goschtalt struct {
 	codecs *encoding.Registry
 	groups []Group
 	mutex  sync.Mutex
 }
 
 // Option is the type used for options.
-type Option func(g *Gestalt) error
+type Option func(g *Goschtalt) error
 
-func (fn Option) apply(g *Gestalt) error {
+func (fn Option) apply(g *Goschtalt) error {
 	return fn(g)
 }
 
-// New creates a new gestalt configuration instance.
-func New(opts ...Option) (*Gestalt, error) {
+// New creates a new goschtalt configuration instance.
+func New(opts ...Option) (*Goschtalt, error) {
 	r, _ := encoding.NewRegistry(encoding.WithCodec(json.Codec{}))
-	g := &Gestalt{
+	g := &Goschtalt{
 		codecs: r,
 	}
 
@@ -58,7 +58,7 @@ func New(opts ...Option) (*Gestalt, error) {
 }
 
 // Option takes a list of options and applies them.
-func (g *Gestalt) Options(opts ...Option) error {
+func (g *Goschtalt) Options(opts ...Option) error {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 	for _, opt := range opts {
@@ -71,7 +71,7 @@ func (g *Gestalt) Options(opts ...Option) error {
 
 // ReadInConfig reads in all the files configured using the options provided,
 // and merges the configuration trees into a single map for later use.
-func (g *Gestalt) ReadInConfig() error {
+func (g *Goschtalt) ReadInConfig() error {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 
@@ -83,7 +83,7 @@ func (g *Gestalt) ReadInConfig() error {
 	return g.merge(full)
 }
 
-func (g *Gestalt) readAll() (map[string]raw, error) {
+func (g *Goschtalt) readAll() (map[string]raw, error) {
 	full := make(map[string]raw)
 
 	for _, group := range g.groups {
@@ -101,14 +101,14 @@ func (g *Gestalt) readAll() (map[string]raw, error) {
 	return full, nil
 }
 
-func (g *Gestalt) merge(full map[string]raw) error {
+func (g *Goschtalt) merge(full map[string]raw) error {
 	return nil
 }
 
 // WithCodec registers a Codec for the specific file extensions provided.
 // Attempting to register a duplicate extension is not supported.
 func WithCodec(enc encoding.Codec) Option {
-	return func(g *Gestalt) error {
+	return func(g *Goschtalt) error {
 		opt := encoding.WithCodec(enc)
 		return g.codecs.Options(opt)
 	}
@@ -117,7 +117,7 @@ func WithCodec(enc encoding.Codec) Option {
 // WithoutExtensions provides a mechanism for effectively removing the codecs
 // from use for specific file types.
 func WithoutExtensions(exts ...string) Option {
-	return func(g *Gestalt) error {
+	return func(g *Goschtalt) error {
 		opt := encoding.WithoutExtensions(exts...)
 		return g.codecs.Options(opt)
 	}
@@ -126,7 +126,7 @@ func WithoutExtensions(exts ...string) Option {
 // WithFileGroup provides a group of files, directories or both to examine for
 // configuration files.
 func WithFileGroup(group Group) Option {
-	return func(g *Gestalt) error {
+	return func(g *Goschtalt) error {
 		g.groups = append(g.groups, group)
 		return nil
 	}

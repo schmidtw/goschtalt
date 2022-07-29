@@ -1,4 +1,4 @@
-module github.com/schmidtw/gestalt
+module github.com/schmidtw/goschtalt
 
 go 1.18
 

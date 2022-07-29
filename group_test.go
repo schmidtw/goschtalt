@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  */
-package gestalt
+package goschtalt
 
 import (
 	iofs "io/fs"
@@ -23,8 +23,8 @@ import (
 	"testing"
 
 	"github.com/psanford/memfs"
-	"github.com/schmidtw/gestalt/internal/encoding"
-	"github.com/schmidtw/gestalt/internal/encoding/json"
+	"github.com/schmidtw/goschtalt/internal/encoding"
+	"github.com/schmidtw/goschtalt/internal/encoding/json"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
