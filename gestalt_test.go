@@ -87,9 +87,9 @@ func TestReadAll(t *testing.T) {
 			require.NoError(err)
 
 			got, err := g.readAll()
-			pp.Print(got)
 			if tc.expectedErr == nil {
 				assert.NoError(err)
+				pp.Print(got)
 				//assert.True(reflect.DeepEqual(tc.expected, got))
 				return
 			}

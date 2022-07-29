@@ -22,7 +22,6 @@ import (
 	"sort"
 	"testing"
 
-	pp "github.com/k0kubun/pp/v3"
 	"github.com/psanford/memfs"
 	"github.com/schmidtw/gestalt/internal/encoding"
 	"github.com/schmidtw/gestalt/internal/encoding/json"
@@ -188,7 +187,6 @@ func TestWalk(t *testing.T) {
 				assert.True(reflect.DeepEqual(tc.expected, got))
 				return
 			}
-			pp.Print(err)
 			assert.ErrorIs(err, tc.expectedErr)
 		})
 	}

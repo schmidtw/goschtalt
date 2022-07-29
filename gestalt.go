@@ -19,7 +19,6 @@ package gestalt
 import (
 	"sync"
 
-	pp "github.com/k0kubun/pp/v3"
 	"github.com/schmidtw/gestalt/internal/encoding"
 	"github.com/schmidtw/gestalt/internal/encoding/json"
 )
@@ -103,7 +102,6 @@ func (g *Gestalt) readAll() (map[string]raw, error) {
 }
 
 func (g *Gestalt) merge(full map[string]raw) error {
-	pp.Print(full)
 	return nil
 }
 
