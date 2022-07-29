@@ -1,2 +1,2 @@
-# gestalt
+# goschtalt
 A simple configuration library that supports multiple files and formats.
