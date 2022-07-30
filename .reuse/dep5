@@ -1,0 +1,12 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: goschtalt
+Upstream-Contact: Weston Schmidt <weston_scmidt@alumni.purdue.edu>
+Source: https://github.com/schmidtw/goschtalt
+
+Files: .github/* .github/workflow/*
+Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
+License: Apache-2.0
+
+Files: go.mod go.sum .gitignore MAINTAINERS.md
+Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
+License: Apache-2.0
