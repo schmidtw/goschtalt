@@ -29,11 +29,8 @@ type Group struct {
 	Recurse bool
 }
 
-func (group Group) walk(codecs *encoding.Registry) ([]raw, error) {
-	var list []raw
+func (group Group) enumerate(exts []string) ([]string, error) {
 	var files []string
-
-	exts := codecs.Extensions()
 
 	for _, path := range group.Paths {
 		// Make sure the paths are consistent across FS implementations with
@@ -78,6 +75,20 @@ func (group Group) walk(codecs *encoding.Registry) ([]raw, error) {
 		files = append(files, matchExts(exts, found)...)
 	}
 	sort.Strings(files)
+
+	return files, nil
+}
+
+func (group Group) walk(codecs *encoding.Registry) ([]raw, error) {
+	var list []raw
+	var files []string
+
+	exts := codecs.Extensions()
+
+	files, err := group.enumerate(exts)
+	if err != nil {
+		return nil, err
+	}
 
 	for _, file := range files {
 		v := &map[string]any{}
