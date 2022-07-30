@@ -43,19 +43,19 @@ func fixMap(m map[string]any) {
 }
 
 func fixVal(val any) any {
-	switch val.(type) {
-	case map[string]interface{}:
-		fixMap(val.(map[string]any))
-	case []interface{}:
-		fixArray(val.([]any))
+	switch val := val.(type) {
+	case map[string]any:
+		fixMap(val)
+	case []any:
+		fixArray(val)
 	case json.Number:
-		if i, err := val.(json.Number).Int64(); err == nil {
+		if i, err := val.Int64(); err == nil {
 			return i
 		}
-		if f, err := val.(json.Number).Float64(); err == nil {
+		if f, err := val.Float64(); err == nil {
 			return f
 		}
-		return val.(json.Number).String()
+		return val.String()
 	}
 	return val
 }
