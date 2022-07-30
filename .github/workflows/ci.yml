@@ -17,5 +17,6 @@ jobs:
   ci:
     uses: xmidt-org/.github/.github/workflows/go-ci.yml@go-ci-v1
     with:
-      docker-skip: true
+      docker-skip:     true
       sonarcloud-skip: true
+      lint-version:    latest

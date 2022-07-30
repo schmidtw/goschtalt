@@ -35,6 +35,7 @@ func Sort(l []string) {
 var testList = []string{
 	"1000X Radonius Maximus",
 	"10X Radonius",
+	"00010X Radonius 2",
 	"200X Radonius",
 	"20X Radonius",
 	"20X Radonius Prime",
@@ -73,6 +74,7 @@ var testList = []string{
 func Test_Sort1(t *testing.T) {
 	testListSortedOK := []string{
 		"10X Radonius",
+		"00010X Radonius 2",
 		"20X Radonius",
 		"20X Radonius Prime",
 		"30X Radonius",

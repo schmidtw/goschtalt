@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2015 Vincent Batoufflet and Marc Falzon
 // SPDX-FileCopyrightText: 2022 Mark Karpelès
+// SPDX-FileCopyrightText: 2022 Weston Schmidt
 // SPDX-License-Identifier: BSD-3-Clause
 //
 // This file originated from https://github.com/facette/natsort/pull/2/files
@@ -8,88 +9,77 @@ package natsort
 
 import "strings"
 
-func Compare(a, b string) bool {
-	ln_a := len(a)
-	ln_b := len(b)
-	posa := 0
-	posb := 0
-
-	for {
-		if ln_a <= posa {
-			if ln_b <= posb {
-				// eof on both at the same time (equal)
-				return false
-			}
-			return true
-		} else if ln_b <= posb {
-			// eof on b
-			return false
-		}
-
-		av, bv := a[posa], b[posb]
-
-		if av >= '0' && av <= '9' && bv >= '0' && bv <= '9' {
-			// go into numeric mode
-			intlna := 1
-			intlnb := 1
-			for {
-				if posa+intlna >= ln_a {
-					break
-				}
-				x := a[posa+intlna]
-				if av == '0' {
-					posa += 1
-					av = x
-					continue
-				}
-				if x >= '0' && x <= '9' {
-					intlna += 1
-				} else {
-					break
-				}
-			}
-			for {
-				if posb+intlnb >= ln_b {
-					break
-				}
-				x := b[posb+intlnb]
-				if bv == '0' {
-					posb += 1
-					bv = x
-					continue
-				}
-				if x >= '0' && x <= '9' {
-					intlnb += 1
-				} else {
-					break
-				}
-			}
-			if intlnb > intlna {
-				// length of a value is longer, means it's a bigger number
-				return true
-			} else if intlna > intlnb {
-				return false
-			}
-			// both have same length, let's compare as string
-			v := strings.Compare(a[posa:posa+intlna], b[posb:posb+intlnb])
-			if v < 0 {
-				return true
-			} else if v > 0 {
-				return false
-			}
-			// equale
-			posa += intlna
-			posb += intlnb
-			continue
-		}
-
-		if av == bv {
-			posa += 1
-			posb += 1
-			continue
-		}
-
-		return av < bv
+func isDigit(c byte) bool {
+	switch c {
+	case '0', '1', '2', '3', '4', '5', '6', '7', '8', '9':
+		return true
 	}
+	return false
+}
+
+func determineNumberBlock(s string, val byte, max int, pos *int) int {
+	num_len := 1
+	for *pos+num_len < max {
+		x := s[*pos+num_len]
+		if val == '0' {
+			*pos += 1
+			val = x
+			continue
+		}
+		if isDigit(x) {
+			num_len += 1
+		} else {
+			break
+		}
+	}
+
+	return num_len
+}
+
+func Compare(a, b string) bool {
+	len_a := len(a)
+	len_b := len(b)
+	pos_a := 0 // Position of the character under review.
+	pos_b := 0 // Position of the character under review.
+
+	for pos_a < len_a && pos_b < len_b {
+		val_a, val_b := a[pos_a], b[pos_b]
+
+		// Go into numeric mode if the next chunks are numbers.
+		if isDigit(val_a) && isDigit(val_b) {
+			num_len_a := determineNumberBlock(a, val_a, len_a, &pos_a)
+			num_len_b := determineNumberBlock(b, val_b, len_b, &pos_b)
+
+			// both have same length, let's compare as string
+			if num_len_a != num_len_b {
+				return num_len_a < num_len_b
+			}
+
+			// both have same length, let's compare as string
+			v := strings.Compare(a[pos_a:pos_a+num_len_a], b[pos_b:pos_b+num_len_b])
+			if v != 0 {
+				return v < 0
+			}
+
+			// equal
+			pos_a += num_len_a
+			pos_b += num_len_b
+			continue
+		}
+
+		if val_a == val_b {
+			pos_a += 1
+			pos_b += 1
+			continue
+		}
+
+		return val_a < val_b
+	}
+
+	if len_a <= pos_a {
+		// eof on both at the same time (equal)
+		return pos_b < len_b
+	}
+	// eof on b
 	return false
 }
