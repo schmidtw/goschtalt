@@ -5,8 +5,8 @@ Source: https://github.com/schmidtw/goschtalt
 
 Files: .github/* .github/workflow/*
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
-License: Apache-2.0
+License: CC0-1.0
 
 Files: go.mod go.sum .gitignore MAINTAINERS.md
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
-License: Apache-2.0
+License: CC0-1.0

@@ -4,22 +4,32 @@
 package goschtalt
 
 import (
+	"sort"
 	"sync"
 
 	"github.com/schmidtw/goschtalt/internal/encoding"
 	"github.com/schmidtw/goschtalt/internal/encoding/json"
+	"github.com/schmidtw/goschtalt/internal/natsort"
 )
 
 type raw struct {
 	file   string
 	values *map[string]any
+	sorter Sorter
 }
+
+type rawSorter []raw
+
+func (r rawSorter) Len() int           { return len(r) }
+func (r rawSorter) Swap(i, j int)      { r[i], r[j] = r[j], r[i] }
+func (r rawSorter) Less(i, j int) bool { return r[i].sorter(r[i].file, r[j].file) }
 
 // Goschtalt is a configurable, prioritized, merging configuration registry.
 type Goschtalt struct {
 	codecs *encoding.Registry
 	groups []Group
 	mutex  sync.Mutex
+	sorter Sorter
 }
 
 // Option is the type used for options.
@@ -29,12 +39,18 @@ func (fn Option) apply(g *Goschtalt) error {
 	return fn(g)
 }
 
+// Sorter is the sorting function used to prioritize the configuration files.
+type Sorter func(a, b string) bool
+
 // New creates a new goschtalt configuration instance.
 func New(opts ...Option) (*Goschtalt, error) {
-	r, _ := encoding.NewRegistry(encoding.WithCodec(json.Codec{}))
+	r, _ := encoding.NewRegistry(
+		encoding.WithCodec(json.Codec{}))
 	g := &Goschtalt{
 		codecs: r,
 	}
+
+	_ = SortByNatural().apply(g)
 
 	err := g.Options(opts...)
 	if err != nil {
@@ -70,8 +86,8 @@ func (g *Goschtalt) ReadInConfig() error {
 	return g.merge(full)
 }
 
-func (g *Goschtalt) readAll() (map[string]raw, error) {
-	full := make(map[string]raw)
+func (g *Goschtalt) readAll() ([]raw, error) {
+	full := []raw{}
 
 	for _, group := range g.groups {
 		cfgs, err := group.walk(g.codecs)
@@ -79,16 +95,19 @@ func (g *Goschtalt) readAll() (map[string]raw, error) {
 			return nil, err
 		}
 
-		for _, cfg := range cfgs {
-			name := cfg.file
-			full[name] = cfg
-		}
+		full = append(full, cfgs...)
 	}
+
+	// Set the sorter so the list can be properly sorted.
+	for i := range full {
+		full[i].sorter = g.sorter
+	}
+	sort.Sort(rawSorter(full))
 
 	return full, nil
 }
 
-func (g *Goschtalt) merge(full map[string]raw) error {
+func (g *Goschtalt) merge(full []raw) error {
 	return nil
 }
 
@@ -117,4 +136,30 @@ func WithFileGroup(group Group) Option {
 		g.groups = append(g.groups, group)
 		return nil
 	}
+}
+
+// SortByCustom provides a way to specify your own file sorting logic.  The two
+// strings provided are the base filenames.  No directory information is provided.
+// For the file 'etc/foo/bar.json' the string given to the sorter will be 'bar.json'.
+func SortByCustom(sorter Sorter) Option {
+	return func(g *Goschtalt) error {
+		g.sorter = sorter
+		return nil
+	}
+}
+
+// SortByLexical provides a simple lexical based sorter for the files where the
+// configuration values originate.  This order determines which configuration
+// values are adopted first and last.
+func SortByLexical() Option {
+	return SortByCustom(func(a, b string) bool {
+		return a < b
+	})
+}
+
+// SortByNatural provides a simple lexical based sorter for the files where the
+// configuration values originate.  This order determines which configuration
+// values are adopted first and last.
+func SortByNatural() Option {
+	return SortByCustom(natsort.Compare)
 }

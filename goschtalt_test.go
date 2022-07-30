@@ -39,6 +39,17 @@ const (
 		}
 	}
 }`
+
+	config3 = `---
+  servers:
+    Echo:
+      ports:
+        - 9090
+        - 9191
+      random:
+        task:
+          limit: 10
+`
 )
 
 func makeGoschtaltTestFs(t *testing.T) iofs.FS {
@@ -46,7 +57,8 @@ func makeGoschtaltTestFs(t *testing.T) iofs.FS {
 	fs := memfs.New()
 	require.NoError(fs.MkdirAll("conf", 0777))
 	require.NoError(fs.WriteFile("conf/80_config.json", []byte(config1), 0755))
-	require.NoError(fs.WriteFile("conf/90_config.json", []byte(config2), 0755))
+	require.NoError(fs.WriteFile("conf/901_config.json", []byte(config2), 0755))
+	require.NoError(fs.WriteFile("conf/91_config.yml", []byte(config3), 0755))
 	return fs
 }
 
