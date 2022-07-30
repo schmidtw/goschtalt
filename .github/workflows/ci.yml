@@ -18,4 +18,4 @@ jobs:
     uses: xmidt-org/.github/.github/workflows/go-ci.yml@go-ci-v1
     with:
       docker-skip: true
-    secrets: inherit
+      sonarcloud-skip: true
