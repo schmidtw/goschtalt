@@ -117,7 +117,7 @@ func (group Group) walk(codecs *encoding.Registry) ([]raw, error) {
 
 		c := raw{
 			file:   info.Name(),
-			values: v,
+			config: v,
 		}
 		list = append(list, c)
 	}

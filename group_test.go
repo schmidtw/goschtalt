@@ -52,7 +52,7 @@ func TestWalk(t *testing.T) {
 			expected: []raw{
 				{
 					file: "1.json",
-					values: &map[string]any{
+					config: &map[string]any{
 						"hello": "world",
 					},
 				},
@@ -69,12 +69,12 @@ func TestWalk(t *testing.T) {
 			expected: []raw{
 				{
 					file: "1.json",
-					values: &map[string]any{
+					config: &map[string]any{
 						"hello": "world",
 					},
 				}, {
 					file: "4.json",
-					values: &map[string]any{
+					config: &map[string]any{
 						"ground": "green",
 					},
 				},
@@ -89,22 +89,22 @@ func TestWalk(t *testing.T) {
 			expected: []raw{
 				{
 					file: "1.json",
-					values: &map[string]any{
+					config: &map[string]any{
 						"hello": "world",
 					},
 				}, {
 					file: "2.json",
-					values: &map[string]any{
+					config: &map[string]any{
 						"water": "blue",
 					},
 				}, {
 					file: "3.json",
-					values: &map[string]any{
+					config: &map[string]any{
 						"sky": "overcast",
 					},
 				}, {
 					file: "4.json",
-					values: &map[string]any{
+					config: &map[string]any{
 						"ground": "green",
 					},
 				},
@@ -118,12 +118,12 @@ func TestWalk(t *testing.T) {
 			expected: []raw{
 				{
 					file: "3.json",
-					values: &map[string]any{
+					config: &map[string]any{
 						"sky": "overcast",
 					},
 				}, {
 					file: "4.json",
-					values: &map[string]any{
+					config: &map[string]any{
 						"ground": "green",
 					},
 				},
