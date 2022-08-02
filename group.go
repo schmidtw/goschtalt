@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/schmidtw/goschtalt/internal/encoding"
 )
@@ -27,6 +28,16 @@ type Group struct {
 	// Recurse specifies if directories encoutered in the Paths should be examined
 	// recursively or not.
 	Recurse bool
+
+	// FileReadTimeout provides a way to bound our file IO operations in the
+	// event that hardware has issues or the underlying calls result in network
+	// calls.
+	FileReadTimeout time.Duration
+
+	// Limiter is called to provide the client of goschtalt the opportunity to
+	// rate limit the fetching process for the files.  The response function
+	// is called when the fetching is complete.
+	Limiter func() func()
 }
 
 func (group Group) enumerate(exts []string) ([]string, error) {
@@ -79,10 +90,37 @@ func (group Group) enumerate(exts []string) ([]string, error) {
 	return files, nil
 }
 
-func (group Group) walk(codecs *encoding.Registry) ([]raw, error) {
-	var list []raw
-	var files []string
+func (group Group) collectAndDecode(codecs *encoding.Registry, file string) (annotatedMap, error) {
+	v := map[string]any{}
+	buf := bytes.NewBuffer(nil)
+	ext := strings.TrimPrefix(filepath.Ext(file), ".")
 
+	f, err := group.FS.Open(file)
+	if err != nil {
+		return annotatedMap{}, err
+	}
+	info, err := f.Stat()
+	if err != nil {
+		_ = f.Close()
+		return annotatedMap{}, err
+	}
+	_, err = io.Copy(buf, f)
+	_ = f.Close()
+	if err != nil {
+		return annotatedMap{}, err
+	}
+
+	err = codecs.Decode(ext, buf.Bytes(), &v)
+	if err != nil {
+		return annotatedMap{}, err
+	}
+
+	am := toAnnotatedMap(info.Name(), v)
+
+	return am, nil
+}
+
+func (group Group) walk(codecs *encoding.Registry) ([]annotatedMap, error) {
 	exts := codecs.Extensions()
 
 	files, err := group.enumerate(exts)
@@ -90,38 +128,14 @@ func (group Group) walk(codecs *encoding.Registry) ([]raw, error) {
 		return nil, err
 	}
 
+	list := []annotatedMap{}
 	for _, file := range files {
-		v := &map[string]any{}
-		buf := bytes.NewBuffer(nil)
-		ext := strings.TrimPrefix(filepath.Ext(file), ".")
-
-		f, err := group.FS.Open(file)
-		if err != nil {
-			continue
-		}
-		info, err := f.Stat()
-		if err != nil {
-			_ = f.Close()
-			continue
-		}
-		_, err = io.Copy(buf, f)
-		_ = f.Close()
-		if err != nil {
-			continue
-		}
-
-		err = codecs.Decode(ext, buf.Bytes(), v)
+		annotated, err := group.collectAndDecode(codecs, file)
 		if err != nil {
 			return nil, err
 		}
-
-		c := raw{
-			file:   info.Name(),
-			config: v,
-		}
-		list = append(list, c)
+		list = append(list, annotated)
 	}
-
 	return list, nil
 }
 

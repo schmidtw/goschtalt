@@ -19,7 +19,7 @@ var (
 
 // Codec provides the encoder and decoders interface
 type Codec interface {
-	Encode(v *map[string]any) ([]byte, error)
+	Encode(v any) ([]byte, error)
 	Decode(b []byte, v *map[string]any) error
 	Extensions() []string
 }
@@ -44,7 +44,7 @@ func NewRegistry(opts ...Option) (*Registry, error) {
 		codecs: make(map[string]Codec),
 	}
 
-	err := r.Options(opts...)
+	err := r.With(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +53,7 @@ func NewRegistry(opts ...Option) (*Registry, error) {
 }
 
 // Option takes a list of options and applies them.
-func (r *Registry) Options(opts ...Option) error {
+func (r *Registry) With(opts ...Option) error {
 	for _, opt := range opts {
 		if err := opt.apply(r); err != nil {
 			return err
@@ -108,7 +108,7 @@ func (r *Registry) Decode(ext string, b []byte, v *map[string]any) error {
 }
 
 // Encode encodes based on the specified extension.
-func (r *Registry) Encode(ext string, v *map[string]any) ([]byte, error) {
+func (r *Registry) Encode(ext string, v any) ([]byte, error) {
 	codec, err := r.find(ext)
 	if err != nil {
 		return nil, err
@@ -117,9 +117,9 @@ func (r *Registry) Encode(ext string, v *map[string]any) ([]byte, error) {
 	return codec.Encode(v)
 }
 
-// WithCodec registers a Codec for the specific file extensions provided.
+// DecoderEncoder registers a Codec for the specific file extensions provided.
 // Attempting to register a duplicate extension is not supported.
-func WithCodec(enc Codec) Option {
+func DecoderEncoder(enc Codec) Option {
 	return func(r *Registry) error {
 		normalized := make(map[string]bool)
 
@@ -149,9 +149,9 @@ func WithCodec(enc Codec) Option {
 	}
 }
 
-// WithoutExtensions provides a mechanism for effectively removing the codecs
+// ExcludedExtensions provides a mechanism for effectively removing the codecs
 // from use for specific file types.
-func WithoutExtensions(exts ...string) Option {
+func ExcludedExtensions(exts ...string) Option {
 	return func(r *Registry) error {
 		r.mutex.Lock()
 		defer r.mutex.Unlock()

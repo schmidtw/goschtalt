@@ -4,7 +4,9 @@
 package goschtalt
 
 import (
+	"fmt"
 	"reflect"
+	"strconv"
 	"testing"
 
 	//pp "github.com/k0kubun/pp/v3"
@@ -142,7 +144,7 @@ func TestReadAll(t *testing.T) {
 				"1.json": `{"foo":{"bar": "one"}}`,
 				"2.json": `{"foo":{"bar": "two"}}`,
 			},
-			options: []Option{WithMergeStrategy(Value, Existing)},
+			options: []Option{MergeStrategy(Value, Existing)},
 			expected: annotatedMap{
 				files: []string{"1.json", "2.json"},
 				m: map[string]any{
@@ -163,7 +165,7 @@ func TestReadAll(t *testing.T) {
 				"1.json": `{"foo":{"bar": "one"}}`,
 				"2.json": `{"foo":{"bar": "two"}}`,
 			},
-			options:     []Option{WithMergeStrategy(Value, Fail)},
+			options:     []Option{MergeStrategy(Value, Fail)},
 			expectedErr: ErrConflict,
 		}, {
 			description: "Merge with a deeper map and array conflict - default rules.",
@@ -208,7 +210,7 @@ func TestReadAll(t *testing.T) {
 				"1.json": `{"foo":{"bar": ["one", "two"]}}`,
 				"2.json": `{"foo":{"bar": ["three", "four"]}}`,
 			},
-			options: []Option{WithMergeStrategy(Array, Prepend)},
+			options: []Option{MergeStrategy(Array, Prepend)},
 			expected: annotatedMap{
 				files: []string{"1.json", "2.json"},
 				m: map[string]any{
@@ -246,7 +248,7 @@ func TestReadAll(t *testing.T) {
 				"1.json": `{"foo":{"bar": ["one", "two"]}}`,
 				"2.json": `{"foo":{"bar": ["three", "four"]}}`,
 			},
-			options: []Option{WithMergeStrategy(Array, Existing)},
+			options: []Option{MergeStrategy(Array, Existing)},
 			expected: annotatedMap{
 				files: []string{"1.json", "2.json"},
 				m: map[string]any{
@@ -276,7 +278,7 @@ func TestReadAll(t *testing.T) {
 				"1.json": `{"foo":{"bar": ["one", "two"]}}`,
 				"2.json": `{"foo":{"bar": ["three", "four"]}}`,
 			},
-			options: []Option{WithMergeStrategy(Array, Latest)},
+			options: []Option{MergeStrategy(Array, Latest)},
 			expected: annotatedMap{
 				files: []string{"1.json", "2.json"},
 				m: map[string]any{
@@ -306,7 +308,7 @@ func TestReadAll(t *testing.T) {
 				"1.json": `{"foo":{"bar": ["one", "two"]}}`,
 				"2.json": `{"foo":{"bar": ["three", "four"]}}`,
 			},
-			options:     []Option{WithMergeStrategy(Array, Fail)},
+			options:     []Option{MergeStrategy(Array, Fail)},
 			expectedErr: ErrConflict,
 		}, {
 			description: "Merge with a deeper map type conflict - default rules.",
@@ -321,7 +323,7 @@ func TestReadAll(t *testing.T) {
 				"1.json": `{"foo":{"bar": ["one", "two"]}}`,
 				"2.json": `{"foo":{"bar": "oops"}}`,
 			},
-			options: []Option{WithMergeStrategy(Map, Latest)},
+			options: []Option{MergeStrategy(Map, Latest)},
 			expected: annotatedMap{
 				files: []string{"1.json", "2.json"},
 				m: map[string]any{
@@ -342,7 +344,7 @@ func TestReadAll(t *testing.T) {
 				"1.json": `{"foo":{"bar": ["one", "two"]}}`,
 				"2.json": `{"foo":{"bar": "oops"}}`,
 			},
-			options: []Option{WithMergeStrategy(Map, Existing)},
+			options: []Option{MergeStrategy(Map, Existing)},
 			expected: annotatedMap{
 				files: []string{"1.json", "2.json"},
 				m: map[string]any{
@@ -384,13 +386,13 @@ func TestReadAll(t *testing.T) {
 				FS:    fs,
 			}
 
-			g, err := New(WithFileGroup(group))
+			g, err := New(FileGroup(group))
 			require.NotNil(g)
 			require.NoError(err)
-			err = g.Options(tc.options...)
+			err = g.With(tc.options...)
 			require.NoError(err)
 
-			err = g.ReadInConfig()
+			err = g.Compile()
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				//Handy to keep around if you need to debug a failure.
@@ -407,6 +409,156 @@ func TestReadAll(t *testing.T) {
 				return
 			}
 			assert.ErrorIs(err, tc.expectedErr)
+		})
+	}
+}
+
+func TestFetch(t *testing.T) {
+	tests := []struct {
+		description     string
+		file            string
+		key             string
+		options         []Option
+		forceStringType bool
+		expected        any
+		expectedErr     error
+		expectedErrText string
+	}{
+		{
+			description:     "Fetch with a matching type.",
+			file:            `{"foo":"bar"}`,
+			key:             "foo",
+			expected:        "bar",
+			forceStringType: true,
+		}, {
+			description:     "Fetch a nested value through an array.",
+			file:            `{"foo":[{"car":"map"},{"dog": "cat"}]}`,
+			key:             "foo.1.dog",
+			forceStringType: true,
+			expected:        "cat",
+		}, {
+			description:     "Fetch a more deeply nested value through an array.",
+			file:            `{"foo":[{"car":{"type":"ev"}},{"dog": "cat"}]}`,
+			key:             "foo.0.car.type",
+			forceStringType: true,
+			expected:        "ev",
+		}, {
+			description:     "Fetch through nested arrays.",
+			file:            `{"foo":[["dog", "cat"],["fish", "shark"]]}`,
+			key:             "foo.0.1",
+			forceStringType: true,
+			expected:        "cat",
+		}, {
+			description: "Fetch an array.",
+			file:        `{"foo":[["dog", "cat"],["fish", "shark"]]}`,
+			key:         "foo.0",
+			expected:    []any{"dog", "cat"},
+		}, {
+			description: "Fetch everything.",
+			file:        `{"foo":[["dog", "cat"],["fish", "shark"]]}`,
+			key:         "",
+			expected: map[string]any{
+				"foo": []any{
+					[]any{"dog", "cat"},
+					[]any{"fish", "shark"},
+				},
+			},
+		}, {
+			description: "Fetch an integer from a string using a mapper.",
+			file:        `{"foo":"2s"}`,
+			key:         "foo",
+			expected:    int(123),
+			options: []Option{
+				func() Option {
+					var typ int
+					return CustomMapper(typ, func(i any) (any, error) {
+						return 123, nil
+					})
+				}(),
+			},
+		}, {
+			description: "Fetch with a non-numeric value as an array index to check the error.",
+			file:        `{"foo":[123]}`,
+			key:         "foo.pig",
+			expectedErr: strconv.ErrSyntax,
+		}, {
+			description:     "Fetch with a non-matching type.",
+			file:            `{"foo":123}`,
+			key:             "foo",
+			forceStringType: true,
+			expectedErr:     ErrTypeMismatch,
+			// Normally checking error text is a bad idea, but since this will
+			// be hard to debug for the user, I think it's worth it in this case.
+			expectedErrText: "type mismatch: expected type 'string' does not match type found 'int64'",
+		}, {
+			description:     "Fetch an array out of bounds to check the error.",
+			file:            `{"foo":[123]}`,
+			key:             "foo.1",
+			forceStringType: true,
+			expectedErr:     ErrArrayIndexOutOfBounds,
+			// Normally checking error text is a bad idea, but since this will
+			// be hard to debug for the user, I think it's worth it in this case.
+			expectedErrText: "with 'foo.1' array index is out of bounds len(array) is 1",
+		}, {
+			description:     "Fetch a missing value to check the error.",
+			file:            `{"foo":[{"car":"map"},{"dog": "cat"}]}`,
+			key:             "foo.1.rat",
+			forceStringType: true,
+			expectedErr:     ErrNotFound,
+			// Normally checking error text is a bad idea, but since this will
+			// be hard to debug for the user, I think it's worth it in this case.
+			expectedErrText: "with 'foo.1.rat' not found",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			fs := memfs.New()
+			require.NotNil(fs)
+			require.NoError(fs.WriteFile("file.json", []byte(tc.file), 0755))
+
+			group := Group{
+				Paths: []string{"."},
+				FS:    fs,
+			}
+
+			g, err := New(FileGroup(group))
+			require.NotNil(g)
+			require.NoError(err)
+			err = g.With(tc.options...)
+			require.NoError(err)
+
+			err = g.Compile()
+			require.NoError(err)
+
+			if tc.forceStringType {
+				var got string
+				got, err = Fetch(g, tc.key, got)
+				if tc.expectedErr == nil {
+					assert.NoError(err)
+					assert.Equal(tc.expected, got)
+					return
+				}
+				assert.ErrorIs(err, tc.expectedErr)
+				if len(tc.expectedErrText) > 0 {
+					assert.Equal(tc.expectedErrText, fmt.Sprintf("%s", err))
+				}
+				return
+			}
+
+			got, err := Fetch(g, tc.key, tc.expected)
+			if tc.expectedErr == nil {
+				assert.NoError(err)
+				assert.Equal(tc.expected, got)
+				return
+			}
+			assert.ErrorIs(err, tc.expectedErr)
+			if len(tc.expectedErrText) > 0 {
+				assert.Equal(tc.expectedErrText, fmt.Sprintf("%s", err))
+			}
 		})
 	}
 }

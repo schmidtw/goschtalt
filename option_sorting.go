@@ -9,33 +9,21 @@ import (
 	"github.com/schmidtw/goschtalt/internal/natsort"
 )
 
+// SortOrder mode options
 const (
-	Lexical = iota + 1
-	Natural
-	Custom
+	Lexical = iota + 1 // Sorts the files in lexical order
+	Natural            // Sorts the files in natural order
+	Custom             // Allows client to specify their own algorithm
 )
 
 // Sorter is the sorting function used to prioritize the configuration files.
 type Sorter func(a, b string) bool
 
-// WithSortOrder provides a way to specify how you want the files (and ultimately
+// SortOrder provides a way to specify how you want the files (and ultimately
 // the configuration values) sorted. There are 2 ordering schemes built in
 // (Lexical and Natural) as well as the option for you to specify your own, using
-// the mode Custom as well as providing a sorter func.
-//
-// TODO clean this up.
-//
-// strings provided are the base filenames.  No directory information is provided.
-// For the file 'etc/foo/bar.json' the string given to the sorter will be 'bar.json'.
-//
-// SortByLexical provides a simple lexical based sorter for the files where the
-// configuration values originate.  This order determines which configuration
-// values are adopted first and last.
-//
-// SortByNatural provides a simple lexical based sorter for the files where the
-// configuration values originate.  This order determines which configuration
-// values are adopted first and last.
-func WithSortOrder(mode int, sorter ...Sorter) Option {
+// the mode Custom as well as providing a sorter function.
+func SortOrder(mode int, sorter ...Sorter) Option {
 	var fn Sorter
 	switch mode {
 	case Lexical:
@@ -56,9 +44,9 @@ func WithSortOrder(mode int, sorter ...Sorter) Option {
 		if fn == nil {
 			return ErrInvalidOption
 		}
-		g.rawSorter = func(r []raw) {
-			sort.SliceStable(r, func(i, j int) bool {
-				return fn(r[i].file, r[j].file)
+		g.annotatedSorter = func(a []annotatedMap) {
+			sort.SliceStable(a, func(i, j int) bool {
+				return fn(a[i].files[0], a[j].files[0])
 			})
 		}
 		return nil

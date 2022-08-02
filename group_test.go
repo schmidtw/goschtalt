@@ -16,11 +16,11 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type groupTestByFile []raw
+type groupTestByFile []annotatedMap
 
 func (a groupTestByFile) Len() int           { return len(a) }
 func (a groupTestByFile) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a groupTestByFile) Less(i, j int) bool { return a[i].file < a[j].file }
+func (a groupTestByFile) Less(i, j int) bool { return a[i].files[0] < a[j].files[0] }
 
 func makeTestFs(t *testing.T) iofs.FS {
 	require := require.New(t)
@@ -40,97 +40,124 @@ func TestWalk(t *testing.T) {
 		description string
 		opts        []encoding.Option
 		group       Group
-		expected    []raw
+		expected    []annotatedMap
 		expectedErr error
 	}{
 		{
 			description: "Process one file.",
-			opts:        []encoding.Option{encoding.WithCodec(json.Codec{})},
+			opts:        []encoding.Option{encoding.DecoderEncoder(json.Codec{})},
 			group: Group{
 				Paths: []string{"nested/conf/1.json"},
 			},
-			expected: []raw{
+			expected: []annotatedMap{
 				{
-					file: "1.json",
-					config: &map[string]any{
-						"hello": "world",
+					files: []string{"1.json"},
+					m: map[string]any{
+						"hello": annotatedValue{
+							files: []string{"1.json"},
+							value: "world",
+						},
 					},
 				},
 			},
 		}, {
 			description: "Process two files.",
-			opts:        []encoding.Option{encoding.WithCodec(json.Codec{})},
+			opts:        []encoding.Option{encoding.DecoderEncoder(json.Codec{})},
 			group: Group{
 				Paths: []string{
 					"nested/conf/1.json",
 					"nested/4.json",
 				},
 			},
-			expected: []raw{
+			expected: []annotatedMap{
 				{
-					file: "1.json",
-					config: &map[string]any{
-						"hello": "world",
+					files: []string{"1.json"},
+					m: map[string]any{
+						"hello": annotatedValue{
+							files: []string{"1.json"},
+							value: "world",
+						},
 					},
 				}, {
-					file: "4.json",
-					config: &map[string]any{
-						"ground": "green",
+					files: []string{"4.json"},
+					m: map[string]any{
+						"ground": annotatedValue{
+							files: []string{"4.json"},
+							value: "green",
+						},
 					},
 				},
 			},
 		}, {
 			description: "Process most files.",
-			opts:        []encoding.Option{encoding.WithCodec(json.Codec{})},
+			opts:        []encoding.Option{encoding.DecoderEncoder(json.Codec{})},
 			group: Group{
 				Paths:   []string{"nested"},
 				Recurse: true,
 			},
-			expected: []raw{
+			expected: []annotatedMap{
 				{
-					file: "1.json",
-					config: &map[string]any{
-						"hello": "world",
+					files: []string{"1.json"},
+					m: map[string]any{
+						"hello": annotatedValue{
+							files: []string{"1.json"},
+							value: "world",
+						},
 					},
 				}, {
-					file: "2.json",
-					config: &map[string]any{
-						"water": "blue",
+					files: []string{"2.json"},
+					m: map[string]any{
+						"water": annotatedValue{
+							files: []string{"2.json"},
+							value: "blue",
+						},
 					},
 				}, {
-					file: "3.json",
-					config: &map[string]any{
-						"sky": "overcast",
+					files: []string{"3.json"},
+					m: map[string]any{
+						"sky": annotatedValue{
+							files: []string{"3.json"},
+							value: "overcast",
+						},
 					},
 				}, {
-					file: "4.json",
-					config: &map[string]any{
-						"ground": "green",
+					files: []string{"4.json"},
+					m: map[string]any{
+						"ground": annotatedValue{
+							files: []string{"4.json"},
+							value: "green",
+						},
 					},
 				},
 			},
 		}, {
 			description: "Process some files.",
-			opts:        []encoding.Option{encoding.WithCodec(json.Codec{})},
+			opts:        []encoding.Option{encoding.DecoderEncoder(json.Codec{})},
 			group: Group{
 				Paths: []string{"nested"},
 			},
-			expected: []raw{
+			expected: []annotatedMap{
 				{
-					file: "3.json",
-					config: &map[string]any{
-						"sky": "overcast",
+					files: []string{"3.json"},
+					m: map[string]any{
+						"sky": annotatedValue{
+							files: []string{"3.json"},
+							value: "overcast",
+						},
 					},
 				}, {
-					file: "4.json",
-					config: &map[string]any{
-						"ground": "green",
+					files: []string{"4.json"},
+					m: map[string]any{
+						"ground": annotatedValue{
+							files: []string{"4.json"},
+							value: "green",
+						},
 					},
 				},
 			},
 		}, {
 			description: "Process all files and fail.",
-			opts:        []encoding.Option{encoding.WithCodec(json.Codec{})},
+			opts:        []encoding.Option{encoding.DecoderEncoder(json.Codec{})},
 			group: Group{
 				Paths:   []string{"."},
 				Recurse: true,

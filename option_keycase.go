@@ -5,31 +5,28 @@ package goschtalt
 
 import "strings"
 
+// KeyCase mode values
 const (
-	Unchanged = iota + 1
-	Lower
-	Upper
+	Unchanged = iota + 1 // The case of the key is not changed.
+	Lower                // The key is made all lowercase.
+	Upper                // The key is made all lowercase.
 )
 
 type caseChanger func(string) string
 
-// TODO
-// WithOriginalCaseKeys does not alter the map keys found in the configuration
-// files.
-func WithKeyCase(mode int) Option {
-	var fn func(*map[string]any)
+// KeyCase specifies the alteration to the case of the keys.
+func KeyCase(mode int) Option {
+	var fn caseChanger
 
 	switch mode {
 	case Unchanged:
-		fn = func(m *map[string]any) {}
+		fn = func(s string) string {
+			return s
+		}
 	case Lower:
-		fn = func(m *map[string]any) {
-			keycaseMap(strings.ToLower, *m)
-		}
+		fn = strings.ToLower
 	case Upper:
-		fn = func(m *map[string]any) {
-			keycaseMap(strings.ToUpper, *m)
-		}
+		fn = strings.ToUpper
 	default:
 	}
 

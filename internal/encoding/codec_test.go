@@ -20,7 +20,7 @@ func (t *testCodec) Decode(b []byte, v *map[string]any) error {
 	return json.Unmarshal(b, v)
 }
 
-func (t *testCodec) Encode(v *map[string]any) ([]byte, error) {
+func (t *testCodec) Encode(v any) ([]byte, error) {
 	return json.Marshal(v)
 }
 
@@ -47,32 +47,32 @@ func TestRegistry_Register(t *testing.T) {
 	}{
 		{
 			description: "Successfully add a single codec.",
-			final:       WithCodec(yml),
+			final:       DecoderEncoder(yml),
 		}, {
 			description: "Successfully add a two codecs.",
-			codecs:      []Option{WithCodec(json)},
-			final:       WithCodec(yml),
+			codecs:      []Option{DecoderEncoder(json)},
+			final:       DecoderEncoder(yml),
 		}, {
 			description: "Fail to add a duplicate codecs.",
-			codecs:      []Option{WithCodec(json), WithCodec(yml)},
-			final:       WithCodec(yml),
+			codecs:      []Option{DecoderEncoder(json), DecoderEncoder(yml)},
+			final:       DecoderEncoder(yml),
 			expectedErr: ErrDuplicateFound,
 		}, {
 			description: "Fail to add a duplicate codecs.",
-			codecs:      []Option{WithCodec(json), WithCodec(yml)},
-			final:       WithCodec(duplicate),
+			codecs:      []Option{DecoderEncoder(json), DecoderEncoder(yml)},
+			final:       DecoderEncoder(duplicate),
 			expectedErr: ErrDuplicateFound,
 		}, {
 			description: "Fail to add a duplicate codecs.",
-			codecs:      []Option{WithCodec(json), WithCodec(yml), WithCodec(duplicate)},
+			codecs:      []Option{DecoderEncoder(json), DecoderEncoder(yml), DecoderEncoder(duplicate)},
 			expectedErr: ErrDuplicateFound,
 		}, {
 			description: "Fail to add a duplicate codecs.",
-			codecs:      []Option{WithCodec(json), WithCodec(json)},
+			codecs:      []Option{DecoderEncoder(json), DecoderEncoder(json)},
 			expectedErr: ErrDuplicateFound,
 		}, {
 			description: "Successfully add, then remove, then add codecs.",
-			codecs:      []Option{WithCodec(json), WithoutExtensions("json", "yml"), WithCodec(json)},
+			codecs:      []Option{DecoderEncoder(json), ExcludedExtensions("json", "yml"), DecoderEncoder(json)},
 		},
 	}
 	for _, tc := range tests {
@@ -85,7 +85,7 @@ func TestRegistry_Register(t *testing.T) {
 			if tc.final != nil {
 				require.NotNil(dr)
 				require.NoError(err)
-				err = dr.Options(tc.final)
+				err = dr.With(tc.final)
 			}
 
 			if tc.expectedErr == nil {
@@ -111,7 +111,7 @@ func TestRegistry_Extensions(t *testing.T) {
 	}{
 		{
 			description: "Fail to add a duplicate codecs.",
-			codecs:      []Option{WithCodec(json), WithCodec(yml)},
+			codecs:      []Option{DecoderEncoder(json), DecoderEncoder(yml)},
 			expected:    []string{"json", "yaml", "yml"},
 		},
 	}
@@ -175,7 +175,7 @@ func TestRegistry_Decode(t *testing.T) {
 				extensions: []string{"JSON"},
 			}
 
-			dr, err := NewRegistry(WithCodec(json))
+			dr, err := NewRegistry(DecoderEncoder(json))
 			require.NotNil(dr)
 			require.NoError(err)
 
@@ -228,7 +228,7 @@ func TestRegistry_Encode(t *testing.T) {
 				extensions: []string{"JSON"},
 			}
 
-			dr, err := NewRegistry(WithCodec(json))
+			dr, err := NewRegistry(DecoderEncoder(json))
 			require.NotNil(dr)
 			require.NoError(err)
 

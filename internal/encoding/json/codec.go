@@ -23,7 +23,7 @@ func (c Codec) Decode(b []byte, v *map[string]any) error {
 	return nil
 }
 
-func (c Codec) Encode(v *map[string]any) ([]byte, error) {
+func (c Codec) Encode(v any) ([]byte, error) {
 	return json.MarshalIndent(v, "", "    ")
 }
 

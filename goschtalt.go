@@ -5,47 +5,39 @@ package goschtalt
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
+	"strconv"
+	"strings"
 	"sync"
 
 	"github.com/schmidtw/goschtalt/internal/encoding"
 	"github.com/schmidtw/goschtalt/internal/encoding/json"
+	"github.com/schmidtw/goschtalt/internal/encoding/yaml"
 )
 
 var (
-	ErrConflict      = errors.New("a conflict has been detected")
-	ErrInvalidOption = errors.New("invalid option")
+	ErrConflict              = errors.New("a conflict has been detected")
+	ErrInvalidOption         = errors.New("invalid option")
+	ErrNotFound              = errors.New("not found")
+	ErrArrayIndexOutOfBounds = errors.New("array index is out of bounds")
+	ErrTypeMismatch          = errors.New("type mismatch")
+	ErrNotCompiled           = errors.New("the Compile() function must be called first")
 )
-
-type raw struct {
-	file   string
-	config *map[string]any
-}
-
-type annotatedMap struct {
-	files []string
-	m     map[string]any
-}
-
-type annotatedArray struct {
-	files []string
-	array []any
-}
-
-type annotatedValue struct {
-	files []string
-	value any
-}
 
 // Goschtalt is a configurable, prioritized, merging configuration registry.
 type Goschtalt struct {
 	codecs          *encoding.Registry
 	groups          []Group
 	annotated       annotatedMap
+	final           map[string]any
+	hasBeenCompiled bool
+	keyDelimiter    string
 	mutex           sync.Mutex
-	rawSorter       func([]raw)
-	keySwizzler     func(*map[string]any)
-	leafConflictFn  func(cur, next annotatedValue) (annotatedValue, error)
+	annotatedSorter func([]annotatedMap)
+	keySwizzler     caseChanger
+	typeMappers     map[string]TypeMapper
+	valueConflictFn func(cur, next annotatedValue) (annotatedValue, error)
 	arrayConflictFn func(cur, next annotatedArray) (annotatedArray, error)
 	mapConflictFn   func(any, any) (any, error)
 }
@@ -61,21 +53,24 @@ func (fn Option) apply(g *Goschtalt) error {
 func New(opts ...Option) (*Goschtalt, error) {
 	r, _ := encoding.NewRegistry()
 	g := &Goschtalt{
-		codecs: r,
+		final:       make(map[string]any),
+		typeMappers: make(map[string]TypeMapper),
+		codecs:      r,
 	}
 
 	/* set the defaults */
-	_ = g.Options(
-		WithCodec(json.Codec{}),
-		WithSortOrder(Natural),
-		WithKeyCase(Lower),
-		WithMergeStrategy(Map, Fail),
-		WithMergeStrategy(Array, Append),
-		WithMergeStrategy(Value, Latest),
+	_ = g.With(
+		Codec(json.Codec{}),
+		Codec(yaml.Codec{}),
+		SortOrder(Natural),
+		KeyCase(Lower),
+		MergeStrategy(Map, Fail),
+		MergeStrategy(Array, Append),
+		MergeStrategy(Value, Latest),
+		KeyDelimiter("."),
 	)
 
-	/* apply the specified options */
-	err := g.Options(opts...)
+	err := g.With(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -83,8 +78,8 @@ func New(opts ...Option) (*Goschtalt, error) {
 	return g, nil
 }
 
-// Option takes a list of options and applies them.
-func (g *Goschtalt) Options(opts ...Option) error {
+// With takes a list of options and applies them.
+func (g *Goschtalt) With(opts ...Option) error {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 	for _, opt := range opts {
@@ -95,13 +90,13 @@ func (g *Goschtalt) Options(opts ...Option) error {
 	return nil
 }
 
-// ReadInConfig reads in all the files configured using the options provided,
+// Compile reads in all the files configured using the options provided,
 // and merges the configuration trees into a single map for later use.
-func (g *Goschtalt) ReadInConfig() error {
+func (g *Goschtalt) Compile() error {
 	g.mutex.Lock()
 	defer g.mutex.Unlock()
 
-	full, err := g.readAll()
+	full, err := g.collect()
 	if err != nil {
 		return err
 	}
@@ -109,8 +104,152 @@ func (g *Goschtalt) ReadInConfig() error {
 	return g.merge(full)
 }
 
-func (g *Goschtalt) readAll() ([]annotatedMap, error) {
-	full := []raw{}
+// Marshal renders the into the format specified ('json', 'yaml' or other extensions
+// the Codecs provide and if adding comments should be attempted.  If a format
+// does not support comments, an error is returned.  The result of the call is
+// a slice of bytes with the information rendered into it.
+func (g *Goschtalt) Marshal(format string, comments bool) ([]byte, error) {
+	g.mutex.Lock()
+	defer g.mutex.Unlock()
+
+	// TODO support outputing origin via comments
+	return g.codecs.Encode(format, &g.final)
+}
+
+// Fetch provides a generic based strict typed approach to fetching parts of the
+// configuration tree.  The Goschtalt and key parameters are fairly
+// straighforward, but the want may not be.  The want parameter is used to
+// determine the type of the output object desired.  This allows this function
+// to do to handy things the g.Fetch() method can't do:
+//
+//  - Thes function is able to validate the type returned is the type desired,
+//    or return a descriptive error about why it can't do what was asked for.
+//
+//  - This function is also able to perform remapping from an existing type to
+//    what you want based on the typeMappers provided.  This allows you to
+//    automatically convert and cast a string to a time.Duration if you provide
+//    the mapper.
+//
+// Here is an example showing how to add a duration caster based on spf13/cast:
+//
+//    import (
+//        "github.com/schmidtw/goschtalt"
+//        "github.com/spf13/cast"
+//    )
+//
+//    func DurationMapper() goschtalt.Option {
+//        var d time.Duration
+//        return goschtalt.CustomMapper(d, func(i any) (any, error) {
+//            return cast.ToDurationE(i)
+//        })
+//    }
+//
+//    ...
+//
+//    g := goschtalt.New(DurationMapper())
+//
+//    ...
+func Fetch[T any](g *Goschtalt, key string, want T) (T, error) {
+	var zeroVal T
+	rv, err := g.Fetch(key)
+	if err != nil {
+		return zeroVal, err
+	}
+
+	if fn, found := g.typeMappers[reflect.TypeOf(want).String()]; found {
+		rv, err = fn(rv)
+		if err != nil {
+			return zeroVal, err
+		}
+	}
+
+	if reflect.TypeOf(want) != reflect.TypeOf(rv) {
+		return zeroVal, fmt.Errorf("%w: expected type '%s' does not match type found '%s'",
+			ErrTypeMismatch,
+			reflect.TypeOf(want),
+			reflect.TypeOf(rv))
+	}
+
+	return rv.(T), nil
+}
+
+// Fetch pulls the specified portion of the configuration tree and returns it to
+// the caller as an any, since it could be a map node or a specific value.
+func (g *Goschtalt) Fetch(key string) (any, error) {
+	if len(key) == 0 {
+		return g.final, nil
+	}
+
+	key = g.keySwizzler(key)
+	path := strings.Split(key, g.keyDelimiter)
+
+	val, at, err := g.searchMap(g.final, path)
+	if err != nil {
+		return nil, fmt.Errorf("with '%s' %w", strings.Join(at, g.keyDelimiter), err)
+	}
+
+	return val, nil
+}
+
+func (g *Goschtalt) searchMap(src map[string]any, path []string) (any, []string, error) {
+	var err error
+
+	at := []string{path[0]}
+
+	next, found := src[path[0]]
+	if !found {
+		return nil, at, ErrNotFound
+	}
+
+	// If there is more to the path, continue traversing, otherwise return.
+	if len(path) > 1 {
+		var up []string
+
+		switch typedNext := next.(type) {
+		case map[string]any:
+			next, up, err = g.searchMap(typedNext, path[1:])
+		case []any:
+			next, up, err = g.searchArray(typedNext, path[1:])
+		default:
+		}
+
+		at = append(at, up...)
+	}
+
+	return next, at, err
+}
+
+func (g *Goschtalt) searchArray(src []any, path []string) (any, []string, error) {
+	at := []string{path[0]}
+
+	idx, err := strconv.Atoi(path[0])
+	if err != nil {
+		return nil, at, err
+	}
+	if len(src) <= idx {
+		return nil, at, fmt.Errorf("%w len(array) is %d", ErrArrayIndexOutOfBounds, len(src))
+	}
+
+	next := src[idx]
+	if len(path) > 1 {
+		var up []string
+
+		switch typedNext := next.(type) {
+		case map[string]any:
+			next, up, err = g.searchMap(typedNext, path[1:])
+		case []any:
+			next, up, err = g.searchArray(typedNext, path[1:])
+		default:
+		}
+
+		at = append(at, up...)
+	}
+
+	return next, at, err
+}
+
+func (g *Goschtalt) collect() ([]annotatedMap, error) {
+	full := []annotatedMap{}
 
 	for _, group := range g.groups {
 		cfgs, err := group.walk(g.codecs)
@@ -123,58 +262,11 @@ func (g *Goschtalt) readAll() ([]annotatedMap, error) {
 
 	for i := range full {
 		// Apply any key mangling that is needed.
-		g.keySwizzler(full[i].config)
+		keycaseMap(g.keySwizzler, full[i].m)
 	}
-	g.rawSorter(full)
+	g.annotatedSorter(full)
 
-	nodes := []annotatedMap{}
-
-	for _, cfg := range full {
-		n := rawToAnnotatedMap(cfg.file, *cfg.config)
-		nodes = append(nodes, n)
-	}
-
-	return nodes, nil
-}
-
-func rawToAnnotatedMap(file string, src map[string]any) annotatedMap {
-	m := annotatedMap{
-		files: []string{file},
-	}
-
-	tmp := map[string]any{}
-	for key, val := range src {
-		tmp[key] = rawToAnnotatedVal(file, val)
-	}
-	m.m = tmp
-
-	return m
-}
-
-func rawToAnnotatedVal(file string, val any) any {
-	switch val := val.(type) {
-	case map[string]any:
-		return rawToAnnotatedMap(file, val)
-	case []any:
-		return rawToAnnotatedArray(file, val)
-	}
-
-	return annotatedValue{
-		files: []string{file},
-		value: val,
-	}
-}
-
-func rawToAnnotatedArray(file string, a []any) annotatedArray {
-	rv := annotatedArray{
-		files: []string{file},
-		array: make([]any, len(a)),
-	}
-	for i, val := range a {
-		rv.array[i] = rawToAnnotatedVal(file, val)
-	}
-
-	return rv
+	return full, nil
 }
 
 func (g *Goschtalt) merge(cfgs []annotatedMap) error {
@@ -188,6 +280,8 @@ func (g *Goschtalt) merge(cfgs []annotatedMap) error {
 			return err
 		}
 	}
+	g.final = toFinalMap(g.annotated)
+	g.hasBeenCompiled = true
 	return nil
 }
 
@@ -196,42 +290,34 @@ func (g *Goschtalt) mergeMap(src annotatedMap, dest *annotatedMap) error {
 		current, found := dest.m[key]
 		if !found {
 			// No conflicts - easy merge
-			switch next := next.(type) {
-			case annotatedMap:
-				dest.files = dedupedAppend(dest.files, next.files...)
-			case annotatedArray:
-				dest.files = dedupedAppend(dest.files, next.files...)
-			case annotatedValue:
-				dest.files = dedupedAppend(dest.files, next.files...)
-			}
+			dest.Append(next.(annotated))
 			dest.m[key] = next
 			continue
 		}
 
 		if reflect.TypeOf(current) == reflect.TypeOf(next) {
 			// Types match.
+			dest.Append(next.(annotated))
+
 			switch next := next.(type) {
 			case annotatedMap:
 				// This one is a bit of a special case in that there isn't a
 				// conflict as much as we ran into another structural map.
 				// Because of that, the conflict resolver doesn't get called
 				// here.
-				dest.files = dedupedAppend(dest.files, next.files...)
 				c := current.(annotatedMap)
 				if err := g.mergeMap(next, &c); err != nil {
 					return err
 				}
 				dest.m[key] = c
 			case annotatedArray: // Both arrays, resolve.
-				dest.files = dedupedAppend(dest.files, next.files...)
 				tmp, err := g.arrayConflictFn(current.(annotatedArray), next)
 				if err != nil {
 					return err
 				}
 				dest.m[key] = tmp
 			case annotatedValue: // Both values, resolve.
-				dest.files = dedupedAppend(dest.files, next.files...)
-				tmp, err := g.leafConflictFn(current.(annotatedValue), next)
+				tmp, err := g.valueConflictFn(current.(annotatedValue), next)
 				if err != nil {
 					return err
 				}
@@ -247,31 +333,9 @@ func (g *Goschtalt) mergeMap(src annotatedMap, dest *annotatedMap) error {
 		}
 
 		// Adjust the file metrics
-		switch tmp := tmp.(type) {
-		case annotatedMap:
-			dest.files = dedupedAppend(dest.files, tmp.files...)
-		case annotatedArray:
-			dest.files = dedupedAppend(dest.files, tmp.files...)
-		case annotatedValue:
-			dest.files = dedupedAppend(dest.files, tmp.files...)
-		}
+		dest.Append(tmp.(annotated))
 		dest.m[key] = tmp
 	}
 
 	return nil
-}
-
-func dedupedAppend(list []string, added ...string) []string {
-	keys := make(map[string]bool)
-	for _, item := range list {
-		keys[item] = true
-	}
-
-	for _, want := range added {
-		if _, found := keys[want]; !found {
-			keys[want] = true
-			list = append(list, want)
-		}
-	}
-	return list
 }
