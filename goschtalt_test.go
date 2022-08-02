@@ -386,26 +386,26 @@ func TestReadAll(t *testing.T) {
 				FS:    fs,
 			}
 
-			g, err := New(FileGroup(group))
-			require.NotNil(g)
+			c, err := New(FileGroup(group))
+			require.NotNil(c)
 			require.NoError(err)
-			err = g.With(tc.options...)
+			err = c.With(tc.options...)
 			require.NoError(err)
 
-			err = g.Compile()
+			err = c.Compile()
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				//Handy to keep around if you need to debug a failure.
 				/*
-					if !reflect.DeepEqual(tc.expected, g.annotated) {
+					if !reflect.DeepEqual(tc.expected, c.annotated) {
 						fmt.Printf("\n%s\n", tc.description)
 						fmt.Println("\nWanted\n-------------------------------------------")
 						pp.Print(tc.expected)
 						fmt.Println("\nGot\n-------------------------------------------")
-						pp.Print(g.annotated)
+						pp.Print(c.annotated)
 					}
 				*/
-				assert.True(reflect.DeepEqual(tc.expected, g.annotated))
+				assert.True(reflect.DeepEqual(tc.expected, c.annotated))
 				return
 			}
 			assert.ErrorIs(err, tc.expectedErr)
@@ -525,18 +525,18 @@ func TestFetch(t *testing.T) {
 				FS:    fs,
 			}
 
-			g, err := New(FileGroup(group))
-			require.NotNil(g)
+			c, err := New(FileGroup(group))
+			require.NotNil(c)
 			require.NoError(err)
-			err = g.With(tc.options...)
+			err = c.With(tc.options...)
 			require.NoError(err)
 
-			err = g.Compile()
+			err = c.Compile()
 			require.NoError(err)
 
 			if tc.forceStringType {
 				var got string
-				got, err = Fetch(g, tc.key, got)
+				got, err = Fetch(c, tc.key, got)
 				if tc.expectedErr == nil {
 					assert.NoError(err)
 					assert.Equal(tc.expected, got)
@@ -549,7 +549,7 @@ func TestFetch(t *testing.T) {
 				return
 			}
 
-			got, err := Fetch(g, tc.key, tc.expected)
+			got, err := Fetch(c, tc.key, tc.expected)
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				assert.Equal(tc.expected, got)

@@ -40,11 +40,11 @@ func SortOrder(mode int, sorter ...Sorter) Option {
 		fn = nil
 	}
 
-	return func(g *Goschtalt) error {
+	return func(c *Config) error {
 		if fn == nil {
 			return ErrInvalidOption
 		}
-		g.annotatedSorter = func(a []annotatedMap) {
+		c.annotatedSorter = func(a []annotatedMap) {
 			sort.SliceStable(a, func(i, j int) bool {
 				return fn(a[i].files[0], a[j].files[0])
 			})

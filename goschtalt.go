@@ -25,8 +25,8 @@ var (
 	ErrNotCompiled           = errors.New("the Compile() function must be called first")
 )
 
-// Goschtalt is a configurable, prioritized, merging configuration registry.
-type Goschtalt struct {
+// Config is a configurable, prioritized, merging configuration registry.
+type Config struct {
 	codecs          *encoding.Registry
 	groups          []Group
 	annotated       annotatedMap
@@ -43,23 +43,23 @@ type Goschtalt struct {
 }
 
 // Option is the type used for options.
-type Option func(g *Goschtalt) error
+type Option func(c *Config) error
 
-func (fn Option) apply(g *Goschtalt) error {
-	return fn(g)
+func (fn Option) apply(c *Config) error {
+	return fn(c)
 }
 
 // New creates a new goschtalt configuration instance.
-func New(opts ...Option) (*Goschtalt, error) {
+func New(opts ...Option) (*Config, error) {
 	r, _ := encoding.NewRegistry()
-	g := &Goschtalt{
+	c := &Config{
 		final:       make(map[string]any),
 		typeMappers: make(map[string]TypeMapper),
 		codecs:      r,
 	}
 
 	/* set the defaults */
-	_ = g.With(
+	_ = c.With(
 		Codec(json.Codec{}),
 		Codec(yaml.Codec{}),
 		SortOrder(Natural),
@@ -70,20 +70,20 @@ func New(opts ...Option) (*Goschtalt, error) {
 		KeyDelimiter("."),
 	)
 
-	err := g.With(opts...)
+	err := c.With(opts...)
 	if err != nil {
 		return nil, err
 	}
 
-	return g, nil
+	return c, nil
 }
 
 // With takes a list of options and applies them.
-func (g *Goschtalt) With(opts ...Option) error {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
+func (c *Config) With(opts ...Option) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 	for _, opt := range opts {
-		if err := opt.apply(g); err != nil {
+		if err := opt.apply(c); err != nil {
 			return err
 		}
 	}
@@ -92,35 +92,35 @@ func (g *Goschtalt) With(opts ...Option) error {
 
 // Compile reads in all the files configured using the options provided,
 // and merges the configuration trees into a single map for later use.
-func (g *Goschtalt) Compile() error {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
+func (c *Config) Compile() error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
-	full, err := g.collect()
+	full, err := c.collect()
 	if err != nil {
 		return err
 	}
 
-	return g.merge(full)
+	return c.merge(full)
 }
 
 // Marshal renders the into the format specified ('json', 'yaml' or other extensions
 // the Codecs provide and if adding comments should be attempted.  If a format
 // does not support comments, an error is returned.  The result of the call is
 // a slice of bytes with the information rendered into it.
-func (g *Goschtalt) Marshal(format string, comments bool) ([]byte, error) {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
+func (c *Config) Marshal(format string, comments bool) ([]byte, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
 
 	// TODO support outputing origin via comments
-	return g.codecs.Encode(format, &g.final)
+	return c.codecs.Encode(format, &c.final)
 }
 
 // Fetch provides a generic based strict typed approach to fetching parts of the
-// configuration tree.  The Goschtalt and key parameters are fairly
+// configuration tree.  The Config and key parameters are fairly
 // straighforward, but the want may not be.  The want parameter is used to
 // determine the type of the output object desired.  This allows this function
-// to do to handy things the g.Fetch() method can't do:
+// to do to handy things the c.Fetch() method can't do:
 //
 //  - Thes function is able to validate the type returned is the type desired,
 //    or return a descriptive error about why it can't do what was asked for.
@@ -146,17 +146,17 @@ func (g *Goschtalt) Marshal(format string, comments bool) ([]byte, error) {
 //
 //    ...
 //
-//    g := goschtalt.New(DurationMapper())
+//    c := goschtalt.New(DurationMapper())
 //
 //    ...
-func Fetch[T any](g *Goschtalt, key string, want T) (T, error) {
+func Fetch[T any](c *Config, key string, want T) (T, error) {
 	var zeroVal T
-	rv, err := g.Fetch(key)
+	rv, err := c.Fetch(key)
 	if err != nil {
 		return zeroVal, err
 	}
 
-	if fn, found := g.typeMappers[reflect.TypeOf(want).String()]; found {
+	if fn, found := c.typeMappers[reflect.TypeOf(want).String()]; found {
 		rv, err = fn(rv)
 		if err != nil {
 			return zeroVal, err
@@ -175,23 +175,23 @@ func Fetch[T any](g *Goschtalt, key string, want T) (T, error) {
 
 // Fetch pulls the specified portion of the configuration tree and returns it to
 // the caller as an any, since it could be a map node or a specific value.
-func (g *Goschtalt) Fetch(key string) (any, error) {
+func (c *Config) Fetch(key string) (any, error) {
 	if len(key) == 0 {
-		return g.final, nil
+		return c.final, nil
 	}
 
-	key = g.keySwizzler(key)
-	path := strings.Split(key, g.keyDelimiter)
+	key = c.keySwizzler(key)
+	path := strings.Split(key, c.keyDelimiter)
 
-	val, at, err := g.searchMap(g.final, path)
+	val, at, err := c.searchMap(c.final, path)
 	if err != nil {
-		return nil, fmt.Errorf("with '%s' %w", strings.Join(at, g.keyDelimiter), err)
+		return nil, fmt.Errorf("with '%s' %w", strings.Join(at, c.keyDelimiter), err)
 	}
 
 	return val, nil
 }
 
-func (g *Goschtalt) searchMap(src map[string]any, path []string) (any, []string, error) {
+func (c *Config) searchMap(src map[string]any, path []string) (any, []string, error) {
 	var err error
 
 	at := []string{path[0]}
@@ -207,9 +207,9 @@ func (g *Goschtalt) searchMap(src map[string]any, path []string) (any, []string,
 
 		switch typedNext := next.(type) {
 		case map[string]any:
-			next, up, err = g.searchMap(typedNext, path[1:])
+			next, up, err = c.searchMap(typedNext, path[1:])
 		case []any:
-			next, up, err = g.searchArray(typedNext, path[1:])
+			next, up, err = c.searchArray(typedNext, path[1:])
 		default:
 		}
 
@@ -219,7 +219,7 @@ func (g *Goschtalt) searchMap(src map[string]any, path []string) (any, []string,
 	return next, at, err
 }
 
-func (g *Goschtalt) searchArray(src []any, path []string) (any, []string, error) {
+func (c *Config) searchArray(src []any, path []string) (any, []string, error) {
 	at := []string{path[0]}
 
 	idx, err := strconv.Atoi(path[0])
@@ -236,9 +236,9 @@ func (g *Goschtalt) searchArray(src []any, path []string) (any, []string, error)
 
 		switch typedNext := next.(type) {
 		case map[string]any:
-			next, up, err = g.searchMap(typedNext, path[1:])
+			next, up, err = c.searchMap(typedNext, path[1:])
 		case []any:
-			next, up, err = g.searchArray(typedNext, path[1:])
+			next, up, err = c.searchArray(typedNext, path[1:])
 		default:
 		}
 
@@ -248,11 +248,11 @@ func (g *Goschtalt) searchArray(src []any, path []string) (any, []string, error)
 	return next, at, err
 }
 
-func (g *Goschtalt) collect() ([]annotatedMap, error) {
+func (c *Config) collect() ([]annotatedMap, error) {
 	full := []annotatedMap{}
 
-	for _, group := range g.groups {
-		cfgs, err := group.walk(g.codecs)
+	for _, group := range c.groups {
+		cfgs, err := group.walk(c.codecs)
 		if err != nil {
 			return nil, err
 		}
@@ -262,30 +262,30 @@ func (g *Goschtalt) collect() ([]annotatedMap, error) {
 
 	for i := range full {
 		// Apply any key mangling that is needed.
-		keycaseMap(g.keySwizzler, full[i].m)
+		keycaseMap(c.keySwizzler, full[i].m)
 	}
-	g.annotatedSorter(full)
+	c.annotatedSorter(full)
 
 	return full, nil
 }
 
-func (g *Goschtalt) merge(cfgs []annotatedMap) error {
+func (c *Config) merge(cfgs []annotatedMap) error {
 	if len(cfgs) == 0 {
 		return nil
 	}
 
-	g.annotated = cfgs[0]
+	c.annotated = cfgs[0]
 	for _, cfg := range cfgs[1:] {
-		if err := g.mergeMap(cfg, &g.annotated); err != nil {
+		if err := c.mergeMap(cfg, &c.annotated); err != nil {
 			return err
 		}
 	}
-	g.final = toFinalMap(g.annotated)
-	g.hasBeenCompiled = true
+	c.final = toFinalMap(c.annotated)
+	c.hasBeenCompiled = true
 	return nil
 }
 
-func (g *Goschtalt) mergeMap(src annotatedMap, dest *annotatedMap) error {
+func (c *Config) mergeMap(src annotatedMap, dest *annotatedMap) error {
 	for key, next := range src.m {
 		current, found := dest.m[key]
 		if !found {
@@ -305,19 +305,19 @@ func (g *Goschtalt) mergeMap(src annotatedMap, dest *annotatedMap) error {
 				// conflict as much as we ran into another structural map.
 				// Because of that, the conflict resolver doesn't get called
 				// here.
-				c := current.(annotatedMap)
-				if err := g.mergeMap(next, &c); err != nil {
+				cur := current.(annotatedMap)
+				if err := c.mergeMap(next, &cur); err != nil {
 					return err
 				}
-				dest.m[key] = c
+				dest.m[key] = cur
 			case annotatedArray: // Both arrays, resolve.
-				tmp, err := g.arrayConflictFn(current.(annotatedArray), next)
+				tmp, err := c.arrayConflictFn(current.(annotatedArray), next)
 				if err != nil {
 					return err
 				}
 				dest.m[key] = tmp
 			case annotatedValue: // Both values, resolve.
-				tmp, err := g.valueConflictFn(current.(annotatedValue), next)
+				tmp, err := c.valueConflictFn(current.(annotatedValue), next)
 				if err != nil {
 					return err
 				}
@@ -327,7 +327,7 @@ func (g *Goschtalt) mergeMap(src annotatedMap, dest *annotatedMap) error {
 		}
 
 		// The types don't match, resolve.
-		tmp, err := g.mapConflictFn(current, next)
+		tmp, err := c.mapConflictFn(current, next)
 		if err != nil {
 			return err
 		}

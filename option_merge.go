@@ -45,20 +45,20 @@ const (
 //   - Value, Fail - Duplicate values triger a failure in processing.
 //   - Value, Latest - Values are replaced by newly processed arrays.
 func MergeStrategy(kind, strategy int) Option {
-	return func(g *Goschtalt) error {
+	return func(c *Config) error {
 		switch kind {
 		case Value:
 			switch strategy {
 			case Fail:
-				g.valueConflictFn = func(cur, next annotatedValue) (annotatedValue, error) {
+				c.valueConflictFn = func(cur, next annotatedValue) (annotatedValue, error) {
 					return annotatedValue{}, ErrConflict
 				}
 			case Latest:
-				g.valueConflictFn = func(cur, next annotatedValue) (annotatedValue, error) {
+				c.valueConflictFn = func(cur, next annotatedValue) (annotatedValue, error) {
 					return next, nil
 				}
 			case Existing:
-				g.valueConflictFn = func(cur, next annotatedValue) (annotatedValue, error) {
+				c.valueConflictFn = func(cur, next annotatedValue) (annotatedValue, error) {
 					return cur, nil
 				}
 			default:
@@ -67,25 +67,25 @@ func MergeStrategy(kind, strategy int) Option {
 		case Array:
 			switch strategy {
 			case Fail:
-				g.arrayConflictFn = func(cur, next annotatedArray) (annotatedArray, error) {
+				c.arrayConflictFn = func(cur, next annotatedArray) (annotatedArray, error) {
 					return annotatedArray{}, ErrConflict
 				}
 			case Latest:
-				g.arrayConflictFn = func(cur, next annotatedArray) (annotatedArray, error) {
+				c.arrayConflictFn = func(cur, next annotatedArray) (annotatedArray, error) {
 					return next, nil
 				}
 			case Existing:
-				g.arrayConflictFn = func(cur, next annotatedArray) (annotatedArray, error) {
+				c.arrayConflictFn = func(cur, next annotatedArray) (annotatedArray, error) {
 					return cur, nil
 				}
 			case Append:
-				g.arrayConflictFn = func(cur, next annotatedArray) (annotatedArray, error) {
+				c.arrayConflictFn = func(cur, next annotatedArray) (annotatedArray, error) {
 					cur.files = dedupedAppend(cur.files, next.files...)
 					cur.array = append(cur.array, next.array...)
 					return cur, nil
 				}
 			case Prepend:
-				g.arrayConflictFn = func(cur, next annotatedArray) (annotatedArray, error) {
+				c.arrayConflictFn = func(cur, next annotatedArray) (annotatedArray, error) {
 					cur.files = dedupedAppend(cur.files, next.files...)
 					cur.array = append(next.array, cur.array...)
 					return cur, nil
@@ -96,15 +96,15 @@ func MergeStrategy(kind, strategy int) Option {
 		case Map:
 			switch strategy {
 			case Fail:
-				g.mapConflictFn = func(cur, next any) (any, error) {
+				c.mapConflictFn = func(cur, next any) (any, error) {
 					return annotatedMap{}, ErrConflict
 				}
 			case Latest:
-				g.mapConflictFn = func(cur, next any) (any, error) {
+				c.mapConflictFn = func(cur, next any) (any, error) {
 					return next, nil
 				}
 			case Existing:
-				g.mapConflictFn = func(cur, next any) (any, error) {
+				c.mapConflictFn = func(cur, next any) (any, error) {
 					return cur, nil
 				}
 			default:

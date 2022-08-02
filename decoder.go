@@ -111,14 +111,14 @@ func MatchName(fn func(mapKey, fieldName string) bool) DecoderOption {
 // Unmarshal performs the act of looking up the specified section of the tree
 // and decoding the tree into the result.  Additional options can be specified
 // to adjust the behavior.
-func (g *Goschtalt) Unmarshal(key string, result any, opts ...DecoderOption) error {
-	g.mutex.Lock()
-	defer g.mutex.Unlock()
-	if !g.hasBeenCompiled {
+func (c *Config) Unmarshal(key string, result any, opts ...DecoderOption) error {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+	if !c.hasBeenCompiled {
 		return ErrNotCompiled
 	}
 
-	tree, err := g.Fetch(key)
+	tree, err := c.Fetch(key)
 	if err != nil {
 		return err
 	}

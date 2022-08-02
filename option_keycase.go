@@ -30,11 +30,11 @@ func KeyCase(mode int) Option {
 	default:
 	}
 
-	return func(g *Goschtalt) error {
+	return func(c *Config) error {
 		if fn == nil {
 			return ErrInvalidOption
 		}
-		g.keySwizzler = fn
+		c.keySwizzler = fn
 		return nil
 	}
 }
