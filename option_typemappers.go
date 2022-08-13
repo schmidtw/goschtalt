@@ -15,7 +15,8 @@ type typeMapper func(any) (any, error)
 // data type to another.  The typ value specifies the destination type the
 // mapper provides.  The mappers are called when the Fetch function is called.
 // Note it is this function:
-//   func Fetch[T any](c *Config, key string, want T) (T, error)
+//
+//	func Fetch[T any](c *Config, key string, want T) (T, error)
 func CustomMapper(typ any, fn func(any) (any, error)) Option {
 	return func(c *Config) error {
 		key := reflect.TypeOf(typ).String()

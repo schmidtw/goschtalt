@@ -17,33 +17,33 @@ import (
 // determine the type of the output object desired.  This allows this function
 // to do to handy things the c.Fetch() method can't do:
 //
-//  - Thes function is able to validate the type returned is the type desired,
-//    or return a descriptive error about why it can't do what was asked for.
+//   - Thes function is able to validate the type returned is the type desired,
+//     or return a descriptive error about why it can't do what was asked for.
 //
-//  - This function is also able to perform remapping from an existing type to
-//    what you want based on the typeMappers provided.  This allows you to
-//    automatically convert and cast a string to a time.Duration if you provide
-//    the mapper.
+//   - This function is also able to perform remapping from an existing type to
+//     what you want based on the typeMappers provided.  This allows you to
+//     automatically convert and cast a string to a time.Duration if you provide
+//     the mapper.
 //
 // Here is an example showing how to add a duration caster based on spf13/cast:
 //
-//    import (
-//        "github.com/schmidtw/goschtalt"
-//        "github.com/spf13/cast"
-//    )
+//	import (
+//	    "github.com/schmidtw/goschtalt"
+//	    "github.com/spf13/cast"
+//	)
 //
-//    func DurationMapper() goschtalt.Option {
-//        var d time.Duration
-//        return goschtalt.CustomMapper(d, func(i any) (any, error) {
-//            return cast.ToDurationE(i)
-//        })
-//    }
+//	func DurationMapper() goschtalt.Option {
+//	    var d time.Duration
+//	    return goschtalt.CustomMapper(d, func(i any) (any, error) {
+//	        return cast.ToDurationE(i)
+//	    })
+//	}
 //
-//    ...
+//	...
 //
-//    c := goschtalt.New(DurationMapper())
+//	c := goschtalt.New(DurationMapper())
 //
-//    ...
+//	...
 func Fetch[T any](c *Config, key string, want T) (T, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
