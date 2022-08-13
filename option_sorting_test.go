@@ -16,7 +16,7 @@ func testStringsToObjects(s []string) (list []meta.Object) {
 	for _, val := range s {
 		o := meta.Object{
 			Origins: []meta.Origin{
-				meta.Origin{
+				{
 					File: val,
 				},
 			},

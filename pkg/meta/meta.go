@@ -370,9 +370,9 @@ func getValidCmd(key string, obj Object) (command, error) {
 	}
 
 	list := map[int][]string{
-		Map:   []string{"", cmdFail, cmdKeep, cmdReplace, cmdSplice},
-		Array: []string{"", cmdFail, cmdKeep, cmdReplace, cmdAppend, cmdPrepend},
-		Value: []string{"", cmdFail, cmdKeep, cmdReplace},
+		Map:   {"", cmdFail, cmdKeep, cmdReplace, cmdSplice},
+		Array: {"", cmdFail, cmdKeep, cmdReplace, cmdAppend, cmdPrepend},
+		Value: {"", cmdFail, cmdKeep, cmdReplace},
 	}
 
 	opts, found := list[obj.Type]

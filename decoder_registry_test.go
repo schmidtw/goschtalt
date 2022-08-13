@@ -105,7 +105,7 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 			bytes:       `{ "test": "123" }`,
 			expected: meta.Object{
 				Origins: []meta.Origin{
-					meta.Origin{
+					{
 						File: "file",
 						Line: 1,
 						Col:  123,
@@ -113,9 +113,9 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 				},
 				Type: meta.Map,
 				Map: map[string]meta.Object{
-					"test": meta.Object{
+					"test": {
 						Origins: []meta.Origin{
-							meta.Origin{
+							{
 								File: "file",
 								Line: 2,
 								Col:  123,
@@ -132,7 +132,7 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 			bytes:       `{ "test": "123" }`,
 			expected: meta.Object{
 				Origins: []meta.Origin{
-					meta.Origin{
+					{
 						File: "file",
 						Line: 1,
 						Col:  123,
@@ -140,9 +140,9 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 				},
 				Type: meta.Map,
 				Map: map[string]meta.Object{
-					"test": meta.Object{
+					"test": {
 						Origins: []meta.Origin{
-							meta.Origin{
+							{
 								File: "file",
 								Line: 2,
 								Col:  123,

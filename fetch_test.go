@@ -219,7 +219,7 @@ func TestFetchWithOrigin(t *testing.T) {
 			key:         "foo",
 			expected:    "bar",
 			origin: []meta.Origin{
-				meta.Origin{
+				{
 					File: "file",
 					Line: 2,
 					Col:  123,

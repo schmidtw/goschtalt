@@ -145,7 +145,7 @@ func TestToRaw(t *testing.T) {
 				Origins: []Origin{},
 				Type:    Map,
 				Map: map[string]Object{
-					"foo": Object{},
+					"foo": {},
 				},
 			},
 			expected: map[string]any{
@@ -157,31 +157,31 @@ func TestToRaw(t *testing.T) {
 				Origins: []Origin{},
 				Type:    Map,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins: []Origin{},
 						Type:    Map,
 						Map: map[string]Object{
-							"bar": Object{
+							"bar": {
 								Origins: []Origin{},
 								Type:    Value,
 								Value:   int(123),
 							},
-							"car": Object{
+							"car": {
 								Origins: []Origin{},
 								Type:    Array,
 								Array: []Object{
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Map,
 										Map: map[string]Object{
-											"sam": Object{
+											"sam": {
 												Origins: []Origin{},
 												Type:    Value,
 												Value:   "cart",
 											},
 										},
 									},
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Value,
 										Value:   "golf",
@@ -228,7 +228,7 @@ func TestToRedacted(t *testing.T) {
 				Origins: []Origin{},
 				Type:    Map,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins:  []Origin{},
 						Type:     Value,
 						IsSecret: true,
@@ -240,7 +240,7 @@ func TestToRedacted(t *testing.T) {
 				Origins: []Origin{},
 				Type:    Map,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins:  []Origin{},
 						Type:     Value,
 						IsSecret: true,
@@ -254,24 +254,24 @@ func TestToRedacted(t *testing.T) {
 				Origins: []Origin{},
 				Type:    Map,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins: []Origin{},
 						Type:    Map,
 						Map: map[string]Object{
-							"bar": Object{
+							"bar": {
 								Origins: []Origin{},
 								Type:    Value,
 								Value:   int(123),
 							},
-							"car": Object{
+							"car": {
 								Origins: []Origin{},
 								Type:    Array,
 								Array: []Object{
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Map,
 										Map: map[string]Object{
-											"sam": Object{
+											"sam": {
 												Origins:  []Origin{},
 												Type:     Value,
 												IsSecret: true,
@@ -279,7 +279,7 @@ func TestToRedacted(t *testing.T) {
 											},
 										},
 									},
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Value,
 										Value:   "golf",
@@ -294,24 +294,24 @@ func TestToRedacted(t *testing.T) {
 				Origins: []Origin{},
 				Type:    Map,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins: []Origin{},
 						Type:    Map,
 						Map: map[string]Object{
-							"bar": Object{
+							"bar": {
 								Origins: []Origin{},
 								Type:    Value,
 								Value:   int(123),
 							},
-							"car": Object{
+							"car": {
 								Origins: []Origin{},
 								Type:    Array,
 								Array: []Object{
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Map,
 										Map: map[string]Object{
-											"sam": Object{
+											"sam": {
 												Origins:  []Origin{},
 												Type:     Value,
 												IsSecret: true,
@@ -319,7 +319,7 @@ func TestToRedacted(t *testing.T) {
 											},
 										},
 									},
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Value,
 										Value:   "golf",
@@ -387,7 +387,7 @@ func TestResolveCommands(t *testing.T) {
 				Origins: []Origin{},
 				Type:    Map,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins:  []Origin{},
 						Type:     Value,
 						IsSecret: true,
@@ -402,26 +402,26 @@ func TestResolveCommands(t *testing.T) {
 				Origins: []Origin{},
 				Type:    Map,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins:  []Origin{},
 						Type:     Map,
 						IsSecret: true,
 						Map: map[string]Object{
-							"bar": Object{
+							"bar": {
 								Origins: []Origin{},
 								Type:    Value,
 								Value:   "123",
 							},
-							"car": Object{
+							"car": {
 								Origins:  []Origin{},
 								Type:     Array,
 								IsSecret: true,
 								Array: []Object{
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Map,
 										Map: map[string]Object{
-											"sam": Object{
+											"sam": {
 												Origins:  []Origin{},
 												Type:     Value,
 												IsSecret: true,
@@ -429,7 +429,7 @@ func TestResolveCommands(t *testing.T) {
 											},
 										},
 									},
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Value,
 										Value:   "golf",
@@ -523,69 +523,69 @@ func TestMerge(t *testing.T) {
 				Origins: []Origin{},
 				Type:    Map,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins:  []Origin{},
 						Type:     Value,
 						IsSecret: true,
 						Value:    "very secret.",
 					},
-					"bar": Object{
+					"bar": {
 						Origins: []Origin{},
 						Type:    Value,
 						Value:   "food",
 					},
-					"squid": Object{
+					"squid": {
 						Origins: []Origin{},
 						Type:    Value,
 						Value:   "ink",
 					},
-					"soap": Object{
+					"soap": {
 						Origins: []Origin{},
 						Type:    Value,
 						Value:   "bar",
 					},
-					"wolf": Object{
+					"wolf": {
 						Origins: []Origin{},
 						Type:    Value,
 						Value:   "of a different type",
 					},
-					"fox": Object{
+					"fox": {
 						Origins: []Origin{},
 						Type:    Map,
 						Map: map[string]Object{
-							"is": Object{
+							"is": {
 								Origins: []Origin{},
 								Type:    Value,
 								Value:   "red",
 							},
 						},
 					},
-					"cow": Object{
+					"cow": {
 						Origins: []Origin{},
 						Type:    Map,
 						Map: map[string]Object{
-							"eats": Object{
+							"eats": {
 								Origins: []Origin{},
 								Type:    Value,
 								Value:   "hay",
 							},
 						},
 					},
-					"ox": Object{
+					"ox": {
 						Origins: []Origin{},
 						Type:    Map,
 						Map: map[string]Object{
-							"cart": Object{
+							"cart": {
 								Origins:  []Origin{},
 								Type:     Array,
 								IsSecret: true,
 								Array: []Object{
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Value,
 										Value:   "2",
 									},
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Value,
 										Value:   "3",
@@ -594,35 +594,35 @@ func TestMerge(t *testing.T) {
 							},
 						},
 					},
-					"mad": Object{
+					"mad": {
 						Origins: []Origin{},
 						Type:    Map,
 						Map: map[string]Object{
-							"cat": Object{
+							"cat": {
 								Origins: []Origin{},
 								Type:    Value,
 								Value:   "crazier",
 							},
-							"money": Object{
+							"money": {
 								Origins: []Origin{},
 								Type:    Array,
 								Array: []Object{
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Value,
 										Value:   "cad",
 									},
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Value,
 										Value:   "gbp",
 									},
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Value,
 										Value:   "usd",
 									},
-									Object{
+									{
 										Origins: []Origin{},
 										Type:    Value,
 										Value:   "euro",
@@ -631,15 +631,15 @@ func TestMerge(t *testing.T) {
 							},
 						},
 					},
-					"dogs": Object{
+					"dogs": {
 						Origins: []Origin{},
 						Type:    Array,
 						Array: []Object{
-							Object{
+							{
 								Origins: []Origin{},
 								Type:    Map,
 								Map: map[string]Object{
-									"snoopy": Object{
+									"snoopy": {
 										Origins: []Origin{},
 										Type:    Value,
 										Value:   "beagle",
@@ -666,17 +666,17 @@ func TestMerge(t *testing.T) {
 				Origins: []Origin{},
 				Type:    Map,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins:  []Origin{},
 						Type:     Array,
 						IsSecret: true,
 						Array: []Object{
-							Object{
+							{
 								Origins: []Origin{},
 								Type:    Value,
 								Value:   "bar",
 							},
-							Object{
+							{
 								Origins: []Origin{},
 								Type:    Value,
 								Value:   "car",
@@ -693,17 +693,17 @@ func TestMerge(t *testing.T) {
 				Origins: []Origin{},
 				Type:    Map,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins:  []Origin{},
 						Type:     Array,
 						IsSecret: true,
 						Array: []Object{
-							Object{
+							{
 								Origins: []Origin{},
 								Type:    Value,
 								Value:   "car",
 							},
-							Object{
+							{
 								Origins: []Origin{},
 								Type:    Value,
 								Value:   "bar",
