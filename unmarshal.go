@@ -5,11 +5,11 @@ package goschtalt
 
 import "github.com/mitchellh/mapstructure"
 
-// DecoderOption is used for configuring the mapstructure unmarshal operation.
+// UnmarshalOption is used for configuring the mapstructure unmarshal operation.
 //
 // All of these options are directly concerned with the mitchellh/mapstructure
 // package.  For additional details please see: https://github.com/mitchellh/mapstructure
-type DecoderOption func(*mapstructure.DecoderConfig)
+type UnmarshalOption func(*mapstructure.DecoderConfig)
 
 // DecodeHook, will be called before any decoding and any type conversion (if
 // WeaklyTypedInput is on). This lets you modify the values before they're set
@@ -20,12 +20,8 @@ type DecoderOption func(*mapstructure.DecoderConfig)
 //
 // If an error is returned, the entire decode will fail with that error.
 //
-// Defaults to:
-//   mapstructure.ComposeDecodeHookFunc(
-//       mapstructure.StringToTimeDurationHookFunc(),
-//       mapstructure.StringToSliceHookFunc(",")
-//   )
-func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderOption {
+// Defaults to nothing set.
+func DecodeHook(hook mapstructure.DecodeHookFunc) UnmarshalOption {
 	return func(cfg *mapstructure.DecoderConfig) {
 		cfg.DecodeHook = hook
 	}
@@ -36,7 +32,7 @@ func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderOption {
 // (extra keys).
 //
 // Defaults to false.
-func ErrorUnused(unused bool) DecoderOption {
+func ErrorUnused(unused bool) UnmarshalOption {
 	return func(cfg *mapstructure.DecoderConfig) {
 		cfg.ErrorUnused = unused
 	}
@@ -48,7 +44,7 @@ func ErrorUnused(unused bool) DecoderOption {
 // will affect all nested structs as well.
 //
 // Defaults to false.
-func ErrorUnset(unset bool) DecoderOption {
+func ErrorUnset(unset bool) UnmarshalOption {
 	return func(cfg *mapstructure.DecoderConfig) {
 		cfg.ErrorUnset = unset
 	}
@@ -71,8 +67,8 @@ func ErrorUnset(unset bool) DecoderOption {
 //     element is weakly decoded. For example: "4" can become []int{4}
 //     if the target type is an int slice.
 //
-// Defaults to true.
-func WeaklyTypedInput(weak bool) DecoderOption {
+// Defaults to false.
+func WeaklyTypedInput(weak bool) UnmarshalOption {
 	return func(cfg *mapstructure.DecoderConfig) {
 		cfg.WeaklyTypedInput = weak
 	}
@@ -81,7 +77,7 @@ func WeaklyTypedInput(weak bool) DecoderOption {
 // The tag name that mapstructure reads for field names.
 //
 // This defaults to "mapstructure".
-func TagName(name string) DecoderOption {
+func TagName(name string) UnmarshalOption {
 	return func(cfg *mapstructure.DecoderConfig) {
 		cfg.TagName = name
 	}
@@ -90,8 +86,10 @@ func TagName(name string) DecoderOption {
 // IgnoreUntaggedFields ignores all struct fields without explicit
 // TagName, comparable to `mapstructure:"-"` as default behaviour.
 //
+// NOTE: This appears broken upstream in mapstructure.
+//
 // Defaults to false.
-func IgnoreUntaggedFields(ignore bool) DecoderOption {
+func IgnoreUntaggedFields(ignore bool) UnmarshalOption {
 	return func(cfg *mapstructure.DecoderConfig) {
 		cfg.IgnoreUntaggedFields = ignore
 	}
@@ -102,40 +100,45 @@ func IgnoreUntaggedFields(ignore bool) DecoderOption {
 // to implement case-sensitive tag values, support snake casing, etc.
 //
 // Defaults to nil.
-func MatchName(fn func(mapKey, fieldName string) bool) DecoderOption {
+func MatchName(fn func(mapKey, fieldName string) bool) UnmarshalOption {
 	return func(cfg *mapstructure.DecoderConfig) {
 		cfg.MatchName = fn
+	}
+}
+
+// DefaultUnmarshalOption allows customization of the desired options for all
+// invocations of the Unmarshal() function.  This should make consistent use
+// use of the Unmarshal() call easier.
+func DefaultUnmarshalOption(opt UnmarshalOption) Option {
+	return func(c *Config) error {
+		c.unmarshalOptions = append(c.unmarshalOptions, opt)
+		return nil
 	}
 }
 
 // Unmarshal performs the act of looking up the specified section of the tree
 // and decoding the tree into the result.  Additional options can be specified
 // to adjust the behavior.
-func (c *Config) Unmarshal(key string, result any, opts ...DecoderOption) error {
+func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	if !c.hasBeenCompiled {
-		return ErrNotCompiled
-	}
 
-	tree, err := c.Fetch(key)
+	tree, _, err := c.fetchWithOrigin(key)
 	if err != nil {
 		return err
 	}
 
-	cfg := &mapstructure.DecoderConfig{
-		Result:           result,
-		WeaklyTypedInput: true,
-		DecodeHook: mapstructure.ComposeDecodeHookFunc(
-			mapstructure.StringToTimeDurationHookFunc(),
-			mapstructure.StringToSliceHookFunc(","),
-		),
+	var cfg mapstructure.DecoderConfig
+	cfg.Result = result
+
+	for _, opt := range c.unmarshalOptions {
+		opt(&cfg)
 	}
 	for _, opt := range opts {
-		opt(cfg)
+		opt(&cfg)
 	}
 
-	decoder, err := mapstructure.NewDecoder(cfg)
+	decoder, err := mapstructure.NewDecoder(&cfg)
 	if err != nil {
 		return err
 	}

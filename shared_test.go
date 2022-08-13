@@ -1,0 +1,100 @@
+// SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
+// SPDX-License-Identifier: Apache-2.0
+
+package goschtalt
+
+import (
+	"encoding/json"
+	"fmt"
+
+	"github.com/schmidtw/goschtalt/pkg/decoder"
+	"github.com/schmidtw/goschtalt/pkg/encoder"
+	"github.com/schmidtw/goschtalt/pkg/meta"
+)
+
+// Test Decoder ////////////////////////////////////////////////////////////////
+
+var _ decoder.Decoder = (*testDecoder)(nil)
+
+type testDecoder struct {
+	extensions []string
+}
+
+func (t *testDecoder) Decode(file string, b []byte, m *meta.Object) error {
+	var data any
+	err := json.Unmarshal(b, &data)
+	if err != nil {
+		return err
+	}
+	tmp := meta.ObjectFromRaw(data)
+	tmp = addOrigin(tmp, &meta.Origin{File: file, Line: 1, Col: 123})
+	*m = tmp
+	return nil
+}
+
+func (t *testDecoder) Extensions() []string {
+	return t.extensions
+}
+
+func decode(file, s string) meta.Object {
+	var data any
+	err := json.Unmarshal([]byte(s), &data)
+	if err != nil {
+		panic(err)
+	}
+	obj := meta.ObjectFromRaw(data)
+	obj = addOrigin(obj, &meta.Origin{File: file, Line: 1, Col: 123})
+
+	return obj
+}
+
+// Test Encoder ////////////////////////////////////////////////////////////////
+
+var _ encoder.Encoder = (*testEncoder)(nil)
+
+type testEncoder struct {
+	extensions []string
+}
+
+func (t *testEncoder) EncodeExtended(m meta.Object) ([]byte, error) {
+	if m.IsSecret == true {
+		return nil, fmt.Errorf("random encoding error")
+	}
+	return json.Marshal(m)
+}
+
+func (t *testEncoder) Encode(v any) ([]byte, error) {
+	if v == nil {
+		return nil, fmt.Errorf("random encoding error")
+	}
+	return json.Marshal(v)
+}
+
+func (t *testEncoder) Extensions() []string {
+	return t.extensions
+}
+
+// Test Utilities //////////////////////////////////////////////////////////////
+
+func addOrigin(obj meta.Object, origin *meta.Origin) meta.Object {
+	obj.Origins = append(obj.Origins, *origin)
+	origin.Line++ // Not accurate, but interesting.
+
+	switch obj.Type {
+	case meta.Array:
+		array := make([]meta.Object, len(obj.Array))
+		for i, val := range obj.Array {
+			array[i] = addOrigin(val, origin)
+		}
+		obj.Array = array
+	case meta.Map:
+		m := make(map[string]meta.Object)
+
+		for key, val := range obj.Map {
+			m[key] = addOrigin(val, origin)
+		}
+		obj.Map = m
+	}
+
+	return obj
+}

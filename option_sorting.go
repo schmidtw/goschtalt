@@ -7,48 +7,34 @@ import (
 	"sort"
 
 	"github.com/schmidtw/goschtalt/internal/natsort"
+	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
-// SortOrder mode options
-const (
-	Lexical = iota + 1 // Sorts the files in lexical order
-	Natural            // Sorts the files in natural order
-	Custom             // Allows client to specify their own algorithm
-)
-
-// Sorter is the sorting function used to prioritize the configuration files.
-type Sorter func(a, b string) bool
-
-// SortOrder provides a way to specify how you want the files (and ultimately
-// the configuration values) sorted. There are 2 ordering schemes built in
-// (Lexical and Natural) as well as the option for you to specify your own, using
-// the mode Custom as well as providing a sorter function.
-func SortOrder(mode int, sorter ...Sorter) Option {
-	var fn Sorter
-	switch mode {
-	case Lexical:
-		fn = func(a, b string) bool {
-			return a < b
-		}
-	case Natural:
-		fn = natsort.Compare
-	case Custom:
-		if len(sorter) > 0 {
-			fn = sorter[0]
-		}
-	default:
-		fn = nil
-	}
-
+// FileSortOrderCustom provides a way to specify how you want the files sorted
+// prior to their merge.  This function provides a way to provide a completely
+// custom sorting algorithm.
+func FileSortOrderCustom(less func(a, b string) bool) Option {
 	return func(c *Config) error {
-		if fn == nil {
-			return ErrInvalidOption
-		}
-		c.annotatedSorter = func(a []annotatedMap) {
+		c.sorter = func(a []meta.Object) {
 			sort.SliceStable(a, func(i, j int) bool {
-				return fn(a[i].files[0], a[j].files[0])
+				return less(a[i].Origins[0].File, a[j].Origins[0].File)
 			})
 		}
 		return nil
 	}
+}
+
+// FileSortOrderLexical provides a built in sorter based on lexical order.
+func FileSortOrderLexical() Option {
+	return FileSortOrderCustom(func(a, b string) bool {
+		return a < b
+	})
+}
+
+// FileSortOrderNatural provides a built in sorter based on natural order.
+// More information about natural sort order: https://en.wikipedia.org/wiki/Natural_sort_order
+func FileSortOrderNatural() Option {
+	return FileSortOrderCustom(func(a, b string) bool {
+		return natsort.Compare(a, b)
+	})
 }

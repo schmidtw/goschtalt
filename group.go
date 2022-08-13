@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/schmidtw/goschtalt/internal/encoding"
+	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
 // Group is a filesystem and paths to examine for configuration files.
@@ -90,51 +90,50 @@ func (group Group) enumerate(exts []string) ([]string, error) {
 	return files, nil
 }
 
-func (group Group) collectAndDecode(codecs *encoding.Registry, file string) (annotatedMap, error) {
-	v := map[string]any{}
+func (group Group) collectAndDecode(decoders *decoderRegistry, file string) (meta.Object, error) {
+	var m meta.Object
+
 	buf := bytes.NewBuffer(nil)
 	ext := strings.TrimPrefix(filepath.Ext(file), ".")
 
 	f, err := group.FS.Open(file)
 	if err != nil {
-		return annotatedMap{}, err
+		return meta.Object{}, err
 	}
 	info, err := f.Stat()
 	if err != nil {
 		_ = f.Close()
-		return annotatedMap{}, err
+		return meta.Object{}, err
 	}
 	_, err = io.Copy(buf, f)
 	_ = f.Close()
 	if err != nil {
-		return annotatedMap{}, err
+		return meta.Object{}, err
 	}
 
-	err = codecs.Decode(ext, buf.Bytes(), &v)
+	err = decoders.decode(ext, info.Name(), buf.Bytes(), &m)
 	if err != nil {
-		return annotatedMap{}, err
+		return meta.Object{}, err
 	}
 
-	am := toAnnotatedMap(info.Name(), v)
-
-	return am, nil
+	return m, nil
 }
 
-func (group Group) walk(codecs *encoding.Registry) ([]annotatedMap, error) {
-	exts := codecs.Extensions()
+func (group Group) walk(decoders *decoderRegistry) ([]meta.Object, error) {
+	exts := decoders.extensions()
 
 	files, err := group.enumerate(exts)
 	if err != nil {
 		return nil, err
 	}
 
-	list := []annotatedMap{}
+	list := []meta.Object{}
 	for _, file := range files {
-		annotated, err := group.collectAndDecode(codecs, file)
+		obj, err := group.collectAndDecode(decoders, file)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, annotated)
+		list = append(list, obj)
 	}
 	return list, nil
 }

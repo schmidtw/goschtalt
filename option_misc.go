@@ -3,23 +3,42 @@
 
 package goschtalt
 
-import "github.com/schmidtw/goschtalt/internal/encoding"
+import (
+	"github.com/schmidtw/goschtalt/pkg/decoder"
+	"github.com/schmidtw/goschtalt/pkg/encoder"
+)
 
-// Codec registers a Codec for the specific file extensions provided.
+// DecoderRegister registers a Decoder for the specific file extensions provided.
 // Attempting to register a duplicate extension is not supported.
-func Codec(enc encoding.Codec) Option {
+func DecoderRegister(d decoder.Decoder) Option {
 	return func(c *Config) error {
-		opt := encoding.DecoderEncoder(enc)
-		return c.codecs.With(opt)
+		return c.decoders.register(d)
 	}
 }
 
-// ExcludedExtensions provides a mechanism for effectively removing the codecs
-// from use for specific file types.
-func ExcludedExtensions(exts ...string) Option {
+// DecoderRemove provides a mechanism for removing the decoders from use for
+// specific file types.
+func DecoderRemove(exts ...string) Option {
 	return func(c *Config) error {
-		opt := encoding.ExcludedExtensions(exts...)
-		return c.codecs.With(opt)
+		c.decoders.deregister(exts...)
+		return nil
+	}
+}
+
+// EncoderRegister registers a Encoder for the specific file extensions provided.
+// Attempting to register a duplicate extension is not supported.
+func EncoderRegister(d encoder.Encoder) Option {
+	return func(c *Config) error {
+		return c.encoders.register(d)
+	}
+}
+
+// EncoderRemove provides a mechanism for removing the encoders from use for
+// specific file types.
+func EncoderRemove(exts ...string) Option {
+	return func(c *Config) error {
+		c.encoders.deregister(exts...)
+		return nil
 	}
 }
 

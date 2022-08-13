@@ -16,3 +16,6 @@
 
 # vim
 *.sw*
+
+# Not go files
+*.no

@@ -7,16 +7,16 @@ import (
 	"reflect"
 )
 
-// TypeMapper is a function that maps from one data type to another data type
+// typeMapper is a function that maps from one data type to another data type
 // if possible, or returns an error if not.
-type TypeMapper func(any) (any, error)
+type typeMapper func(any) (any, error)
 
 // CustomMapper provides a way for clients of this library to map from one
 // data type to another.  The typ value specifies the destination type the
 // mapper provides.  The mappers are called when the Fetch function is called.
 // Note it is this function:
 //   func Fetch[T any](c *Config, key string, want T) (T, error)
-func CustomMapper(typ any, fn TypeMapper) Option {
+func CustomMapper(typ any, fn func(any) (any, error)) Option {
 	return func(c *Config) error {
 		key := reflect.TypeOf(typ).String()
 

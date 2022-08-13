@@ -5,164 +5,72 @@ package goschtalt
 
 import (
 	iofs "io/fs"
-	"reflect"
 	"sort"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/psanford/memfs"
-	"github.com/schmidtw/goschtalt/internal/encoding"
-	"github.com/schmidtw/goschtalt/internal/encoding/json"
+	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
-type groupTestByFile []annotatedMap
-
-func (a groupTestByFile) Len() int           { return len(a) }
-func (a groupTestByFile) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
-func (a groupTestByFile) Less(i, j int) bool { return a[i].files[0] < a[j].files[0] }
-
-func makeTestFs(t *testing.T) iofs.FS {
-	require := require.New(t)
-	fs := memfs.New()
-	require.NoError(fs.MkdirAll("nested/conf", 0777))
-	require.NoError(fs.WriteFile("nested/conf/1.json", []byte(`{"hello":"world"}`), 0755))
-	require.NoError(fs.WriteFile("nested/conf/2.json", []byte(`{"water":"blue"}`), 0755))
-	require.NoError(fs.WriteFile("nested/conf/ignore", []byte(`ignore this file`), 0755))
-	require.NoError(fs.WriteFile("nested/3.json", []byte(`{"sky":"overcast"}`), 0755))
-	require.NoError(fs.WriteFile("nested/4.json", []byte(`{"ground":"green"}`), 0755))
-	require.NoError(fs.WriteFile("invalid.json", []byte(`{ground:green}`), 0755))
-	return fs
-}
-
 func TestWalk(t *testing.T) {
 	tests := []struct {
 		description string
-		opts        []encoding.Option
 		group       Group
-		expected    []annotatedMap
+		expected    []string
 		expectedErr error
 	}{
 		{
 			description: "Process one file.",
-			opts:        []encoding.Option{encoding.DecoderEncoder(json.Codec{})},
 			group: Group{
 				Paths: []string{"nested/conf/1.json"},
 			},
-			expected: []annotatedMap{
-				{
-					files: []string{"1.json"},
-					m: map[string]any{
-						"hello": annotatedValue{
-							files: []string{"1.json"},
-							value: "world",
-						},
-					},
-				},
+			expected: []string{
+				`1.json`, `{"hello":"world"}`,
 			},
 		}, {
 			description: "Process two files.",
-			opts:        []encoding.Option{encoding.DecoderEncoder(json.Codec{})},
 			group: Group{
 				Paths: []string{
 					"nested/conf/1.json",
 					"nested/4.json",
 				},
 			},
-			expected: []annotatedMap{
-				{
-					files: []string{"1.json"},
-					m: map[string]any{
-						"hello": annotatedValue{
-							files: []string{"1.json"},
-							value: "world",
-						},
-					},
-				}, {
-					files: []string{"4.json"},
-					m: map[string]any{
-						"ground": annotatedValue{
-							files: []string{"4.json"},
-							value: "green",
-						},
-					},
-				},
+			expected: []string{
+				`1.json`, `{"hello":"world"}`,
+				`4.json`, `{"ground":"green"}`,
 			},
-		}, {
+		},
+		{
 			description: "Process most files.",
-			opts:        []encoding.Option{encoding.DecoderEncoder(json.Codec{})},
 			group: Group{
 				Paths:   []string{"nested"},
 				Recurse: true,
 			},
-			expected: []annotatedMap{
-				{
-					files: []string{"1.json"},
-					m: map[string]any{
-						"hello": annotatedValue{
-							files: []string{"1.json"},
-							value: "world",
-						},
-					},
-				}, {
-					files: []string{"2.json"},
-					m: map[string]any{
-						"water": annotatedValue{
-							files: []string{"2.json"},
-							value: "blue",
-						},
-					},
-				}, {
-					files: []string{"3.json"},
-					m: map[string]any{
-						"sky": annotatedValue{
-							files: []string{"3.json"},
-							value: "overcast",
-						},
-					},
-				}, {
-					files: []string{"4.json"},
-					m: map[string]any{
-						"ground": annotatedValue{
-							files: []string{"4.json"},
-							value: "green",
-						},
-					},
-				},
+			expected: []string{
+				`1.json`, `{"hello":"world"}`,
+				`2.json`, `{"water":"blue"}`,
+				`3.json`, `{"sky":"overcast"}`,
+				`4.json`, `{"ground":"green"}`,
 			},
 		}, {
 			description: "Process some files.",
-			opts:        []encoding.Option{encoding.DecoderEncoder(json.Codec{})},
 			group: Group{
 				Paths: []string{"nested"},
 			},
-			expected: []annotatedMap{
-				{
-					files: []string{"3.json"},
-					m: map[string]any{
-						"sky": annotatedValue{
-							files: []string{"3.json"},
-							value: "overcast",
-						},
-					},
-				}, {
-					files: []string{"4.json"},
-					m: map[string]any{
-						"ground": annotatedValue{
-							files: []string{"4.json"},
-							value: "green",
-						},
-					},
-				},
+			expected: []string{
+				`3.json`, `{"sky":"overcast"}`,
+				`4.json`, `{"ground":"green"}`,
 			},
 		}, {
 			description: "Process all files and fail.",
-			opts:        []encoding.Option{encoding.DecoderEncoder(json.Codec{})},
 			group: Group{
 				Paths:   []string{"."},
 				Recurse: true,
 			},
-			expectedErr: encoding.ErrDecoding,
+			expectedErr: ErrDecoding,
 		}, {
 			description: "Trailing slashes are not allowed.",
 			group: Group{
@@ -188,17 +96,38 @@ func TestWalk(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			tc.group.FS = makeTestFs(t)
-			r, err := encoding.NewRegistry(tc.opts...)
-			require.NotNil(r)
+			fs := memfs.New()
+			require.NoError(fs.MkdirAll("nested/conf", 0777))
+			require.NoError(fs.WriteFile("nested/conf/1.json", []byte(`{"hello":"world"}`), 0755))
+			require.NoError(fs.WriteFile("nested/conf/2.json", []byte(`{"water":"blue"}`), 0755))
+			require.NoError(fs.WriteFile("nested/conf/ignore", []byte(`ignore this file`), 0755))
+			require.NoError(fs.WriteFile("nested/3.json", []byte(`{"sky":"overcast"}`), 0755))
+			require.NoError(fs.WriteFile("nested/4.json", []byte(`{"ground":"green"}`), 0755))
+			require.NoError(fs.WriteFile("invalid.json", []byte(`{ground:green}`), 0755))
+			tc.group.FS = fs
+
+			dr := newDecoderRegistry()
+			require.NotNil(dr)
+			err := dr.register(&testDecoder{extensions: []string{"json"}})
 			require.NoError(err)
 
-			got, err := tc.group.walk(r)
+			got, err := tc.group.walk(dr)
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				require.NotNil(got)
-				sort.Sort(groupTestByFile(got))
-				assert.True(reflect.DeepEqual(tc.expected, got))
+				sort.SliceStable(got, func(i, j int) bool {
+					return got[i].Origins[0].File < got[j].Origins[0].File
+				})
+
+				var expected []meta.Object
+
+				for i := 0; i < len(tc.expected); i += 2 {
+					file := tc.expected[i]
+					data := tc.expected[i+1]
+					tree := decode(file, data)
+					expected = append(expected, tree)
+				}
+				assert.Empty(cmp.Diff(expected, got))
 				return
 			}
 			assert.ErrorIs(err, tc.expectedErr)
@@ -234,7 +163,7 @@ func TestMatchExts(t *testing.T) {
 			assert := assert.New(t)
 
 			got := matchExts(tc.exts, tc.files)
-			assert.True(reflect.DeepEqual(tc.expected, got))
+			assert.Empty(cmp.Diff(tc.expected, got))
 		})
 	}
 }

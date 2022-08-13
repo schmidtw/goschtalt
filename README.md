@@ -11,9 +11,14 @@ A simple configuration library that supports multiple files and formats.
 [![GitHub Release](https://img.shields.io/github/release/schmidtw/goschtalt.svg)](CHANGELOG.md)
 [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt)](https://pkg.go.dev/github.com/schmidtw/goschtalt)
 
-## Goals
+## Goals & Themes
 
 * Favor small, simple designs.
-* Favor user customization options over building everything in.
 * Keep dependencies to a minimum.
+* Favor user customization options over building everything in.
+* Leverage go's new fs.FS interface for collecting files
+
+## API Stability
+
+This package has not yet released, so APIs are subject to change for a bit longer.
 
