@@ -51,7 +51,7 @@ func TestDecoderRegistry_Most(t *testing.T) {
 		}, {
 			description: "Successfully add, then remove, then add decoders.",
 			decoders:    []decoder.Decoder{json, yml},
-			remove:      []string{"json", "yml", "non-existant"},
+			remove:      []string{"json", "yml", "non-existent"},
 			add:         json,
 			expected:    []string{"json", "yaml"},
 		},

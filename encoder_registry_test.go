@@ -51,7 +51,7 @@ func TestEncoderRegistry_Most(t *testing.T) {
 		}, {
 			description: "Successfully add, then remove, then add encoders.",
 			encoders:    []encoder.Encoder{json, yml},
-			remove:      []string{"json", "yml", "non-existant"},
+			remove:      []string{"json", "yml", "non-existent"},
 			add:         json,
 			expected:    []string{"json", "yaml"},
 		},
