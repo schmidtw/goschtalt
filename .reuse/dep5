@@ -7,6 +7,10 @@ Files: .github/* .github/workflow/*
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: CC0-1.0
 
+Files: extensions/encoders/yaml/go.mod extensions/encoders/yaml/go.sum
+Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
+License: CC0-1.0
+
 Files: go.mod go.sum .gitignore MAINTAINERS.md
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: CC0-1.0

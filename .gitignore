@@ -15,7 +15,7 @@
 # vendor/
 
 # vim
-*.sw*
+*.sw[a-p]
 
 # Not go files
 *.no
