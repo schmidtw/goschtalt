@@ -4,14 +4,11 @@
 package yaml
 
 import (
-	"sort"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
-	yml "gopkg.in/yaml.v3"
 )
 
 func TestExtensions(t *testing.T) {
@@ -26,28 +23,100 @@ func TestExtensions(t *testing.T) {
 func TestEncodeExtended(t *testing.T) {
 	tests := []struct {
 		description      string
-		in               string
+		in               meta.Object
 		expected         string
 		expectedExtended string
 	}{
 		{
 			description:      "A test of empty.",
-			in:               `---`,
 			expected:         "null\n",
 			expectedExtended: "null\n",
 		},
 		{
 			description: "A simple test.",
-			in: `---
-candy: bar
-cats:
-  - madd
-  - tabby
-other:
-  things:
-    red: balloons
-    green: [ grass, ground, water ]
-  trending: now`,
+			// Input vector in yaml:
+			//candy: bar
+			//cats:
+			//    - madd
+			//    - tabby
+			//other:
+			//    things:
+			//        red: balloons
+			//        green:
+			//            - grass
+			//            - ground
+			//            - water
+			//    trending: now
+			in: meta.Object{
+				Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 1, Col: 1}},
+				Type:    meta.Map,
+				Map: map[string]meta.Object{
+					"candy": meta.Object{
+						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 1, Col: 8}},
+						Type:    meta.Value,
+						Value:   "bar",
+					},
+					"cats": meta.Object{
+						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 2, Col: 1}},
+						Type:    meta.Array,
+						Array: []meta.Object{
+							meta.Object{
+								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 3, Col: 7}},
+								Type:    meta.Value,
+								Value:   "madd",
+							},
+							meta.Object{
+								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 4, Col: 7}},
+								Type:    meta.Value,
+								Value:   "tabby",
+							},
+						},
+					},
+					"other": meta.Object{
+						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 5, Col: 1}},
+						Type:    meta.Map,
+						Map: map[string]meta.Object{
+							"things": meta.Object{
+								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 6, Col: 5}},
+								Type:    meta.Map,
+								Map: map[string]meta.Object{
+									"red": meta.Object{
+										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 7, Col: 14}},
+										Type:    meta.Value,
+										Value:   "balloons",
+									},
+									"green": meta.Object{
+										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 8, Col: 9}},
+										Type:    meta.Array,
+										Array: []meta.Object{
+											meta.Object{
+												Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 9, Col: 15}},
+												Type:    meta.Value,
+												Value:   "grass",
+											},
+											meta.Object{
+												Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 10, Col: 15}},
+												Type:    meta.Value,
+												Value:   "ground",
+											},
+											meta.Object{
+												Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 11, Col: 15}},
+												Type:    meta.Value,
+												Value:   "water",
+											},
+										},
+									},
+								},
+							},
+							"trending": meta.Object{
+								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 12, Col: 15}},
+								Type:    meta.Value,
+								Value:   "now",
+							},
+						},
+					},
+				},
+			},
 			expected: `candy: bar
 cats:
     - madd
@@ -61,79 +130,36 @@ other:
         red: balloons
     trending: now
 `,
-			expectedExtended: `candy: bar # file.yml:2[3]
-cats: # file.yml:1[???]
-    - madd # file.yml:4[9]
-    - tabby # file.yml:5[12]
-other: # file.yml:1[???]
-    things: # file.yml:6[15]
-        green: # file.yml:7[18]
-            - grass # file.yml:9[24]
-            - ground # file.yml:10[27]
-            - water # file.yml:11[30]
-        red: balloons # file.yml:12[33]
-    trending: now # file.yml:13[36]
+			expectedExtended: `candy: bar # file.yml:1[8]
+cats: # file.yml:2[1]
+    - madd # file.yml:3[7]
+    - tabby # file.yml:4[7]
+other: # file.yml:5[1]
+    things: # file.yml:6[5]
+        green: # file.yml:8[9]
+            - grass # file.yml:9[15]
+            - ground # file.yml:10[15]
+            - water # file.yml:11[15]
+        red: balloons # file.yml:7[14]
+    trending: now # file.yml:12[15]
 `,
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			require := require.New(t)
+			//require := require.New(t)
 
 			var e Encoder
-			var in any
-			require.NoError(yml.Unmarshal([]byte(tc.in), &in))
-			objs := meta.ObjectFromRaw(in)
-			origin := meta.Origin{
-				File: "file.yml",
-				Line: 1,
-			}
-			objs = addOrigin(objs, &origin)
-
-			got, err := e.EncodeExtended(objs)
+			got, err := e.EncodeExtended(tc.in)
 			assert.NoError(err)
 			assert.Empty(cmp.Diff(tc.expectedExtended, string(got)))
 
-			got, err = e.Encode(in)
+			raw := tc.in.ToRaw()
+
+			got, err = e.Encode(raw)
 			assert.NoError(err)
 			assert.Empty(cmp.Diff(tc.expected, string(got)))
 		})
 	}
-}
-
-// Test Utilities //////////////////////////////////////////////////////////////
-
-func addOrigin(obj meta.Object, origin *meta.Origin) meta.Object {
-	obj.Origins = append(obj.Origins, *origin)
-	origin.Line++   // Not accurate, but interesting.
-	origin.Col += 3 // Not accurate, but interesting.
-	if origin.Col > 80 {
-		origin.Col = 1
-	}
-
-	switch obj.Type {
-	case meta.Array:
-		array := make([]meta.Object, len(obj.Array))
-		for i, val := range obj.Array {
-			array[i] = addOrigin(val, origin)
-		}
-		obj.Array = array
-	case meta.Map:
-		// Ensure ordering so we can compare later.
-		var keys []string
-		for key := range obj.Map {
-			keys = append(keys, key)
-		}
-		sort.Strings(keys)
-
-		m := make(map[string]meta.Object)
-
-		for _, key := range keys {
-			m[key] = addOrigin(obj.Map[key], origin)
-		}
-		obj.Map = m
-	}
-
-	return obj
 }

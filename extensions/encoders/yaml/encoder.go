@@ -49,7 +49,10 @@ func (e Encoder) EncodeExtended(obj meta.Object) ([]byte, error) {
 		Tag:  "!!map",
 	}
 
-	n := encode(obj)
+	n, err := encode(obj)
+	if err != nil {
+		return nil, err
+	}
 	doc.Content = append(doc.Content, &n)
 
 	return yml.Marshal(&doc)
@@ -57,24 +60,30 @@ func (e Encoder) EncodeExtended(obj meta.Object) ([]byte, error) {
 
 // encode is an internal helper function that builds the yml.Node based tree
 // to give to the yaml encoder.  This is likely specific to this yaml encoder.
-func encode(obj meta.Object) (n yml.Node) {
+func encode(obj meta.Object) (n yml.Node, err error) {
 	n.LineComment = obj.OriginString()
 
 	if obj.Type == meta.Value {
-		n.Encode(obj.Value)
+		err = n.Encode(obj.Value)
+		if err != nil {
+			return yml.Node{}, err
+		}
 		n.LineComment = obj.OriginString() // The encode wipes this out.
-		return n
+		return n, nil
 	}
 
 	if obj.Type == meta.Array {
 		n.Kind = yml.SequenceNode
 
 		for _, v := range obj.Array {
-			sub := encode(v)
+			sub, err := encode(v)
+			if err != nil {
+				return yml.Node{}, err
+			}
 			n.Content = append(n.Content, &sub)
 		}
 
-		return n
+		return n, nil
 	}
 
 	n.Kind = yml.MappingNode
@@ -90,14 +99,17 @@ func encode(obj meta.Object) (n yml.Node) {
 		v := obj.Map[k]
 		key := yml.Node{
 			Kind:        yml.ScalarNode,
-			LineComment: n.LineComment,
+			LineComment: v.OriginString(),
 			Value:       k,
 		}
-		val := encode(v)
+		val, err := encode(v)
+		if err != nil {
+			return yml.Node{}, err
+		}
 
 		n.Content = append(n.Content, &key)
 		n.Content = append(n.Content, &val)
 	}
 
-	return n
+	return n, nil
 }
