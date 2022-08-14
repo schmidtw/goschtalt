@@ -51,7 +51,7 @@ func (o Origin) String() string {
 	if o.Col > 0 {
 		col = strconv.Itoa(o.Col)
 	}
-	return fmt.Sprintf("file: %s, line: %s, col: %s", file, line, col)
+	return fmt.Sprintf("%s:%s[%s]", file, line, col)
 }
 
 const (
@@ -67,6 +67,15 @@ type Object struct {
 	Map      map[string]Object
 	Array    []Object
 	Value    any
+}
+
+func (obj Object) OriginString() string {
+	var list []string
+	for _, v := range obj.Origins {
+		list = append(list, v.String())
+	}
+
+	return strings.Join(list, ", ")
 }
 
 func (obj Object) Fetch(asks []string, separater string) (Object, error) {

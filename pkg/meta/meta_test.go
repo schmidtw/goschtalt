@@ -31,7 +31,7 @@ func TestOrigin_String(t *testing.T) {
 	}{
 		{
 			description: "Output an empty origin.",
-			expected:    "file: unknown, line: ???, col: ???",
+			expected:    "unknown:???[???]",
 		}, {
 			description: "Output an filled out origin.",
 			origin: Origin{
@@ -39,7 +39,7 @@ func TestOrigin_String(t *testing.T) {
 				Line: 42,
 				Col:  88,
 			},
-			expected: "file: magic.file, line: 42, col: 88",
+			expected: "magic.file:42[88]",
 		},
 	}
 	for _, tc := range tests {
@@ -792,6 +792,63 @@ func TestMerge(t *testing.T) {
 			}
 
 			assert.ErrorIs(tc.expectedErr, err)
+		})
+	}
+}
+
+func TestOrigin_OriginString(t *testing.T) {
+	tests := []struct {
+		description string
+		obj         Object
+		expected    string
+	}{
+		{
+			description: "Output an empty object.",
+			expected:    "",
+		}, {
+			description: "Output an empty origin.",
+			obj: Object{
+				Origins: []Origin{Origin{}},
+			},
+			expected: "unknown:???[???]",
+		}, {
+			description: "Output an filled out origin.",
+			obj: Object{
+				Origins: []Origin{
+					Origin{
+						File: "magic.file",
+						Line: 42,
+						Col:  88,
+					},
+				},
+			},
+			expected: "magic.file:42[88]",
+		}, {
+			description: "Output an filled out origin.",
+			obj: Object{
+				Origins: []Origin{
+					Origin{
+						File: "magic.file",
+						Line: 42,
+						Col:  88,
+					},
+					Origin{
+						File: "foo.json",
+						Line: 96,
+						Col:  32,
+					},
+				},
+			},
+			expected: "magic.file:42[88], foo.json:96[32]",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			got := tc.obj.OriginString()
+
+			assert.Equal(tc.expected, got)
 		})
 	}
 }
