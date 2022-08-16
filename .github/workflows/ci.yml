@@ -83,7 +83,7 @@ jobs:
 
       - name: Send results to codecov.io
         if: |
-          matrix.os == ubuntu-latest &&
+          matrix.os == 'ubuntu-latest' &&
           matrix.go == env.go_version
         uses: codecov/codecov-action@v2
         with:
