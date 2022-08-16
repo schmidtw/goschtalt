@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 // SPDX-License-Identifier: Apache-2.0
+//go:build !windows
 
 package yaml_test
 
