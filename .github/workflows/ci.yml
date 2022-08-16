@@ -22,18 +22,9 @@ jobs:
     strategy:
       matrix:
         os: [ 'ubuntu-latest', 'macos-latest', 'windows-latest' ]
-        go: [ '1.18', '1.19' ]
-        race: [ '', '-race' ]
-        coverage: [ '', '-covermode=atomic -json > report.json' ]
-        exclude:
-          - os: 'windows-latest'
-            race: '-race'
-            coverage: '-covermode=atomic -json > report.json'
-          - os: 'ubuntu-latest'
-            race: ''
-          - os: 'macos-latest'
-            race: ''
-            coverage: '-covermode=atomic -json > report.json'
+        go: ['1.18', '1.19']
+      exclude:
+        - os: windows-latest
     runs-on: ${{ matrix.os }}
     name: Build & Test
 
@@ -60,7 +51,14 @@ jobs:
 
       - name: goschtalt -- Test
         run: |
-          go test ${{ matrix.race }} ${{ matrix.coverage }} ./...
+          go test ./...
+
+      - name: goschtalt -- Coverage
+        if: |
+          matrix.os == 'ubuntu-latest' &&
+          matrix.go == env.go_version
+        run: |
+          go test -race -covermode=atomic -json > report.json ./...
 
       # Duplicated for each extension package.
       # Duplicated for each extension package.
@@ -75,7 +73,15 @@ jobs:
       - name: extensions/decoders/yaml -- Test
         working-directory: ./extensions/decoders/yaml
         run: |
-          go test ${{ matrix.race }} ${{ matrix.coverage }} ./...
+          go test ./...
+
+      - name: extensions/decoders/yaml -- Coverage
+        working-directory: ./extensions/decoders/yaml
+        if: |
+          matrix.os == 'ubuntu-latest' &&
+          matrix.go == env.go_version
+        run: |
+          go test -race -covermode=atomic -json > report.json ./...
 
       # --- extensions/encoders/yaml
 
@@ -87,7 +93,15 @@ jobs:
       - name: extensions/encoders/yaml -- Test
         working-directory: ./extensions/encoders/yaml
         run: |
-          go test ${{ matrix.race }} ${{ matrix.coverage }} ./...
+          go test ./...
+
+      - name: extensions/encoders/yaml -- Coverage
+        working-directory: ./extensions/encoders/yaml
+        if: |
+          matrix.os == 'ubuntu-latest' &&
+          matrix.go == env.go_version
+        run: |
+          go test -race -covermode=atomic -json > report.json ./...
 
       # Upload the results of code coverage once
 
