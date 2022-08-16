@@ -3,14 +3,14 @@ Upstream-Name: goschtalt
 Upstream-Contact: Weston Schmidt <weston_scmidt@alumni.purdue.edu>
 Source: https://github.com/schmidtw/goschtalt
 
-Files: .github/* .github/workflow/*
+Files: extensions/decoders/yaml/go.mod extensions/decoders/yaml/go.sum
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
-License: CC0-1.0
+License: Apache-2.0
 
 Files: extensions/encoders/yaml/go.mod extensions/encoders/yaml/go.sum
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
-License: CC0-1.0
+License: Apache-2.0
 
-Files: go.mod go.sum .gitignore MAINTAINERS.md
+Files: .github/* .github/workflow/* go.mod go.sum .gitignore .licensed.yml MAINTAINERS.md
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
-License: CC0-1.0
+License: Apache-2.0

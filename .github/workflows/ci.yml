@@ -1,22 +1,237 @@
 ---
-name: CI
+name: ci
 
 on:
   push:
     branches:
       - main
     paths-ignore:
-      - README.md
-      - CONTRIBUTING.md
-      - MAINTAINERS.md
-      - LICENSE
+      - '**.md'
+      - '.gitignore'
   pull_request:
   workflow_dispatch:
 
+env:
+  go_version:     '1.19'
+  linter_version: 'latest'
+  linter_timeout: '5m'
+
 jobs:
-  ci:
-    uses: xmidt-org/.github/.github/workflows/go-ci.yml@go-ci-v1
-    with:
-      docker-skip:     true
-      sonarcloud-skip: true
-      lint-version:    latest
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        go: ['1.18', '1.19']
+    runs-on: ${{ matrix.os }}
+    name: Build & Test
+
+    steps:
+      - name: Setup go version
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ matrix.go }}
+
+      # Low dependencies means little value in caching, but here's where that
+      # should happen if needed. :)
+
+      - name: Checkout the code
+        uses: actions/checkout@v3
+
+      - name: Make the workspace
+        run: |
+          go work init .
+          go work use -r .
+
+      - name: Run the build for goschtalt package
+        run: |
+          go build ./...
+
+      - name: Run the tests for goschtalt package against races
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.txt ./...
+          go test -race -covermode=atomic -json > report.json        ./...
+
+      # Duplicated for each extension package.
+
+      # --- extensions/decoders/yaml
+
+      - name: Run the build for extensions/decoders/yaml package
+        working-directory: ./extensions/decoders/yaml
+        run: |
+          go build ./...
+
+      - name: Run the tests for extensions/decoders/yaml package against races
+        working-directory: ./extensions/decoders/yaml
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.txt ./...
+          go test -race -covermode=atomic -json > report.json        ./...
+
+      # --- extensions/encoders/yaml
+
+      - name: Run the build for extensions/encoders/yaml package
+        working-directory: ./extensions/encoders/yaml
+        run: |
+          go build ./...
+
+      - name: Run the tests for extensions/encoders/yaml package against races
+        working-directory: ./extensions/encoders/yaml
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.txt ./...
+          go test -race -covermode=atomic -json > report.json        ./...
+
+      # Upload the results of code coverage once
+
+      - name: Send results to codecov.io
+        if: |
+          matrix.os == ubuntu-latest &&
+          matrix.go == env.go_version
+        uses: codecov/codecov-action@v2
+        with:
+          flags: unittests
+          files: >-
+            ./report.json,
+            extensions/decoders/yaml/report.json,
+            extensions/encoders/yaml/report.json
+
+      # Update the results on goreportcard.com
+      - name: Go report card
+        if: |
+          matrix.os == ubuntu-latest &&
+          matrix.go == env.go_version
+        uses: creekorful/goreportcard-action@v1.0
+
+  style:
+    name: Check code style
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Setup go version
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.go_version }}
+
+      # Low dependencies means little value in caching, but here's where that
+      # should happen if needed. :)
+
+      - name: Checkout the code
+        uses: actions/checkout@v3
+
+      - name: Run gofmt
+        shell: bash
+        run: |
+          gofmt -d $(find . -path ./vendor -prune -o -name '*.go' -print) > fmt.patch
+          # Error check & fail if any format mismatches are detected.
+          if [ $(wc fmt.patch | awk '{print $1}') -ne 0 ]; then
+            cat fmt.patch;
+            exit 1;
+          fi
+
+  lint:
+    name: Golint Checking
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Setup go version
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.go_version }}
+
+      # Low dependencies means little value in caching, but here's where that
+      # should happen if needed. :)
+
+      - name: Checkout the code
+        uses: actions/checkout@v3
+
+      - name: Lint New Issues Only
+        if: github.event_name == 'pull_request'
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: ${{ env.linter_version }}
+          args: --timeout ${{ env.linter_timeout }}
+
+      - name: Lint Entire Repo
+        if: github.event_name != 'pull_request'
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version:  ${{ env.linter_version }}
+          args: --timeout ${{ env.linter_timeout }}
+
+  reuse:
+    name: REUSE Checking
+    runs-on: [ubuntu-latest]
+    steps: 
+    - uses: actions/checkout@v2
+    - name: REUSE Compliance Check
+      uses: fsfe/reuse-action@v1
+
+  # TODO - include the extensions better
+  license:
+    name: License Checking
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Setup go version
+        uses: actions/setup-go@v2
+        with:
+          go-version: ${{ env.go_version }}
+
+      # Low dependencies means little value in caching, but here's where that
+      # should happen if needed. :)
+
+      - name: Checkout the code
+        uses: actions/checkout@v3
+
+      - name: Setup licensed
+        uses: jonabc/setup-licensed@v1
+        with:
+         version: 3.x
+      - run: go get ./...
+      - run: licensed cache
+
+      - name: Validate compliance
+        run: |
+          licensed status -f yaml > licensing.yml || true
+          yq eval 'del(.apps[].sources[].dependencies[] | select(.allowed == "true") )' licensing.yml > disallowed.yml
+          licensed status
+
+      - name: Archive license results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: licensing
+          path: |
+            licensing.yml
+            disallowed.yml
+
+  release:
+    name: Release
+    needs: [ test, style, lint, reuse, license ]
+    if: |
+      contains( 'main', github.ref_name )
+    runs-on: [ ubuntu-latest ]
+    steps:
+      - name: Checkout the code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Generate Release Version
+        uses: xmidt-org/release-builder-action@v3
+        id: prebundle
+        with:
+          gh-token: ${{ github.token }}
+          dry-run: true
+
+      - name: Generate Release Bundle and Release
+        uses: xmidt-org/release-builder-action@v3
+        id: bundle
+        with:
+          gh-token: ${{ github.token }}
+
+      - name: Upload Release
+        if:  steps.bundle.outputs.release-tag != ''
+        uses: ncipollo/release-action@v1
+        with:
+          name: ${{ steps.bundle.outputs.release-name }}
+          tag: ${{ steps.bundle.outputs.release-tag }}
+          draft: false
+          prerelease: false
+          bodyFile: ${{ steps.bundle.outputs.release-body-file }}
+          token: ${{ github.token }}

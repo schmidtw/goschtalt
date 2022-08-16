@@ -33,34 +33,34 @@ d:
     - fog
     - dog`,
 			expected: meta.Object{
-				Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 1, Col: 1}},
+				Origins: []meta.Origin{{File: "file.yml", Line: 1, Col: 1}},
 				Map: map[string]meta.Object{
-					"a": meta.Object{
-						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 2, Col: 1}},
+					"a": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 2, Col: 1}},
 						Map: map[string]meta.Object{
-							"b": meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 3, Col: 3}},
+							"b": {
+								Origins: []meta.Origin{{File: "file.yml", Line: 3, Col: 3}},
 								Map: map[string]meta.Object{
-									"c": meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 4, Col: 8}},
+									"c": {
+										Origins: []meta.Origin{{File: "file.yml", Line: 4, Col: 8}},
 										Value:   "123",
 									},
 								},
 							},
 						},
 					},
-					"d": meta.Object{
-						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 5, Col: 1}},
+					"d": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 5, Col: 1}},
 						Map: map[string]meta.Object{
-							"e": meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 6, Col: 3}},
+							"e": {
+								Origins: []meta.Origin{{File: "file.yml", Line: 6, Col: 3}},
 								Array: []meta.Object{
-									meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 7, Col: 7}},
+									{
+										Origins: []meta.Origin{{File: "file.yml", Line: 7, Col: 7}},
 										Value:   "fog",
 									},
-									meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 8, Col: 7}},
+									{
+										Origins: []meta.Origin{{File: "file.yml", Line: 8, Col: 7}},
 										Value:   "dog",
 									},
 								},
@@ -91,104 +91,104 @@ h:
   [*bar, *car]
 `,
 			expected: meta.Object{
-				Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 1, Col: 1}},
+				Origins: []meta.Origin{{File: "file.yml", Line: 1, Col: 1}},
 				Map: map[string]meta.Object{
-					"a": meta.Object{
-						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 2, Col: 1}},
+					"a": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 2, Col: 1}},
 						Map: map[string]meta.Object{
-							"b": meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 3, Col: 3}},
+							"b": {
+								Origins: []meta.Origin{{File: "file.yml", Line: 3, Col: 3}},
 								Map: map[string]meta.Object{
-									"c": meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 4, Col: 8}},
+									"c": {
+										Origins: []meta.Origin{{File: "file.yml", Line: 4, Col: 8}},
 										Value:   "123",
 									},
 								},
 							},
-							"z": meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 5, Col: 3}},
+							"z": {
+								Origins: []meta.Origin{{File: "file.yml", Line: 5, Col: 3}},
 								Map: map[string]meta.Object{
-									"y": meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 6, Col: 8}},
+									"y": {
+										Origins: []meta.Origin{{File: "file.yml", Line: 6, Col: 8}},
 										Value:   "cat",
 									},
 								},
 							},
 						},
 					},
-					"d": meta.Object{
-						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 7, Col: 1}},
+					"d": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 7, Col: 1}},
 						Map: map[string]meta.Object{
-							"c": meta.Object{
+							"c": {
 								Origins: []meta.Origin{},
 								Value:   "123",
 							},
-							"e": meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 9, Col: 3}},
+							"e": {
+								Origins: []meta.Origin{{File: "file.yml", Line: 9, Col: 3}},
 								Array: []meta.Object{
-									meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 10, Col: 7}},
+									{
+										Origins: []meta.Origin{{File: "file.yml", Line: 10, Col: 7}},
 										Value:   "fog",
 									},
-									meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 11, Col: 7}},
+									{
+										Origins: []meta.Origin{{File: "file.yml", Line: 11, Col: 7}},
 										Value:   "dog",
 									},
 								},
 							},
-							"f": meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 12, Col: 3}},
+							"f": {
+								Origins: []meta.Origin{{File: "file.yml", Line: 12, Col: 3}},
 								Array: []meta.Object{
-									meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 13, Col: 7}},
+									{
+										Origins: []meta.Origin{{File: "file.yml", Line: 13, Col: 7}},
 										Value:   "red",
 									},
-									meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 14, Col: 7}},
+									{
+										Origins: []meta.Origin{{File: "file.yml", Line: 14, Col: 7}},
 										Value:   "blue",
 									},
 								},
 							},
 						},
 					},
-					"g": meta.Object{
-						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 15, Col: 1}},
+					"g": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 15, Col: 1}},
 						Map: map[string]meta.Object{
-							"c": meta.Object{
+							"c": {
 								Origins: []meta.Origin{},
 								Value:   "123",
 							},
-							"y": meta.Object{
+							"y": {
 								Origins: []meta.Origin{},
 								Value:   "cat",
 							},
 						},
 					},
-					"h": meta.Object{
-						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 17, Col: 1}},
+					"h": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 17, Col: 1}},
 						Array: []meta.Object{
-							meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 18, Col: 4}},
+							{
+								Origins: []meta.Origin{{File: "file.yml", Line: 18, Col: 4}},
 								Array: []meta.Object{
-									meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 10, Col: 7}},
+									{
+										Origins: []meta.Origin{{File: "file.yml", Line: 10, Col: 7}},
 										Value:   "fog",
 									},
-									meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 11, Col: 7}},
+									{
+										Origins: []meta.Origin{{File: "file.yml", Line: 11, Col: 7}},
 										Value:   "dog",
 									},
 								},
 							},
-							meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 18, Col: 10}},
+							{
+								Origins: []meta.Origin{{File: "file.yml", Line: 18, Col: 10}},
 								Array: []meta.Object{
-									meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 13, Col: 7}},
+									{
+										Origins: []meta.Origin{{File: "file.yml", Line: 13, Col: 7}},
 										Value:   "red",
 									},
-									meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 14, Col: 7}},
+									{
+										Origins: []meta.Origin{{File: "file.yml", Line: 14, Col: 7}},
 										Value:   "blue",
 									},
 								},

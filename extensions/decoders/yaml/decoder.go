@@ -1,6 +1,24 @@
 // SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 // SPDX-License-Identifier: Apache-2.0
 
+// yaml package is a goschtalt decoder package.
+//
+// The yaml package automatically registers the decoder as a default decoder
+// with the goschtalt package so the usage is as simple as possible ... simply
+// import the package and it should just work.
+//
+// Import the package like you do for pprof - like this:
+//
+//	import (
+//		"fmt"
+//		"os"
+//		...
+//
+//		"github.com/schmidtw/goschtalt"
+//		_ "github.com/schmidtw/goschtalt/extensions/decoders/yaml"
+//	)
+//
+// See the example for how to use this extension package.
 package yaml
 
 import (
@@ -98,7 +116,7 @@ func annotate(level int, filename string, obj meta.Object, prev, node yml.Node) 
 
 	// Map
 	obj.Origins = []meta.Origin{
-		meta.Origin{
+		{
 			File: filename,
 			Line: prev.Line,
 			Col:  prev.Column,
