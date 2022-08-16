@@ -96,7 +96,7 @@ jobs:
       # Update the results on goreportcard.com
       - name: Go report card
         if: |
-          matrix.os == ubuntu-latest &&
+          matrix.os == 'ubuntu-latest' &&
           matrix.go == env.go_version
         uses: creekorful/goreportcard-action@v1.0
 
