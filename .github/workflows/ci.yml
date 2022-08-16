@@ -21,8 +21,20 @@ jobs:
     needs: [ style, lint, reuse ]
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        go: ['1.18', '1.19']
+        os: [ 'ubuntu-latest', 'macos-latest', 'windows-latest' ]
+        go: [ '1.18', '1.19' ]
+        race: [ '-race' ]
+        coverage: [ '' ]
+      exclude:
+        - os: 'windows-latest'
+          race: '-race'
+        - os: 'ubuntu-latest'
+          coverage: ''
+      include:
+        - os: 'windows-latest'
+          race: ''
+        - os: 'ubuntu-latest'
+          coverage: '-covermode=atomic -json > report.json'
     runs-on: ${{ matrix.os }}
     name: Build & Test
 
@@ -49,15 +61,7 @@ jobs:
 
       - name: goschtalt -- Test
         run: |
-          go test -race ./...
-
-      - name: goschtalt -- Coverage
-        if: |
-          matrix.os == 'ubuntu-latest' &&
-          matrix.go == env.go_version
-        run: |
-          go test -race -covermode=atomic -coverprofile=coverage.txt ./...
-          go test -race -covermode=atomic -json > report.json        ./...
+          go test ${{ matrix.race }} ${{ matrix.coverage }} ./...
 
       # Duplicated for each extension package.
       # Duplicated for each extension package.
@@ -72,16 +76,7 @@ jobs:
       - name: extensions/decoders/yaml -- Test
         working-directory: ./extensions/decoders/yaml
         run: |
-          go test -race ./...
-
-      - name: extensions/decoders/yaml -- Coverage
-        working-directory: ./extensions/decoders/yaml
-        if: |
-          matrix.os == 'ubuntu-latest' &&
-          matrix.go == env.go_version
-        run: |
-          go test -race -covermode=atomic -coverprofile=coverage.txt ./...
-          go test -race -covermode=atomic -json > report.json        ./...
+          go test ${{ matrix.race }} ${{ matrix.coverage }} ./...
 
       # --- extensions/encoders/yaml
 
@@ -93,16 +88,7 @@ jobs:
       - name: extensions/encoders/yaml -- Test
         working-directory: ./extensions/encoders/yaml
         run: |
-          go test -race ./...
-
-      - name: extensions/encoders/yaml -- Coverage
-        working-directory: ./extensions/encoders/yaml
-        if: |
-          matrix.os == 'ubuntu-latest' &&
-          matrix.go == env.go_version
-        run: |
-          go test -race -covermode=atomic -coverprofile=coverage.txt ./...
-          go test -race -covermode=atomic -json > report.json        ./...
+          go test ${{ matrix.race }} ${{ matrix.coverage }} ./...
 
       # Upload the results of code coverage once
 
@@ -127,7 +113,7 @@ jobs:
 
   style:
     name: Check code style
-    runs-on: [ubuntu-latest]
+    runs-on: [ 'ubuntu-latest' ]
     steps:
       - name: Setup go version
         uses: actions/setup-go@v2
@@ -152,7 +138,7 @@ jobs:
 
   lint:
     name: Golint Checking
-    runs-on: [ubuntu-latest]
+    runs-on: [ 'ubuntu-latest' ]
     steps:
       - name: Setup go version
         uses: actions/setup-go@v2
@@ -181,7 +167,7 @@ jobs:
 
   reuse:
     name: REUSE Checking
-    runs-on: [ubuntu-latest]
+    runs-on: [ 'ubuntu-latest' ]
     steps: 
     - uses: actions/checkout@v2
     - name: REUSE Compliance Check
@@ -190,7 +176,7 @@ jobs:
   # TODO - include the extensions better
   license:
     name: License Checking
-    runs-on: [ubuntu-latest]
+    runs-on: [ 'ubuntu-latest' ]
     steps:
       - name: Setup go version
         uses: actions/setup-go@v2
@@ -230,7 +216,7 @@ jobs:
     needs: [ test, style, lint, reuse, license ]
     if: |
       contains( 'main', github.ref_name )
-    runs-on: [ ubuntu-latest ]
+    runs-on: [ 'ubuntu-latest' ]
     steps:
       - name: Checkout the code
         uses: actions/checkout@v3
