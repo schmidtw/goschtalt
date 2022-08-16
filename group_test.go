@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/psanford/memfs"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
@@ -127,7 +128,7 @@ func TestWalk(t *testing.T) {
 					tree := decode(file, data)
 					expected = append(expected, tree)
 				}
-				assert.Empty(cmp.Diff(expected, got))
+				assert.Empty(cmp.Diff(expected, got, cmpopts.IgnoreUnexported(meta.Object{})))
 				return
 			}
 			assert.ErrorIs(err, tc.expectedErr)

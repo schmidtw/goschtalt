@@ -57,7 +57,7 @@ type testEncoder struct {
 }
 
 func (t *testEncoder) EncodeExtended(m meta.Object) ([]byte, error) {
-	if m.IsSecret == true {
+	if m.Value == "cause error" {
 		return nil, fmt.Errorf("random encoding error")
 	}
 	return json.Marshal(m)
@@ -80,7 +80,7 @@ func addOrigin(obj meta.Object, origin *meta.Origin) meta.Object {
 	obj.Origins = append(obj.Origins, *origin)
 	origin.Line++ // Not accurate, but interesting.
 
-	switch obj.Type {
+	switch obj.Kind() {
 	case meta.Array:
 		array := make([]meta.Object, len(obj.Array))
 		for i, val := range obj.Array {

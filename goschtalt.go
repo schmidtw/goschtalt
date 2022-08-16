@@ -38,7 +38,7 @@ type Option func(c *Config) error
 // New creates a new goschtalt configuration instance.
 func New(opts ...Option) (*Config, error) {
 	c := &Config{
-		tree:        meta.Object{Type: meta.Map},
+		tree:        meta.Object{},
 		decoders:    newDecoderRegistry(),
 		encoders:    newEncoderRegistry(),
 		typeMappers: make(map[string]typeMapper),
@@ -84,8 +84,7 @@ func (c *Config) Compile() error {
 	}
 
 	merged := meta.Object{
-		Type: meta.Map,
-		Map:  make(map[string]meta.Object),
+		Map: make(map[string]meta.Object),
 	}
 	if len(cfgs) == 0 {
 		c.tree = merged

@@ -49,59 +49,47 @@ func TestEncodeExtended(t *testing.T) {
 			//    trending: now
 			in: meta.Object{
 				Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 1, Col: 1}},
-				Type:    meta.Map,
 				Map: map[string]meta.Object{
 					"candy": meta.Object{
 						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 1, Col: 8}},
-						Type:    meta.Value,
 						Value:   "bar",
 					},
 					"cats": meta.Object{
 						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 2, Col: 1}},
-						Type:    meta.Array,
 						Array: []meta.Object{
 							meta.Object{
 								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 3, Col: 7}},
-								Type:    meta.Value,
 								Value:   "madd",
 							},
 							meta.Object{
 								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 4, Col: 7}},
-								Type:    meta.Value,
 								Value:   "tabby",
 							},
 						},
 					},
 					"other": meta.Object{
 						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 5, Col: 1}},
-						Type:    meta.Map,
 						Map: map[string]meta.Object{
 							"things": meta.Object{
 								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 6, Col: 5}},
-								Type:    meta.Map,
 								Map: map[string]meta.Object{
 									"red": meta.Object{
 										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 7, Col: 14}},
-										Type:    meta.Value,
 										Value:   "balloons",
 									},
 									"green": meta.Object{
 										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 8, Col: 9}},
-										Type:    meta.Array,
 										Array: []meta.Object{
 											meta.Object{
 												Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 9, Col: 15}},
-												Type:    meta.Value,
 												Value:   "grass",
 											},
 											meta.Object{
 												Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 10, Col: 15}},
-												Type:    meta.Value,
 												Value:   "ground",
 											},
 											meta.Object{
 												Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 11, Col: 15}},
-												Type:    meta.Value,
 												Value:   "water",
 											},
 										},
@@ -110,7 +98,6 @@ func TestEncodeExtended(t *testing.T) {
 							},
 							"trending": meta.Object{
 								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 12, Col: 15}},
-								Type:    meta.Value,
 								Value:   "now",
 							},
 						},
@@ -148,7 +135,6 @@ other: # file.yml:5[1]
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
-			//require := require.New(t)
 
 			var e Encoder
 			got, err := e.EncodeExtended(tc.in)

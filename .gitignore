@@ -19,3 +19,6 @@
 
 # Not go files
 *.no
+
+# Don't include any workspace files.
+go.work

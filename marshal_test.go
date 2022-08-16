@@ -41,7 +41,7 @@ func TestMarshal(t *testing.T) {
 			description: "Import and export a tree with orgins.",
 			input:       `{"foo":"bar"}`,
 			opts:        []MarshalOption{UseFormat("json"), IncludeOrigins(true)},
-			expected:    `{"Origins":[{"File":"file","Line":1,"Col":123}],"IsSecret":false,"Type":2,"Map":{"foo":{"Origins":[{"File":"file","Line":2,"Col":123}],"IsSecret":false,"Type":3,"Map":null,"Array":null,"Value":"bar"}},"Array":null,"Value":null}`,
+			expected:    `{"Origins":[{"File":"file","Line":1,"Col":123}],"Array":null,"Map":{"foo":{"Origins":[{"File":"file","Line":2,"Col":123}],"Array":null,"Map":null,"Value":"bar"}},"Value":null}`,
 		}, {
 			description: "Not compiled.",
 			input:       `{"foo":"bar"}`,

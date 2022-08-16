@@ -52,9 +52,9 @@ func TestMap_getCmd(t *testing.T) {
 			},
 		}, {
 			description: "Simple, single command found. #4",
-			input:       "foo	(( bar	))	   ",
+			input: "foo	(( bar	))	   ",
 			expected: command{
-				full:  "foo	(( bar	))	   ",
+				full: "foo	(( bar	))	   ",
 				cmd:   "bar",
 				final: "foo",
 			},

@@ -160,19 +160,13 @@ func TestEncoderRegistry_EncodeExtended(t *testing.T) {
 		{
 			description: "Successfully encode.",
 			extension:   "json",
-			in: meta.Object{
-				Type: meta.Map,
-				Map:  map[string]meta.Object{},
-			},
-			expected: `{"Origins":null,"IsSecret":false,"Type":2,"Map":{},"Array":null,"Value":null}`,
+			in:          meta.Object{},
+			expected:    `{"Origins":null,"Array":null,"Map":null,"Value":null}`,
 		}, {
 			description: "Successfully encode uppercase.",
 			extension:   "JSON",
-			in: meta.Object{
-				Type: meta.Map,
-				Map:  map[string]meta.Object{},
-			},
-			expected: `{"Origins":null,"IsSecret":false,"Type":2,"Map":{},"Array":null,"Value":null}`,
+			in:          meta.Object{},
+			expected:    `{"Origins":null,"Array":null,"Map":null,"Value":null}`,
 		}, {
 			description: "Fail to find an encoder.",
 			extension:   "invalid",
@@ -181,9 +175,7 @@ func TestEncoderRegistry_EncodeExtended(t *testing.T) {
 			description: "Encoding error.",
 			extension:   "JSON",
 			in: meta.Object{
-				Type:     meta.Map,
-				IsSecret: true, // trigger an error
-				Map:      map[string]meta.Object{},
+				Value: "cause error",
 			},
 			expectedErr: ErrEncoding,
 		},

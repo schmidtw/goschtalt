@@ -62,8 +62,9 @@ func (e Encoder) EncodeExtended(obj meta.Object) ([]byte, error) {
 // to give to the yaml encoder.  This is likely specific to this yaml encoder.
 func encode(obj meta.Object) (n yml.Node, err error) {
 	n.LineComment = obj.OriginString()
+	kind := obj.Kind()
 
-	if obj.Type == meta.Value {
+	if kind == meta.Value {
 		err = n.Encode(obj.Value)
 		if err != nil {
 			return yml.Node{}, err
@@ -72,7 +73,7 @@ func encode(obj meta.Object) (n yml.Node, err error) {
 		return n, nil
 	}
 
-	if obj.Type == meta.Array {
+	if kind == meta.Array {
 		n.Kind = yml.SequenceNode
 
 		for _, v := range obj.Array {

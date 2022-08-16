@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
@@ -111,7 +112,6 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 						Col:  123,
 					},
 				},
-				Type: meta.Map,
 				Map: map[string]meta.Object{
 					"test": {
 						Origins: []meta.Origin{
@@ -121,7 +121,6 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 								Col:  123,
 							},
 						},
-						Type:  meta.Value,
 						Value: "123",
 					},
 				},
@@ -138,7 +137,6 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 						Col:  123,
 					},
 				},
-				Type: meta.Map,
 				Map: map[string]meta.Object{
 					"test": {
 						Origins: []meta.Origin{
@@ -148,7 +146,6 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 								Col:  123,
 							},
 						},
-						Type:  meta.Value,
 						Value: "123",
 					},
 				},
@@ -181,7 +178,8 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 			err := dr.decode(tc.extension, "file", []byte(tc.bytes), &obj)
 			if tc.expectedErr == nil {
 				require.NoError(err)
-				assert.Empty(cmp.Diff(tc.expected, obj))
+				assert.Empty(cmp.Diff(tc.expected, obj,
+					cmpopts.IgnoreUnexported(meta.Object{})))
 				return
 			}
 			assert.ErrorIs(err, tc.expectedErr)
