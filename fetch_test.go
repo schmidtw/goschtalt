@@ -5,7 +5,6 @@ package goschtalt
 
 import (
 	"fmt"
-	"reflect"
 	"strings"
 	"testing"
 
@@ -126,22 +125,7 @@ func TestFetch(t *testing.T) {
 				}
 			}
 
-			var err error
-			var got any
-
-			var m map[string]any
-			switch reflect.TypeOf(tc.expected).String() {
-			case "string":
-				var s string
-				got, err = Fetch(&c, tc.key, s)
-			case "float64":
-				var f float64
-				got, err = Fetch(&c, tc.key, f)
-			case reflect.TypeOf(m).String():
-				got, err = Fetch(&c, tc.key, m)
-			default:
-				panic(fmt.Sprintf("unknown type from the test: %q", reflect.TypeOf(tc.expected).String()))
-			}
+			got, err := Fetch(&c, tc.key, tc.expected)
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
