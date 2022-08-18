@@ -12,4 +12,5 @@ var (
 	ErrNotCompiled    = errors.New("the Compile() function must be called first")
 	ErrNotFound       = errors.New("not found")
 	ErrTypeMismatch   = errors.New("type mismatch")
+	ErrConfigMissing  = errors.New("Config is missing a required configuration")
 )

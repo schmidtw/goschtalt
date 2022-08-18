@@ -79,3 +79,67 @@ func TestKeyDelimiter(t *testing.T) {
 	require.NoError(c.With(KeyDelimiter("<crazy>")))
 	assert.Equal(c.keyDelimiter, "<crazy>")
 }
+
+func TestNoDefaults(t *testing.T) {
+	tests := []struct {
+		description string
+		opts        []Option
+		delimiter   string
+		ignore      bool
+		expectedErr error
+	}{
+		{
+			description: "NoDefaults and required options",
+			delimiter:   "|",
+			ignore:      true,
+			opts: []Option{
+				NoDefaults(),
+				FileSortOrderNatural(),
+				KeyCaseLower(),
+				KeyDelimiter("|"),
+			},
+		}, {
+			description: "NoDefaults and missing FileSortOrder",
+			opts: []Option{
+				NoDefaults(),
+				KeyCaseLower(),
+				KeyDelimiter("|"),
+			},
+			expectedErr: ErrConfigMissing,
+		}, {
+			description: "NoDefaults and missing KeyCase",
+			opts: []Option{
+				NoDefaults(),
+				FileSortOrderNatural(),
+				KeyDelimiter("|"),
+			},
+			expectedErr: ErrConfigMissing,
+		}, {
+			description: "NoDefaults and missing KeyDelimiter",
+			opts: []Option{
+				NoDefaults(),
+				FileSortOrderNatural(),
+				KeyCaseLower(),
+			},
+			expectedErr: ErrConfigMissing,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			c, err := New(tc.opts...)
+			if tc.expectedErr == nil {
+				assert.NoError(err)
+				require.NotNil(c)
+				assert.Equal(tc.delimiter, c.keyDelimiter)
+				assert.Equal(tc.ignore, c.ignoreDefaults)
+				return
+			}
+
+			assert.ErrorIs(err, tc.expectedErr)
+		})
+	}
+}

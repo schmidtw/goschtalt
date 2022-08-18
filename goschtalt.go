@@ -4,6 +4,7 @@
 package goschtalt
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/schmidtw/goschtalt/pkg/meta"
@@ -22,6 +23,7 @@ type Config struct {
 	hasBeenCompiled bool
 
 	// options based things
+	ignoreDefaults   bool
 	decoders         *decoderRegistry
 	encoders         *encoderRegistry
 	groups           []Group
@@ -35,21 +37,48 @@ type Config struct {
 // Option is the type used for options.
 type Option func(c *Config) error
 
-// New creates a new goschtalt configuration instance.
-func New(opts ...Option) (*Config, error) {
-	c := &Config{
+func newConfig() *Config {
+	return &Config{
 		tree:        meta.Object{},
 		decoders:    newDecoderRegistry(),
 		encoders:    newEncoderRegistry(),
 		typeMappers: make(map[string]typeMapper),
 	}
+}
 
-	/* set the defaults */
-	_ = c.With(DefaultOptions...)
-
-	err := c.With(opts...)
+// New creates a new goschtalt configuration instance.
+func New(opts ...Option) (*Config, error) {
+	// Check to see if an option indicates to not apply defaults on a
+	// throw-away object.
+	tmp := newConfig()
+	err := tmp.With(opts...)
 	if err != nil {
 		return nil, err
+	}
+
+	var allOpts []Option
+	if !tmp.ignoreDefaults {
+		allOpts = append(allOpts, DefaultOptions...)
+	}
+
+	c := newConfig()
+
+	allOpts = append(allOpts, opts...)
+	err = c.With(allOpts...)
+	if err != nil {
+		return nil, err
+	}
+
+	if c.sorter == nil {
+		return nil, fmt.Errorf("%w: a FileSortOrder... option must be specified.", ErrConfigMissing)
+	}
+
+	if len(c.keyDelimiter) == 0 {
+		return nil, fmt.Errorf("%w: KeyDelimiter() option must be specified.", ErrConfigMissing)
+	}
+
+	if c.keySwizzler == nil {
+		return nil, fmt.Errorf("%w: a KeyCase... option must be specified.", ErrConfigMissing)
 	}
 
 	return c, nil

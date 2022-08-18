@@ -58,3 +58,12 @@ func KeyDelimiter(delimiter string) Option {
 		return nil
 	}
 }
+
+// NoDefaults provides a way to explicitly not use any preconfigured default
+// values and instead use just the ones specified as options.
+func NoDefaults() Option {
+	return func(c *Config) error {
+		c.ignoreDefaults = true
+		return nil
+	}
+}
