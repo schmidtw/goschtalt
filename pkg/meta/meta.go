@@ -195,6 +195,13 @@ func ObjectFromRaw(in any) (obj Object) {
 // Add adds an object to the tree assuming the key needs to be split and the tree
 // may need to be created or added to depending on what is existing.  The returned
 // object is the new tree.
+//
+// Note that Add will not create arrays, but only maps and values.  It will update
+// arrays (either replacing an item, or extending the array by exactly 1 if the
+// index is 1 larger than the array).  It is suggested to use Add() to build
+// an object tree and then use the ConvertMapsToArrays() method to do the
+// conversion.  This helps eliminate problems due to sparcely populated arrays
+// not being allowed.
 func (obj Object) Add(keyDelimiter, key string, val any, origin ...Origin) (Object, error) {
 	splitKey := strings.Split(key, keyDelimiter)
 	return obj.add(splitKey, val, origin...)
@@ -203,10 +210,6 @@ func (obj Object) Add(keyDelimiter, key string, val any, origin ...Origin) (Obje
 // add is the internal helper that is recursively called to add to the tree.
 func (obj Object) add(keys []string, val any, origin ...Origin) (Object, error) {
 	kind := obj.Kind()
-
-	if kind == Value && obj.Value != nil {
-		return Object{}, ErrConflict
-	}
 
 	if len(origin) == 0 {
 		origin = []Origin{Origin{}}
@@ -228,17 +231,21 @@ func (obj Object) add(keys []string, val any, origin ...Origin) (Object, error) 
 		if idx < 0 || len(obj.Array) < idx {
 			return Object{}, fmt.Errorf("%w: index: '%s' must be %d", ErrArrayOutOfBounds, key, len(obj.Array))
 		}
+
+		sub := Object{
+			Origins: origin,
+		}
+		if idx < len(obj.Array) {
+			sub = obj.Array[idx]
+		}
+
+		next, err := sub.add(keys[1:], val, origin...)
+		if err != nil {
+			return Object{}, err
+		}
 		if idx == len(obj.Array) {
-			next, err := Object{Origins: origin}.add(keys[1:], val, origin...)
-			if err != nil {
-				return Object{}, err
-			}
 			obj.Array = append(obj.Array, next)
 		} else {
-			next, err := obj.Array[idx].add(keys[1:], val, origin...)
-			if err != nil {
-				return Object{}, err
-			}
 			obj.Array[idx] = next
 		}
 		return obj, nil
@@ -262,41 +269,6 @@ func (obj Object) add(keys []string, val any, origin ...Origin) (Object, error) 
 	obj.Map[key] = next
 	return obj, nil
 }
-
-/*
-		if _, found := obj.Map[key]; found {
-			if len(keys) == 1 {
-				obj.Map[key] = Object{
-					Origins: origin,
-					Value:   val,
-				}
-				return obj
-			}
-
-			obj.Map[key] = obj.Map[key].add(keys[1:], val, origin...)
-			return obj
-		}
-
-		if len(keys) == 1 {
-			obj.Map[key] = Object{
-				Origins: origin,
-				Value:   val,
-			}
-			return obj
-		}
-		m := Object{
-			Origins: origin,
-			Map:     make(map[string]Object),
-		}
-	next, err := Object{}.add(keys[1:], val, origin...)
-	if err != nil {
-		return Object{}, err
-	}
-	obj.Map[key] = next
-
-	return obj
-}
-*/
 
 // ToRedacted builds a copy of the tree where secrets are redacted.  Secret maps
 // or arrays will now show up as values containing the value 'REDACTED'.

@@ -86,7 +86,10 @@ func (d Decoder) Decode(filename, keyDelimiter string, b []byte, m *meta.Object)
 		}
 
 		val, _ := props.Get(key)
-		tree = tree.Add(keyDelimiter, key, val, origin)
+		tree, err = tree.Add(keyDelimiter, key, val, origin)
+		if err != nil {
+			return err
+		}
 	}
 
 	*m = tree.ConvertMapsToArrays()

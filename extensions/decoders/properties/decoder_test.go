@@ -4,6 +4,7 @@
 package properties
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -12,7 +13,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestExtensions(t *testing.T) {
+	assert := assert.New(t)
+
+	want := []string{"properties"}
+	got := Decoder{}.Extensions()
+
+	assert.Empty(cmp.Diff(want, got))
+}
+
 func TestDecode(t *testing.T) {
+	unknown := errors.New("unknown")
 	tests := []struct {
 		description string
 		in          string
@@ -22,6 +33,10 @@ func TestDecode(t *testing.T) {
 		{
 			description: "A test of empty.",
 			expected:    meta.Object{},
+		}, {
+			description: "A test of invalid values.",
+			in:          `=:`,
+			expectedErr: unknown,
 		}, {
 			description: "A small test.",
 			in: `# A small test
@@ -84,7 +99,15 @@ Foo.l = jestor`,
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(meta.Object{})))
+				return
 			}
+
+			if tc.expectedErr == unknown {
+				assert.Error(err)
+				return
+			}
+
+			assert.ErrorIs(err, tc.expectedErr)
 		})
 	}
 }
