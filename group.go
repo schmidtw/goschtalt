@@ -90,7 +90,7 @@ func (group Group) enumerate(exts []string) ([]string, error) {
 	return files, nil
 }
 
-func (group Group) collectAndDecode(decoders *decoderRegistry, file string) (meta.Object, error) {
+func (group Group) collectAndDecode(decoders *decoderRegistry, file, keyDelimiter string) (meta.Object, error) {
 	var m meta.Object
 
 	buf := bytes.NewBuffer(nil)
@@ -111,7 +111,7 @@ func (group Group) collectAndDecode(decoders *decoderRegistry, file string) (met
 		return meta.Object{}, err
 	}
 
-	err = decoders.decode(ext, info.Name(), buf.Bytes(), &m)
+	err = decoders.decode(ext, info.Name(), keyDelimiter, buf.Bytes(), &m)
 	if err != nil {
 		return meta.Object{}, err
 	}
@@ -119,7 +119,7 @@ func (group Group) collectAndDecode(decoders *decoderRegistry, file string) (met
 	return m, nil
 }
 
-func (group Group) walk(decoders *decoderRegistry) ([]meta.Object, error) {
+func (group Group) walk(decoders *decoderRegistry, keyDelimiter string) ([]meta.Object, error) {
 	exts := decoders.extensions()
 
 	files, err := group.enumerate(exts)
@@ -129,7 +129,7 @@ func (group Group) walk(decoders *decoderRegistry) ([]meta.Object, error) {
 
 	list := []meta.Object{}
 	for _, file := range files {
-		obj, err := group.collectAndDecode(decoders, file)
+		obj, err := group.collectAndDecode(decoders, keyDelimiter, file)
 		if err != nil {
 			return nil, err
 		}

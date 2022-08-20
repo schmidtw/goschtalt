@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/k0kubun/pp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -201,6 +202,255 @@ func TestToRaw(t *testing.T) {
 			got := tc.in.ToRaw()
 
 			assert.Empty(cmp.Diff(tc.expected, got))
+		})
+	}
+}
+
+func TestAdd(t *testing.T) {
+	tests := []struct {
+		run         bool
+		description string
+		key         string
+		val         string
+		start       Object
+		origin      *Origin
+		expected    Object
+		expectedErr error
+	}{
+		{
+			description: "Add to an empty tree.",
+			key:         "Foo.Bar",
+			val:         "abc",
+			expected: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Value:   "abc",
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Add to an empty tree, but add an origin.",
+			key:         "Foo.Bar",
+			val:         "abc",
+			origin:      &Origin{File: "file"},
+			expected: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{File: "file"}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{File: "file"}},
+								Value:   "abc",
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Add to tree with an array.",
+			key:         "Foo.Bar.1",
+			val:         "xyz",
+			start: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Change a value in an array.",
+			run:         true,
+			key:         "Foo.Bar.0",
+			val:         "---",
+			start: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "---",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Fail with an array index that is negative.",
+			key:         "Foo.Bar.-1",
+			val:         "---",
+			expectedErr: ErrArrayOutOfBounds,
+			start: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Fail with an array index that is too large.",
+			key:         "Foo.Bar.10",
+			val:         "---",
+			expectedErr: ErrArrayOutOfBounds,
+			start: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Fail with an array index that isn't an int.",
+			key:         "Foo.0.invalid",
+			val:         "---",
+			expectedErr: ErrInvalidIndex,
+			start: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Array: []Object{
+							{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range tests {
+		if !tc.run {
+			continue
+		}
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			var got Object
+			var err error
+			if tc.origin == nil {
+				got, err = tc.start.Add(".", tc.key, tc.val)
+			} else {
+				got, err = tc.start.Add(".", tc.key, tc.val, *tc.origin)
+			}
+
+			pp.Printf("got:\n%s\n", got)
+			if tc.expectedErr == nil {
+				assert.NoError(err)
+				//assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+				return
+			}
+
+			assert.ErrorIs(err, tc.expectedErr)
 		})
 	}
 }

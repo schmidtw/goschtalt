@@ -59,13 +59,13 @@ func (dr *decoderRegistry) find(ext string) (decoder.Decoder, error) {
 }
 
 // decode decodes based on the specified extension.
-func (dr *decoderRegistry) decode(ext, file string, b []byte, o *meta.Object) error {
+func (dr *decoderRegistry) decode(ext, file, keyDelimiter string, b []byte, o *meta.Object) error {
 	codec, err := dr.find(ext)
 	if err != nil {
 		return err
 	}
 
-	err = codec.Decode(file, b, o)
+	err = codec.Decode(file, keyDelimiter, b, o)
 	if err != nil {
 		return fmt.Errorf("decoder error for extension '%s' processing file '%s' %w %v",
 			ext, file, ErrDecoding, err)

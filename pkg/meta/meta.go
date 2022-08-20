@@ -28,6 +28,7 @@ var (
 	ErrInvalidCommand   = errors.New("invalid command")
 	ErrNotFound         = errors.New("not found")
 	ErrArrayOutOfBounds = errors.New("array index is out of bounds")
+	ErrInvalidIndex     = errors.New("invalid index")
 )
 
 // Origin provides details about an origin of a parameter.
@@ -191,6 +192,112 @@ func ObjectFromRaw(in any) (obj Object) {
 	return obj
 }
 
+// Add adds an object to the tree assuming the key needs to be split and the tree
+// may need to be created or added to depending on what is existing.  The returned
+// object is the new tree.
+func (obj Object) Add(keyDelimiter, key string, val any, origin ...Origin) (Object, error) {
+	splitKey := strings.Split(key, keyDelimiter)
+	return obj.add(splitKey, val, origin...)
+}
+
+// add is the internal helper that is recursively called to add to the tree.
+func (obj Object) add(keys []string, val any, origin ...Origin) (Object, error) {
+	kind := obj.Kind()
+
+	if kind == Value && obj.Value != nil {
+		return Object{}, ErrConflict
+	}
+
+	if len(origin) == 0 {
+		origin = []Origin{Origin{}}
+	}
+
+	if len(keys) == 0 {
+		return Object{
+			Origins: origin,
+			Value:   val,
+		}, nil
+	}
+
+	key := keys[0]
+	if kind == Array {
+		idx, err := strconv.Atoi(key)
+		if err != nil {
+			return Object{}, fmt.Errorf("%w: index: '%s' %v", ErrInvalidIndex, key, err)
+		}
+		if idx < 0 || len(obj.Array) < idx {
+			return Object{}, fmt.Errorf("%w: index: '%s' must be %d", ErrArrayOutOfBounds, key, len(obj.Array))
+		}
+		if idx == len(obj.Array) {
+			next, err := Object{Origins: origin}.add(keys[1:], val, origin...)
+			if err != nil {
+				return Object{}, err
+			}
+			obj.Array = append(obj.Array, next)
+		} else {
+			next, err := obj.Array[idx].add(keys[1:], val, origin...)
+			if err != nil {
+				return Object{}, err
+			}
+			obj.Array[idx] = next
+		}
+		return obj, nil
+	}
+
+	// Map
+	if obj.Map == nil {
+		obj.Map = make(map[string]Object)
+	}
+
+	sub, found := obj.Map[key]
+	if !found {
+		sub = Object{
+			Origins: origin,
+		}
+	}
+	next, err := sub.add(keys[1:], val, origin...)
+	if err != nil {
+		return Object{}, err
+	}
+	obj.Map[key] = next
+	return obj, nil
+}
+
+/*
+		if _, found := obj.Map[key]; found {
+			if len(keys) == 1 {
+				obj.Map[key] = Object{
+					Origins: origin,
+					Value:   val,
+				}
+				return obj
+			}
+
+			obj.Map[key] = obj.Map[key].add(keys[1:], val, origin...)
+			return obj
+		}
+
+		if len(keys) == 1 {
+			obj.Map[key] = Object{
+				Origins: origin,
+				Value:   val,
+			}
+			return obj
+		}
+		m := Object{
+			Origins: origin,
+			Map:     make(map[string]Object),
+		}
+	next, err := Object{}.add(keys[1:], val, origin...)
+	if err != nil {
+		return Object{}, err
+	}
+	obj.Map[key] = next
+
+	return obj
+}
+*/
+
 // ToRedacted builds a copy of the tree where secrets are redacted.  Secret maps
 // or arrays will now show up as values containing the value 'REDACTED'.
 func (obj Object) ToRedacted() Object {
@@ -219,6 +326,48 @@ func (obj Object) ToRedacted() Object {
 	}
 
 	return obj
+}
+
+// ConvertMapsToArrays walks the object tree and looks for any maps that contain
+// only sequential numbers starting with 0.  If one is found, then it assumed to
+// be an array and restructured accordingly.
+func (obj Object) ConvertMapsToArrays() Object {
+	switch obj.Kind() {
+	case Value, Array:
+		return obj
+	}
+
+	// Map
+	for key := range obj.Map {
+		obj.Map[key] = obj.Map[key].ConvertMapsToArrays()
+	}
+
+	// Now check to see if the map should be an array.
+	indexes := make([]bool, len(obj.Map))
+
+	for key := range obj.Map {
+		idx, err := strconv.Atoi(key)
+		if err != nil {
+			// Can't be an array, exit.
+			return obj
+		}
+		if idx < 0 || len(indexes) <= idx || indexes[idx] {
+			// Can't be an array because the indexes aren't sequential, exit.
+			return obj
+		}
+		indexes[idx] = true
+	}
+
+	rv := Object{
+		Origins: obj.Origins,
+		Array:   make([]Object, len(obj.Map)),
+	}
+
+	for i := 0; i < len(obj.Map); i++ {
+		rv.Array[i] = obj.Map[strconv.Itoa(i)]
+	}
+
+	return rv
 }
 
 // AlterKeyCase builds a copy of the tree where the keys for all Objects have
