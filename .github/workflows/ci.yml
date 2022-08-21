@@ -57,6 +57,22 @@ jobs:
 
       # Duplicated for each extension package.
       # Duplicated for each extension package.
+      #
+      # --- extensions/decoders/env
+
+      - name: extensions/decoders/env -- Build & Test
+        working-directory: ./extensions/decoders/env
+        run: |
+          go build ./...
+          go test ./...
+
+      - name: extensions/decoders/env -- Coverage
+        working-directory: ./extensions/decoders/env
+        if: |
+          matrix.os == 'ubuntu-latest' &&
+          matrix.go == env.go_version
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.out ./...
 
       # --- extensions/decoders/json
 
@@ -133,10 +149,11 @@ jobs:
           flags: unittests
           files: >-
             ./coverage.out,
-            extensions/decoders/json/coverage.out,
-            extensions/decoders/properties/coverage.out,
-            extensions/decoders/yaml/coverage.out,
-            extensions/encoders/yaml/coverage.out
+            ./extensions/decoders/env/coverage.out,
+            ./extensions/decoders/json/coverage.out,
+            ./extensions/decoders/properties/coverage.out,
+            ./extensions/decoders/yaml/coverage.out,
+            ./extensions/encoders/yaml/coverage.out
 
       # Update the results on goreportcard.com
       - name: Go report card
