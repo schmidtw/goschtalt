@@ -43,12 +43,9 @@ jobs:
           go work init .
           go work use -r .
 
-      - name: goschtalt -- Build
+      - name: goschtalt -- Build & Test
         run: |
           go build ./...
-
-      - name: goschtalt -- Test
-        run: |
           go test ./...
 
       - name: goschtalt -- Coverage
@@ -56,21 +53,49 @@ jobs:
           matrix.os == 'ubuntu-latest' &&
           matrix.go == env.go_version
         run: |
-          go test -race -covermode=atomic -json > report.json ./...
+          go test -race -covermode=atomic -coverprofile=coverage.out ./...
 
       # Duplicated for each extension package.
       # Duplicated for each extension package.
+
+      # --- extensions/decoders/json
+
+      - name: extensions/decoders/json -- Build & Test
+        working-directory: ./extensions/decoders/json
+        run: |
+          go build ./...
+          go test ./...
+
+      - name: extensions/decoders/json -- Coverage
+        working-directory: ./extensions/decoders/json
+        if: |
+          matrix.os == 'ubuntu-latest' &&
+          matrix.go == env.go_version
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.out ./...
+
+      # --- extensions/decoders/properties
+
+      - name: extensions/decoders/properties -- Build & Test
+        working-directory: ./extensions/decoders/properties
+        run: |
+          go build ./...
+          go test ./...
+
+      - name: extensions/decoders/properties -- Coverage
+        working-directory: ./extensions/decoders/properties
+        if: |
+          matrix.os == 'ubuntu-latest' &&
+          matrix.go == env.go_version
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.out ./...
 
       # --- extensions/decoders/yaml
 
-      - name: extensions/decoders/yaml -- Build
+      - name: extensions/decoders/yaml -- Build & Test
         working-directory: ./extensions/decoders/yaml
         run: |
           go build ./...
-
-      - name: extensions/decoders/yaml -- Test
-        working-directory: ./extensions/decoders/yaml
-        run: |
           go test ./...
 
       - name: extensions/decoders/yaml -- Coverage
@@ -79,18 +104,14 @@ jobs:
           matrix.os == 'ubuntu-latest' &&
           matrix.go == env.go_version
         run: |
-          go test -race -covermode=atomic -json > report.json ./...
+          go test -race -covermode=atomic -coverprofile=coverage.out ./...
 
       # --- extensions/encoders/yaml
 
-      - name: extensions/encoders/yaml -- Build
+      - name: extensions/encoders/yaml -- Build & Test
         working-directory: ./extensions/encoders/yaml
         run: |
           go build ./...
-
-      - name: extensions/encoders/yaml -- Test
-        working-directory: ./extensions/encoders/yaml
-        run: |
           go test ./...
 
       - name: extensions/encoders/yaml -- Coverage
@@ -99,7 +120,7 @@ jobs:
           matrix.os == 'ubuntu-latest' &&
           matrix.go == env.go_version
         run: |
-          go test -race -covermode=atomic -json > report.json ./...
+          go test -race -covermode=atomic -coverprofile=coverage.out ./...
 
       # Upload the results of code coverage once
 
@@ -111,9 +132,11 @@ jobs:
         with:
           flags: unittests
           files: >-
-            ./report.json,
-            extensions/decoders/yaml/report.json,
-            extensions/encoders/yaml/report.json
+            ./coverage.out,
+            extensions/decoders/json/coverage.out,
+            extensions/decoders/properties/coverage.out,
+            extensions/decoders/yaml/coverage.out,
+            extensions/encoders/yaml/coverage.out
 
       # Update the results on goreportcard.com
       - name: Go report card
