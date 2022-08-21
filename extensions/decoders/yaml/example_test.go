@@ -1,33 +1,38 @@
 // SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 // SPDX-License-Identifier: Apache-2.0
-//go:build !windows
 
 package yaml_test
 
 import (
 	"fmt"
-	"os"
+	"io/fs"
 	"strings"
 
+	"github.com/psanford/memfs"
 	"github.com/schmidtw/goschtalt"
 	_ "github.com/schmidtw/goschtalt/extensions/decoders/yaml"
 )
 
+const filename = `example.yml`
 const text = `---
 example:
     version: 1
     colors: [red, green, blue]`
 
-func Example() {
-	err := os.WriteFile("/tmp/example.yml", []byte(text), 0644)
-	if err != nil {
+func getFS() fs.FS {
+	mfs := memfs.New()
+	if err := mfs.WriteFile(filename, []byte(text), 0755); err != nil {
 		panic(err)
 	}
 
+	return mfs
+}
+
+func Example() {
 	g, err := goschtalt.New(goschtalt.FileGroup(
 		goschtalt.Group{
-			FS:    os.DirFS("/tmp"),
-			Paths: []string{"."}, // Look in '/tmp/.'
+			FS:    getFS(),       // Normally, you use something like os.DirFS("/etc/program")
+			Paths: []string{"."}, // Look in '.'
 		}))
 	if err != nil {
 		panic(err)

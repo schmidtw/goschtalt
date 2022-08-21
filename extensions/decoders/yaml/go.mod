@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/google/go-cmp v0.5.8
+	github.com/psanford/memfs v0.0.0-20210214183328-a001468d78ef
 	github.com/schmidtw/goschtalt v0.0.0-20220814210655-042350981cba
 	github.com/stretchr/testify v1.8.0
 	gopkg.in/yaml.v3 v3.0.1

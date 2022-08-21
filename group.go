@@ -129,7 +129,7 @@ func (group Group) walk(decoders *decoderRegistry, keyDelimiter string) ([]meta.
 
 	list := []meta.Object{}
 	for _, file := range files {
-		obj, err := group.collectAndDecode(decoders, keyDelimiter, file)
+		obj, err := group.collectAndDecode(decoders, file, keyDelimiter)
 		if err != nil {
 			return nil, err
 		}

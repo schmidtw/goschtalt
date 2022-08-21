@@ -12,6 +12,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestExtensions(t *testing.T) {
+	assert := assert.New(t)
+
+	want := []string{"yaml", "yml"}
+	got := Decoder{}.Extensions()
+
+	assert.Empty(cmp.Diff(want, got))
+}
+
 func TestDecode(t *testing.T) {
 	tests := []struct {
 		description string
@@ -206,7 +215,7 @@ h:
 
 			var d Decoder
 			var got meta.Object
-			err := d.Decode("file.yml", []byte(tc.in), &got)
+			err := d.Decode("file.yml", ".", []byte(tc.in), &got)
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)

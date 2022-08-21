@@ -175,7 +175,7 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 			require.NoError(dr.register(json))
 
 			var obj meta.Object
-			err := dr.decode(tc.extension, "file", []byte(tc.bytes), &obj)
+			err := dr.decode(tc.extension, "file", ".", []byte(tc.bytes), &obj)
 			if tc.expectedErr == nil {
 				require.NoError(err)
 				assert.Empty(cmp.Diff(tc.expected, obj,

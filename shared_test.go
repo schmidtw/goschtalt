@@ -20,7 +20,7 @@ type testDecoder struct {
 	extensions []string
 }
 
-func (t *testDecoder) Decode(file string, b []byte, m *meta.Object) error {
+func (t *testDecoder) Decode(file, _ string, b []byte, m *meta.Object) error {
 	var data any
 	err := json.Unmarshal(b, &data)
 	if err != nil {

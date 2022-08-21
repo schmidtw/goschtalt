@@ -85,6 +85,44 @@ Foo.l = jestor`,
 					},
 				},
 			},
+		}, {
+			description: "A test of types.",
+			in: `# A test of types.
+a = 250
+b = 0xff
+c = 077
+d = 13.2
+e = true
+f = false`,
+			expected: meta.Object{
+				Origins: []meta.Origin{{File: "file.properties", Line: 1, Col: 1}},
+				Map: map[string]meta.Object{
+					"a": {
+						Origins: []meta.Origin{{File: "file.properties", Line: 2, Col: 1}},
+						Value:   int64(250),
+					},
+					"b": {
+						Origins: []meta.Origin{{File: "file.properties", Line: 3, Col: 1}},
+						Value:   int64(255),
+					},
+					"c": {
+						Origins: []meta.Origin{{File: "file.properties", Line: 4, Col: 1}},
+						Value:   int64(63),
+					},
+					"d": {
+						Origins: []meta.Origin{{File: "file.properties", Line: 5, Col: 1}},
+						Value:   float64(13.2),
+					},
+					"e": {
+						Origins: []meta.Origin{{File: "file.properties", Line: 6, Col: 1}},
+						Value:   true,
+					},
+					"f": {
+						Origins: []meta.Origin{{File: "file.properties", Line: 7, Col: 1}},
+						Value:   false,
+					},
+				},
+			},
 		},
 	}
 
