@@ -31,12 +31,20 @@
 //   - Defaults are set via goschtalt.DefaultOptions, but can be replace when
 //     invoking a new goschtalt object.
 //   - No singleton objects.
-//   - Only 1 non-standard library dependency on mitchellh/mapstructure, which
+//   - Only 1 non-standard library dependency on `mitchellh/mapstructure`, which
 //     has no dependencies outside the standard library.
 //
 // # Where do I find configuration file decoders?
 //
-// TODO Currently these are a work in progress.
+// The project contains several packages that are versioned together, but are
+// otherwise independent (different go modules).  They can be found here:
+// https://github.com/schmidtw/goschtalt/tree/main/extensions/decoders
+//
+//	cli        - provides a configuration decoder for command line arguments (coming soon)
+//	env        - provides a configuration decoder for environment variables
+//	json       - provides a configuration decoder for json files
+//	properties - provides a configuration decoder for properties files
+//	yaml       - provides a configuration decoder for yaml files
 //
 // # How do I decorate my configuration files to take advantage of goschtalt?
 //
@@ -44,7 +52,9 @@
 //
 // # How do I write my own configuration decoder?
 //
-// TODO This documentation needs to be written.
+// Examples of decoders exist in the extensions/decoders directory.  Of interest
+// are the `env` decoder that provides an Option, and the `yaml` decoder that
+// is simply a decoder.
 //
 // # What's with the name?
 //
