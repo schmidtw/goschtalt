@@ -611,6 +611,53 @@ func TestConvertMapsToArrays(t *testing.T) {
 	}
 }
 
+func TestStringToBestType(t *testing.T) {
+	tests := []struct {
+		description string
+		in          string
+		expected    any
+	}{
+		{
+			description: "An integer.",
+			in:          "10",
+			expected:    int64(10),
+		}, {
+			description: "Zero.",
+			in:          "0",
+			expected:    int64(0),
+		}, {
+			description: "A really large integer.",
+			in:          "9223372036854775807",
+			expected:    int64(9223372036854775807),
+		}, {
+			description: "A really, really big number.",
+			in:          "92233720368547758070",
+			expected:    float64(92233720368547758070),
+		}, {
+			description: "true",
+			in:          "true",
+			expected:    true,
+		}, {
+			description: "false",
+			in:          "false",
+			expected:    false,
+		}, {
+			description: "An actual string",
+			in:          "cows",
+			expected:    "cows",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			got := StringToBestType(tc.in)
+
+			assert.Equal(tc.expected, got)
+		})
+	}
+}
+
 func TestToRedacted(t *testing.T) {
 	tests := []struct {
 		description string

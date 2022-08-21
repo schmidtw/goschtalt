@@ -270,6 +270,28 @@ func (obj Object) add(keys []string, val any, origin ...Origin) (Object, error) 
 	return obj, nil
 }
 
+// StringToBestType does a reasonable effort to determine if there is a better
+// type being presented.  Either an int64, float64, bool or the original string
+// is returned with preference for the type also in that order.
+func StringToBestType(s string) any {
+	i64, err := strconv.ParseInt(s, 0, 64)
+	if err == nil {
+		return i64
+	}
+
+	f, err := strconv.ParseFloat(s, 64)
+	if err == nil {
+		return f
+	}
+
+	b, err := strconv.ParseBool(s)
+	if err == nil {
+		return b
+	}
+
+	return s
+}
+
 // ToRedacted builds a copy of the tree where secrets are redacted.  Secret maps
 // or arrays will now show up as values containing the value 'REDACTED'.
 func (obj Object) ToRedacted() Object {

@@ -22,7 +22,6 @@
 package properties
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/magiconair/properties"
@@ -87,7 +86,7 @@ func (d Decoder) Decode(filename, keyDelimiter string, b []byte, m *meta.Object)
 
 		val, _ := props.Get(key)
 
-		tree, err = tree.Add(keyDelimiter, key, best(val), origin)
+		tree, err = tree.Add(keyDelimiter, key, meta.StringToBestType(val), origin)
 		if err != nil {
 			return err
 		}
@@ -95,23 +94,4 @@ func (d Decoder) Decode(filename, keyDelimiter string, b []byte, m *meta.Object)
 
 	*m = tree.ConvertMapsToArrays()
 	return nil
-}
-
-func best(s string) any {
-	i64, err := strconv.ParseInt(s, 0, 64)
-	if err == nil {
-		return i64
-	}
-
-	f, err := strconv.ParseFloat(s, 64)
-	if err == nil {
-		return f
-	}
-
-	b, err := strconv.ParseBool(s)
-	if err == nil {
-		return b
-	}
-
-	return s
 }
