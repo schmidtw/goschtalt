@@ -105,7 +105,7 @@ func (c *Config) Compile() error {
 	var cfgs []meta.Object
 
 	for _, group := range c.groups {
-		tmp, err := group.walk(c.decoders)
+		tmp, err := group.walk(c.decoders, c.keyDelimiter)
 		if err != nil {
 			return err
 		}

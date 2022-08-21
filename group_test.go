@@ -112,7 +112,7 @@ func TestWalk(t *testing.T) {
 			err := dr.register(&testDecoder{extensions: []string{"json"}})
 			require.NoError(err)
 
-			got, err := tc.group.walk(dr)
+			got, err := tc.group.walk(dr, ".")
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				require.NotNil(got)

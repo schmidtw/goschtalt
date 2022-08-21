@@ -4,6 +4,7 @@
 package json
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -12,7 +13,17 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestExtensions(t *testing.T) {
+	assert := assert.New(t)
+
+	want := []string{"json"}
+	got := Decoder{}.Extensions()
+
+	assert.Empty(cmp.Diff(want, got))
+}
+
 func TestDecode(t *testing.T) {
+	unknown := errors.New("unknown")
 	tests := []struct {
 		description string
 		in          string
@@ -22,6 +33,10 @@ func TestDecode(t *testing.T) {
 		{
 			description: "A test of empty.",
 			expected:    meta.Object{},
+		}, {
+			description: "Invalid json.",
+			in:          `{ a b }`,
+			expectedErr: unknown,
 		}, {
 			description: "A small test.",
 			in:          `{ "a": { "b": { "c": "123" } }, "d": { "e": [ "fog", "dog" ] } }`,
@@ -71,12 +86,18 @@ func TestDecode(t *testing.T) {
 
 			var d Decoder
 			var got meta.Object
-			err := d.Decode("file.yml", []byte(tc.in), &got)
+			err := d.Decode("file.yml", ".", []byte(tc.in), &got)
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(meta.Object{})))
 			}
+
+			if tc.expectedErr == unknown {
+				assert.NotNil(err)
+				return
+			}
+			assert.ErrorIs(err, tc.expectedErr)
 		})
 	}
 }

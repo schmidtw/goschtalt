@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 // SPDX-License-Identifier: Apache-2.0
+//go:build !windows
 
-package json_test
+package properties_test
 
 import (
 	"fmt"
@@ -10,16 +11,15 @@ import (
 
 	"github.com/psanford/memfs"
 	"github.com/schmidtw/goschtalt"
-	_ "github.com/schmidtw/goschtalt/extensions/decoders/json"
+	_ "github.com/schmidtw/goschtalt/extensions/decoders/properties"
 )
 
-const filename = `example.json`
-const text = `{
-  "example": {
-      "version": 1,
-      "colors": ["red", "green", "blue"]
-  }
-}`
+const filename = `example.properties`
+const text = `# example file
+example.version = 1
+example.colors.0 = red
+example.colors.1 = green
+example.colors.2 = blue`
 
 func getFS() fs.FS {
 	mfs := memfs.New()

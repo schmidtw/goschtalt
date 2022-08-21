@@ -205,6 +205,419 @@ func TestToRaw(t *testing.T) {
 	}
 }
 
+func TestAdd(t *testing.T) {
+	tests := []struct {
+		description string
+		key         string
+		val         string
+		start       Object
+		origin      *Origin
+		expected    Object
+		expectedErr error
+	}{
+		{
+			description: "Add to an empty tree.",
+			key:         "Foo.Bar",
+			val:         "abc",
+			expected: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Value:   "abc",
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Add to an empty tree, but add an origin.",
+			key:         "Foo.Bar",
+			val:         "abc",
+			origin:      &Origin{File: "file"},
+			expected: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{File: "file"}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{File: "file"}},
+								Value:   "abc",
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Add to tree with an array.",
+			key:         "Foo.Bar.1",
+			val:         "xyz",
+			start: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Change a value in an array.",
+			key:         "Foo.Bar.0",
+			val:         "---",
+			start: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+			expected: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "---",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Fail with an array index that is negative.",
+			key:         "Foo.Bar.-1",
+			val:         "---",
+			expectedErr: ErrArrayOutOfBounds,
+			start: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Fail with an array index that is too large.",
+			key:         "Foo.Bar.10",
+			val:         "---",
+			expectedErr: ErrArrayOutOfBounds,
+			start: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Map: map[string]Object{
+							"Bar": Object{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "Fail with an array index that isn't an int.",
+			key:         "Foo.0.invalid",
+			val:         "---",
+			expectedErr: ErrInvalidIndex,
+			start: Object{
+				Map: map[string]Object{
+					"Foo": Object{
+						Origins: []Origin{Origin{}},
+						Array: []Object{
+							{
+								Origins: []Origin{Origin{}},
+								Array: []Object{
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "abc",
+									},
+									{
+										Origins: []Origin{Origin{}},
+										Value:   "xyz",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			var got Object
+			var err error
+			if tc.origin == nil {
+				got, err = tc.start.Add(".", tc.key, tc.val)
+			} else {
+				got, err = tc.start.Add(".", tc.key, tc.val, *tc.origin)
+			}
+
+			if tc.expectedErr == nil {
+				assert.NoError(err)
+				assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+				return
+			}
+
+			assert.ErrorIs(err, tc.expectedErr)
+		})
+	}
+}
+
+func TestConvertMapsToArrays(t *testing.T) {
+	empty := []Origin{Origin{}}
+	tests := []struct {
+		description string
+		inputs      []string
+		origin      Origin
+		expected    Object
+	}{
+		{
+			description: "An empty object.",
+			expected: Object{
+				Origins: []Origin{Origin{}},
+			},
+		}, {
+			description: "An normal example.",
+			inputs: []string{
+				"foo.bar.cat.0=zero",
+				"foo.bar.cat.2=two",
+				"foo.bar.cat.1=one",
+				"foo.bar.dog=Fred",
+				"foo.bar.fish.0.0=Wanda",
+				"foo.bar.fish.0.1=Ponyo",
+			},
+			expected: Object{
+				Origins: empty,
+				Map: map[string]Object{
+					"foo": Object{
+						Origins: empty,
+						Map: map[string]Object{
+							"bar": Object{
+								Origins: empty,
+								Map: map[string]Object{
+									"cat": Object{
+										Origins: empty,
+										Array: []Object{
+											{Origins: empty, Value: "zero"},
+											{Origins: empty, Value: "one"},
+											{Origins: empty, Value: "two"},
+										},
+									},
+									"fish": Object{
+										Origins: empty,
+										Array: []Object{
+											{
+												Origins: empty,
+												Array: []Object{
+													{Origins: empty, Value: "Wanda"},
+													{Origins: empty, Value: "Ponyo"},
+												},
+											},
+										},
+									},
+									"dog": Object{Origins: empty, Value: "Fred"},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "An array with a gap.",
+			inputs: []string{
+				"foo.bar.cat.0=zero",
+				"foo.bar.cat.2=two",
+			},
+			expected: Object{
+				Origins: empty,
+				Map: map[string]Object{
+					"foo": Object{
+						Origins: empty,
+						Map: map[string]Object{
+							"bar": Object{
+								Origins: empty,
+								Map: map[string]Object{
+									"cat": Object{
+										Origins: empty,
+										Map: map[string]Object{
+											"0": {Origins: empty, Value: "zero"},
+											"2": {Origins: empty, Value: "two"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "An array with a index out of bounds.",
+			inputs: []string{
+				"foo.bar.cat.0=zero",
+				"foo.bar.cat.-2=two",
+			},
+			expected: Object{
+				Origins: empty,
+				Map: map[string]Object{
+					"foo": Object{
+						Origins: empty,
+						Map: map[string]Object{
+							"bar": Object{
+								Origins: empty,
+								Map: map[string]Object{
+									"cat": Object{
+										Origins: empty,
+										Map: map[string]Object{
+											"0":  {Origins: empty, Value: "zero"},
+											"-2": {Origins: empty, Value: "two"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "An array with a index that isn't a number.",
+			inputs: []string{
+				"foo.bar.cat.0=zero",
+				"foo.bar.cat.two=two",
+			},
+			expected: Object{
+				Origins: empty,
+				Map: map[string]Object{
+					"foo": Object{
+						Origins: empty,
+						Map: map[string]Object{
+							"bar": Object{
+								Origins: empty,
+								Map: map[string]Object{
+									"cat": Object{
+										Origins: empty,
+										Map: map[string]Object{
+											"0":   {Origins: empty, Value: "zero"},
+											"two": {Origins: empty, Value: "two"},
+										},
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			start := Object{
+				Origins: []Origin{tc.origin},
+			}
+			for _, input := range tc.inputs {
+				var err error
+
+				kvp := strings.Split(input, "=")
+				require.True(len(kvp) == 2)
+				start, err = start.Add(".", kvp[0], kvp[1])
+				require.NotNil(start)
+				require.NoError(err)
+			}
+
+			got := start.ConvertMapsToArrays()
+
+			assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+		})
+	}
+}
+
 func TestToRedacted(t *testing.T) {
 	tests := []struct {
 		description string
