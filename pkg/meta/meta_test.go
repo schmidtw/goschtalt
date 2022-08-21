@@ -170,8 +170,7 @@ func TestToRaw(t *testing.T) {
 												Value:   "cart",
 											},
 										},
-									},
-									{
+									}, {
 										Origins: []Origin{},
 										Value:   "golf",
 									},
@@ -221,11 +220,11 @@ func TestAdd(t *testing.T) {
 			val:         "abc",
 			expected: Object{
 				Map: map[string]Object{
-					"Foo": Object{
-						Origins: []Origin{Origin{}},
+					"Foo": {
+						Origins: []Origin{{}},
 						Map: map[string]Object{
-							"Bar": Object{
-								Origins: []Origin{Origin{}},
+							"Bar": {
+								Origins: []Origin{{}},
 								Value:   "abc",
 							},
 						},
@@ -239,11 +238,11 @@ func TestAdd(t *testing.T) {
 			origin:      &Origin{File: "file"},
 			expected: Object{
 				Map: map[string]Object{
-					"Foo": Object{
-						Origins: []Origin{Origin{File: "file"}},
+					"Foo": {
+						Origins: []Origin{{File: "file"}},
 						Map: map[string]Object{
-							"Bar": Object{
-								Origins: []Origin{Origin{File: "file"}},
+							"Bar": {
+								Origins: []Origin{{File: "file"}},
 								Value:   "abc",
 							},
 						},
@@ -256,14 +255,14 @@ func TestAdd(t *testing.T) {
 			val:         "xyz",
 			start: Object{
 				Map: map[string]Object{
-					"Foo": Object{
-						Origins: []Origin{Origin{}},
+					"Foo": {
+						Origins: []Origin{{}},
 						Map: map[string]Object{
-							"Bar": Object{
-								Origins: []Origin{Origin{}},
+							"Bar": {
+								Origins: []Origin{{}},
 								Array: []Object{
 									{
-										Origins: []Origin{Origin{}},
+										Origins: []Origin{{}},
 										Value:   "abc",
 									},
 								},
@@ -274,18 +273,17 @@ func TestAdd(t *testing.T) {
 			},
 			expected: Object{
 				Map: map[string]Object{
-					"Foo": Object{
-						Origins: []Origin{Origin{}},
+					"Foo": {
+						Origins: []Origin{{}},
 						Map: map[string]Object{
-							"Bar": Object{
-								Origins: []Origin{Origin{}},
+							"Bar": {
+								Origins: []Origin{{}},
 								Array: []Object{
 									{
-										Origins: []Origin{Origin{}},
+										Origins: []Origin{{}},
 										Value:   "abc",
-									},
-									{
-										Origins: []Origin{Origin{}},
+									}, {
+										Origins: []Origin{{}},
 										Value:   "xyz",
 									},
 								},
@@ -300,18 +298,17 @@ func TestAdd(t *testing.T) {
 			val:         "---",
 			start: Object{
 				Map: map[string]Object{
-					"Foo": Object{
-						Origins: []Origin{Origin{}},
+					"Foo": {
+						Origins: []Origin{{}},
 						Map: map[string]Object{
-							"Bar": Object{
-								Origins: []Origin{Origin{}},
+							"Bar": {
+								Origins: []Origin{{}},
 								Array: []Object{
 									{
-										Origins: []Origin{Origin{}},
+										Origins: []Origin{{}},
 										Value:   "abc",
-									},
-									{
-										Origins: []Origin{Origin{}},
+									}, {
+										Origins: []Origin{{}},
 										Value:   "xyz",
 									},
 								},
@@ -322,18 +319,17 @@ func TestAdd(t *testing.T) {
 			},
 			expected: Object{
 				Map: map[string]Object{
-					"Foo": Object{
-						Origins: []Origin{Origin{}},
+					"Foo": {
+						Origins: []Origin{{}},
 						Map: map[string]Object{
-							"Bar": Object{
-								Origins: []Origin{Origin{}},
+							"Bar": {
+								Origins: []Origin{{}},
 								Array: []Object{
 									{
-										Origins: []Origin{Origin{}},
+										Origins: []Origin{{}},
 										Value:   "---",
-									},
-									{
-										Origins: []Origin{Origin{}},
+									}, {
+										Origins: []Origin{{}},
 										Value:   "xyz",
 									},
 								},
@@ -349,18 +345,17 @@ func TestAdd(t *testing.T) {
 			expectedErr: ErrArrayOutOfBounds,
 			start: Object{
 				Map: map[string]Object{
-					"Foo": Object{
-						Origins: []Origin{Origin{}},
+					"Foo": {
+						Origins: []Origin{{}},
 						Map: map[string]Object{
-							"Bar": Object{
-								Origins: []Origin{Origin{}},
+							"Bar": {
+								Origins: []Origin{{}},
 								Array: []Object{
 									{
-										Origins: []Origin{Origin{}},
+										Origins: []Origin{{}},
 										Value:   "abc",
-									},
-									{
-										Origins: []Origin{Origin{}},
+									}, {
+										Origins: []Origin{{}},
 										Value:   "xyz",
 									},
 								},
@@ -376,18 +371,17 @@ func TestAdd(t *testing.T) {
 			expectedErr: ErrArrayOutOfBounds,
 			start: Object{
 				Map: map[string]Object{
-					"Foo": Object{
-						Origins: []Origin{Origin{}},
+					"Foo": {
+						Origins: []Origin{{}},
 						Map: map[string]Object{
-							"Bar": Object{
-								Origins: []Origin{Origin{}},
+							"Bar": {
+								Origins: []Origin{{}},
 								Array: []Object{
 									{
-										Origins: []Origin{Origin{}},
+										Origins: []Origin{{}},
 										Value:   "abc",
-									},
-									{
-										Origins: []Origin{Origin{}},
+									}, {
+										Origins: []Origin{{}},
 										Value:   "xyz",
 									},
 								},
@@ -403,18 +397,17 @@ func TestAdd(t *testing.T) {
 			expectedErr: ErrInvalidIndex,
 			start: Object{
 				Map: map[string]Object{
-					"Foo": Object{
-						Origins: []Origin{Origin{}},
+					"Foo": {
+						Origins: []Origin{{}},
 						Array: []Object{
 							{
-								Origins: []Origin{Origin{}},
+								Origins: []Origin{{}},
 								Array: []Object{
 									{
-										Origins: []Origin{Origin{}},
+										Origins: []Origin{{}},
 										Value:   "abc",
-									},
-									{
-										Origins: []Origin{Origin{}},
+									}, {
+										Origins: []Origin{{}},
 										Value:   "xyz",
 									},
 								},
@@ -449,7 +442,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestConvertMapsToArrays(t *testing.T) {
-	empty := []Origin{Origin{}}
+	empty := []Origin{{}}
 	tests := []struct {
 		description string
 		inputs      []string
@@ -459,7 +452,7 @@ func TestConvertMapsToArrays(t *testing.T) {
 		{
 			description: "An empty object.",
 			expected: Object{
-				Origins: []Origin{Origin{}},
+				Origins: []Origin{{}},
 			},
 		}, {
 			description: "An normal example.",
@@ -474,13 +467,13 @@ func TestConvertMapsToArrays(t *testing.T) {
 			expected: Object{
 				Origins: empty,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins: empty,
 						Map: map[string]Object{
-							"bar": Object{
+							"bar": {
 								Origins: empty,
 								Map: map[string]Object{
-									"cat": Object{
+									"cat": {
 										Origins: empty,
 										Array: []Object{
 											{Origins: empty, Value: "zero"},
@@ -488,7 +481,7 @@ func TestConvertMapsToArrays(t *testing.T) {
 											{Origins: empty, Value: "two"},
 										},
 									},
-									"fish": Object{
+									"fish": {
 										Origins: empty,
 										Array: []Object{
 											{
@@ -500,7 +493,7 @@ func TestConvertMapsToArrays(t *testing.T) {
 											},
 										},
 									},
-									"dog": Object{Origins: empty, Value: "Fred"},
+									"dog": {Origins: empty, Value: "Fred"},
 								},
 							},
 						},
@@ -516,13 +509,13 @@ func TestConvertMapsToArrays(t *testing.T) {
 			expected: Object{
 				Origins: empty,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins: empty,
 						Map: map[string]Object{
-							"bar": Object{
+							"bar": {
 								Origins: empty,
 								Map: map[string]Object{
-									"cat": Object{
+									"cat": {
 										Origins: empty,
 										Map: map[string]Object{
 											"0": {Origins: empty, Value: "zero"},
@@ -544,13 +537,13 @@ func TestConvertMapsToArrays(t *testing.T) {
 			expected: Object{
 				Origins: empty,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins: empty,
 						Map: map[string]Object{
-							"bar": Object{
+							"bar": {
 								Origins: empty,
 								Map: map[string]Object{
-									"cat": Object{
+									"cat": {
 										Origins: empty,
 										Map: map[string]Object{
 											"0":  {Origins: empty, Value: "zero"},
@@ -572,13 +565,13 @@ func TestConvertMapsToArrays(t *testing.T) {
 			expected: Object{
 				Origins: empty,
 				Map: map[string]Object{
-					"foo": Object{
+					"foo": {
 						Origins: empty,
 						Map: map[string]Object{
-							"bar": Object{
+							"bar": {
 								Origins: empty,
 								Map: map[string]Object{
-									"cat": Object{
+									"cat": {
 										Origins: empty,
 										Map: map[string]Object{
 											"0":   {Origins: empty, Value: "zero"},
@@ -670,8 +663,7 @@ func TestToRedacted(t *testing.T) {
 												Value:   "cart",
 											},
 										},
-									},
-									{
+									}, {
 										Origins: []Origin{},
 										Value:   "golf",
 									},
@@ -703,8 +695,7 @@ func TestToRedacted(t *testing.T) {
 												Value:   redactedText,
 											},
 										},
-									},
-									{
+									}, {
 										Origins: []Origin{},
 										Value:   "golf",
 									},
@@ -804,8 +795,7 @@ func TestResolveCommands(t *testing.T) {
 												Value:   "cart",
 											},
 										},
-									},
-									{
+									}, {
 										Origins: []Origin{},
 										Value:   "golf",
 									},
@@ -946,8 +936,7 @@ func TestMerge(t *testing.T) {
 									{
 										Origins: []Origin{},
 										Value:   "2",
-									},
-									{
+									}, {
 										Origins: []Origin{},
 										Value:   "3",
 									},
@@ -968,16 +957,13 @@ func TestMerge(t *testing.T) {
 									{
 										Origins: []Origin{},
 										Value:   "cad",
-									},
-									{
+									}, {
 										Origins: []Origin{},
 										Value:   "gbp",
-									},
-									{
+									}, {
 										Origins: []Origin{},
 										Value:   "usd",
-									},
-									{
+									}, {
 										Origins: []Origin{},
 										Value:   "euro",
 									},
@@ -1022,8 +1008,7 @@ func TestMerge(t *testing.T) {
 							{
 								Origins: []Origin{},
 								Value:   "bar",
-							},
-							{
+							}, {
 								Origins: []Origin{},
 								Value:   "car",
 							},
@@ -1045,8 +1030,7 @@ func TestMerge(t *testing.T) {
 							{
 								Origins: []Origin{},
 								Value:   "car",
-							},
-							{
+							}, {
 								Origins: []Origin{},
 								Value:   "bar",
 							},
@@ -1150,14 +1134,14 @@ func TestOrigin_OriginString(t *testing.T) {
 		}, {
 			description: "Output an empty origin.",
 			obj: Object{
-				Origins: []Origin{Origin{}},
+				Origins: []Origin{{}},
 			},
 			expected: "unknown:???[???]",
 		}, {
 			description: "Output an filled out origin.",
 			obj: Object{
 				Origins: []Origin{
-					Origin{
+					{
 						File: "magic.file",
 						Line: 42,
 						Col:  88,
@@ -1169,12 +1153,11 @@ func TestOrigin_OriginString(t *testing.T) {
 			description: "Output an filled out origin.",
 			obj: Object{
 				Origins: []Origin{
-					Origin{
+					{
 						File: "magic.file",
 						Line: 42,
 						Col:  88,
-					},
-					Origin{
+					}, {
 						File: "foo.json",
 						Line: 96,
 						Col:  32,
