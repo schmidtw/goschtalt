@@ -164,13 +164,7 @@ jobs:
         with:
           flags: unittests
           files: >-
-            ./coverage.out,
-            ./extensions/decoders/cli/coverage.out,
-            ./extensions/decoders/env/coverage.out,
-            ./extensions/decoders/json/coverage.out,
-            ./extensions/decoders/properties/coverage.out,
-            ./extensions/decoders/yaml/coverage.out,
-            ./extensions/encoders/yaml/coverage.out
+            ./coverage.out, ./extensions/decoders/cli/coverage.out, ./extensions/decoders/env/coverage.out, ./extensions/decoders/json/coverage.out, ./extensions/decoders/properties/coverage.out, ./extensions/decoders/yaml/coverage.out, ./extensions/encoders/yaml/coverage.out
 
       # Update the results on goreportcard.com
       - name: Go report card
