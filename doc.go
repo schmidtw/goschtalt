@@ -46,7 +46,7 @@
 //	decoders/json       - decoder for json files
 //	decoders/properties - decoder for properties files
 //	decoders/yaml       - decoder for yaml files
-//	encoders/yaml       - decoder for yaml files
+//	encoders/yaml       - encoder for yaml files
 //
 // # How do I decorate my configuration files to take full advantage of goschtalt?
 //
