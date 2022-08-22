@@ -96,11 +96,11 @@ func isKey(s string) bool {
 // local filesystem(s) based on relative or absolut paths.  Additionally,
 // key/value pairs can be provided as well.
 //
-//  The list of command options: (each may be repeated any number of times)
+//	The list of command options: (each may be repeated any number of times)
 //	[-f filename] / [--file filename] provides an exact file to evaluate
 //	[-d dir] / [--dir dir] provides a directory to examine for files
 //	[-r dir] / [--recurse dir] provides a directory tree to examine for files recursively
-//  [--kvp key value] provides a specific key and value pair that should be set
+//	[--kvp key value] provides a specific key and value pair that should be set
 func Options(filename, delimiter string, args []string, dirFS ...func(string) fs.FS) []goschtalt.Option {
 	dirfs := os.DirFS
 	if len(dirFS) > 0 {
