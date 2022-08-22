@@ -14,7 +14,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"time"
 
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
@@ -30,16 +29,6 @@ type Group struct {
 	// Recurse specifies if directories encoutered in the Paths should be examined
 	// recursively or not.
 	Recurse bool
-
-	// FileReadTimeout provides a way to bound our file IO operations in the
-	// event that hardware has issues or the underlying calls result in network
-	// calls.
-	FileReadTimeout time.Duration
-
-	// Limiter is called to provide the client of goschtalt the opportunity to
-	// rate limit the fetching process for the files.  The response function
-	// is called when the fetching is complete.
-	Limiter func() func()
 }
 
 func (group Group) enumerate(exts []string) ([]string, error) {
