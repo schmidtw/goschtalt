@@ -79,23 +79,23 @@
 // being defined.
 //
 // All types (maps, arrays, values) support:
-//	- replace - replaces any existing values encountered by this merge
-//	- keep    - keeps the existing values encountered by this merge
-//	- fail    - causes the merge to return an error and stop processing
-//	- clear   - causes all of the existing configuration tree to be deleted
-//	- secret  - this special command marks the field as secret
+//   - replace - replaces any existing values encountered by this merge
+//   - keep    - keeps the existing values encountered by this merge
+//   - fail    - causes the merge to return an error and stop processing
+//   - clear   - causes all of the existing configuration tree to be deleted
+//   - secret  - this special command marks the field as secret
 //
 // Maps support the following instructions:
-//	- splice  - merge the leaf nodes if possible vs. replacing the map entirely
+//   - splice  - merge the leaf nodes if possible vs. replacing the map entirely
 //
 // Arrays support the following instructions:
-//	- append  - append this array to the existing array
-//	- prepend - prepend this array to the existing array
+//   - append  - append this array to the existing array
+//   - prepend - prepend this array to the existing array
 //
 // Default merging behaviors:
-//	- maps   - splice when possible, replace if splicing isn't possible
-//	- arrays - append
-//	- values - replace
+//   - maps   - splice when possible, replace if splicing isn't possible
+//   - arrays - append
+//   - values - replace
 //
 // An example showing using a secret:
 //
