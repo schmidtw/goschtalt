@@ -34,21 +34,87 @@
 //   - Only 1 non-standard library dependency on `mitchellh/mapstructure`, which
 //     has no dependencies outside the standard library.
 //
-// # Where do I find configuration file decoders?
+// # Where do I find configuration file encoders/decoders?
 //
 // The project contains several packages that are versioned together, but are
 // otherwise independent (different go modules).  They can be found here:
-// https://github.com/schmidtw/goschtalt/tree/main/extensions/decoders
 //
-//	cli        - provides a configuration decoder for command line arguments
-//	env        - provides a configuration decoder for environment variables
-//	json       - provides a configuration decoder for json files
-//	properties - provides a configuration decoder for properties files
-//	yaml       - provides a configuration decoder for yaml files
+// https://github.com/schmidtw/goschtalt/tree/main/extensions/
 //
-// # How do I decorate my configuration files to take advantage of goschtalt?
+//	decoders/cli        - decoder for command line arguments
+//	decoders/env        - decoder for environment variables
+//	decoders/json       - decoder for json files
+//	decoders/properties - decoder for properties files
+//	decoders/yaml       - decoder for yaml files
+//	encoders/yaml       - decoder for yaml files
 //
-// TODO This documentation needs to be written.
+// # How do I decorate my configuration files to take full advantage of goschtalt?
+//
+// For most of the decoders you can specify instructions for goschtalt's handling
+// of the data fields by annotating the key portion.  Here's a simple example in
+// yaml:
+//
+//	foo:
+//	  bar((prepend)):
+//	    - 1
+//	    - 2
+//
+// If this configuration data is merged with an existing configuration set:
+//
+//	foo:
+//	  bar:
+//	    - 3
+//	    - 4
+//
+// The resulting configuration will be:
+//
+//	foo:
+//	  bar:
+//	    - 1
+//	    - 2
+//	    - 3
+//	    - 4
+//
+// The commands available are consistent, but vary based on the type of the value
+// being defined.
+//
+// All types (maps, arrays, values) support:
+//	- replace - replaces any existing values encountered by this merge
+//	- keep    - keeps the existing values encountered by this merge
+//	- fail    - causes the merge to return an error and stop processing
+//	- clear   - causes all of the existing configuration tree to be deleted
+//	- secret  - this special command marks the field as secret
+//
+// Maps support the following instructions:
+//	- splice  - merge the leaf nodes if possible vs. replacing the map entirely
+//
+// Arrays support the following instructions:
+//	- append  - append this array to the existing array
+//	- prepend - prepend this array to the existing array
+//
+// Default merging behaviors:
+//	- maps   - splice when possible, replace if splicing isn't possible
+//	- arrays - append
+//	- values - replace
+//
+// An example showing using a secret:
+//
+//	foo:
+//	  bar ((append secret)):
+//	    - 3
+//	    - 4
+//
+// The order of the instructions doesn't matter, nor does extra whitespece around
+// the instructions.  You may comma separate them, or you may just use a space.
+// But you can only have one or two instructions (one MUST be secret if there are
+// two.
+//
+// # A bit more on secrets.
+//
+// Secrets are primarily there so that if you want to output your configuration
+// and everything is marked as secret correctly, you can get a redacted
+// configuration file with minimal work.  It's also handy if you output your
+// configuration values into a log so you don't accidentally leak your secrets.
 //
 // # How do I write my own configuration decoder?
 //
