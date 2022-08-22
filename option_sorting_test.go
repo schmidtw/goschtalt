@@ -13,12 +13,15 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testStringsToObjects(s []string) (list []meta.Object) {
+func testStringsToObjects(s []string) (list []fileObject) {
 	for _, val := range s {
-		o := meta.Object{
-			Origins: []meta.Origin{
-				{
-					File: val,
+		o := fileObject{
+			File: val,
+			Obj: meta.Object{
+				Origins: []meta.Origin{
+					{
+						File: val,
+					},
 				},
 			},
 		}

@@ -7,7 +7,6 @@ import (
 	"sort"
 
 	"github.com/schmidtw/goschtalt/internal/natsort"
-	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
 // FileSortOrderCustom provides a way to specify how you want the files sorted
@@ -15,9 +14,9 @@ import (
 // custom sorting algorithm.
 func FileSortOrderCustom(less func(a, b string) bool) Option {
 	return func(c *Config) error {
-		c.sorter = func(a []meta.Object) {
+		c.sorter = func(a []fileObject) {
 			sort.SliceStable(a, func(i, j int) bool {
-				return less(a[i].Origins[0].File, a[j].Origins[0].File)
+				return less(a[i].File, a[j].File)
 			})
 		}
 		return nil

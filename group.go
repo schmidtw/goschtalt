@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	iofs "io/fs"
+	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -119,7 +120,12 @@ func (group Group) collectAndDecode(decoders *decoderRegistry, file, keyDelimite
 	return m, nil
 }
 
-func (group Group) walk(decoders *decoderRegistry, keyDelimiter string) ([]meta.Object, error) {
+type fileObject struct {
+	File string
+	Obj  meta.Object
+}
+
+func (group Group) walk(decoders *decoderRegistry, keyDelimiter string) ([]fileObject, error) {
 	exts := decoders.extensions()
 
 	files, err := group.enumerate(exts)
@@ -127,13 +133,13 @@ func (group Group) walk(decoders *decoderRegistry, keyDelimiter string) ([]meta.
 		return nil, err
 	}
 
-	list := []meta.Object{}
+	var list []fileObject
 	for _, file := range files {
 		obj, err := group.collectAndDecode(decoders, file, keyDelimiter)
 		if err != nil {
 			return nil, err
 		}
-		list = append(list, obj)
+		list = append(list, fileObject{File: path.Base(file), Obj: obj})
 	}
 	return list, nil
 }

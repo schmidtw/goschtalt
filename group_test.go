@@ -117,16 +117,16 @@ func TestWalk(t *testing.T) {
 				assert.NoError(err)
 				require.NotNil(got)
 				sort.SliceStable(got, func(i, j int) bool {
-					return got[i].Origins[0].File < got[j].Origins[0].File
+					return got[i].File < got[j].File
 				})
 
-				var expected []meta.Object
+				var expected []fileObject
 
 				for i := 0; i < len(tc.expected); i += 2 {
 					file := tc.expected[i]
 					data := tc.expected[i+1]
 					tree := decode(file, data)
-					expected = append(expected, tree)
+					expected = append(expected, fileObject{File: file, Obj: tree})
 				}
 				assert.Empty(cmp.Diff(expected, got, cmpopts.IgnoreUnexported(meta.Object{})))
 				return

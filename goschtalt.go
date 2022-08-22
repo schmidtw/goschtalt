@@ -27,7 +27,7 @@ type Config struct {
 	decoders         *decoderRegistry
 	encoders         *encoderRegistry
 	groups           []Group
-	sorter           func([]meta.Object)
+	sorter           func([]fileObject)
 	keyDelimiter     string
 	keySwizzler      func(string) string
 	unmarshalOptions []UnmarshalOption
@@ -102,7 +102,7 @@ func (c *Config) Compile() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	var cfgs []meta.Object
+	var cfgs []fileObject
 
 	for _, group := range c.groups {
 		tmp, err := group.walk(c.decoders, c.keyDelimiter)
@@ -125,8 +125,8 @@ func (c *Config) Compile() error {
 
 	for _, cfg := range cfgs {
 		var err error
-		cfg = cfg.AlterKeyCase(c.keySwizzler)
-		merged, err = merged.Merge(cfg)
+		subtree := cfg.Obj.AlterKeyCase(c.keySwizzler)
+		merged, err = merged.Merge(subtree)
 		if err != nil {
 			return err
 		}
