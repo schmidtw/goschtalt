@@ -47,7 +47,7 @@ type instructions struct {
 }
 
 // Decode decodes a byte arreay into the meta.Object tree.
-func (d cliDecoder) Decode(filename, keyDelimiter string, b []byte, m *meta.Object) error {
+func (d cliDecoder) Decode(ctx decoder.Context, b []byte, m *meta.Object) error {
 	var inst instructions
 	err := json.Unmarshal(b, &inst)
 	if err != nil {
@@ -55,7 +55,7 @@ func (d cliDecoder) Decode(filename, keyDelimiter string, b []byte, m *meta.Obje
 	}
 
 	origin := meta.Origin{
-		File: filename,
+		File: ctx.Filename,
 	}
 
 	tree := meta.Object{

@@ -20,14 +20,14 @@ type testDecoder struct {
 	extensions []string
 }
 
-func (t *testDecoder) Decode(file, _ string, b []byte, m *meta.Object) error {
+func (t *testDecoder) Decode(ctx decoder.Context, b []byte, m *meta.Object) error {
 	var data any
 	err := json.Unmarshal(b, &data)
 	if err != nil {
 		return err
 	}
 	tmp := meta.ObjectFromRaw(data)
-	tmp = addOrigin(tmp, &meta.Origin{File: file, Line: 1, Col: 123})
+	tmp = addOrigin(tmp, &meta.Origin{File: ctx.Filename, Line: 1, Col: 123})
 	*m = tmp
 	return nil
 }

@@ -48,7 +48,7 @@ func (d Decoder) Extensions() []string {
 }
 
 // Decode decodes a byte arreay into the meta.Object tree.
-func (d Decoder) Decode(filename, keyDelimiter string, b []byte, m *meta.Object) error {
+func (d Decoder) Decode(ctx decoder.Context, b []byte, m *meta.Object) error {
 	props, err := properties.Load(b, properties.UTF8)
 	if err != nil {
 		return err
@@ -63,7 +63,7 @@ func (d Decoder) Decode(filename, keyDelimiter string, b []byte, m *meta.Object)
 
 	tree := meta.Object{
 		Origins: []meta.Origin{{
-			File: filename,
+			File: ctx.Filename,
 			Line: 1,
 			Col:  1,
 		}},
@@ -71,7 +71,7 @@ func (d Decoder) Decode(filename, keyDelimiter string, b []byte, m *meta.Object)
 	}
 	for _, key := range keys {
 		origin := meta.Origin{
-			File: filename,
+			File: ctx.Filename,
 			Col:  1,
 		}
 		for i, line := range lines {
@@ -86,7 +86,7 @@ func (d Decoder) Decode(filename, keyDelimiter string, b []byte, m *meta.Object)
 
 		val, _ := props.Get(key)
 
-		tree, err = tree.Add(keyDelimiter, key, meta.StringToBestType(val), origin)
+		tree, err = tree.Add(ctx.Delimiter, key, meta.StringToBestType(val), origin)
 		if err != nil {
 			return err
 		}

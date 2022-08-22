@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 )
@@ -41,16 +42,16 @@ func TestDecode(t *testing.T) {
 			description: "A small test.",
 			in:          `{ "a": { "b": { "c": "123" } }, "d": { "e": [ "fog", "dog" ] } }`,
 			expected: meta.Object{
-				Origins: []meta.Origin{{File: "file.yml"}},
+				Origins: []meta.Origin{{File: "file.json"}},
 				Map: map[string]meta.Object{
 					"a": {
-						Origins: []meta.Origin{{File: "file.yml"}},
+						Origins: []meta.Origin{{File: "file.json"}},
 						Map: map[string]meta.Object{
 							"b": {
-								Origins: []meta.Origin{{File: "file.yml"}},
+								Origins: []meta.Origin{{File: "file.json"}},
 								Map: map[string]meta.Object{
 									"c": {
-										Origins: []meta.Origin{{File: "file.yml"}},
+										Origins: []meta.Origin{{File: "file.json"}},
 										Value:   "123",
 									},
 								},
@@ -58,17 +59,17 @@ func TestDecode(t *testing.T) {
 						},
 					},
 					"d": {
-						Origins: []meta.Origin{{File: "file.yml"}},
+						Origins: []meta.Origin{{File: "file.json"}},
 						Map: map[string]meta.Object{
 							"e": {
-								Origins: []meta.Origin{{File: "file.yml"}},
+								Origins: []meta.Origin{{File: "file.json"}},
 								Array: []meta.Object{
 									{
-										Origins: []meta.Origin{{File: "file.yml"}},
+										Origins: []meta.Origin{{File: "file.json"}},
 										Value:   "fog",
 									},
 									{
-										Origins: []meta.Origin{{File: "file.yml"}},
+										Origins: []meta.Origin{{File: "file.json"}},
 										Value:   "dog",
 									},
 								},
@@ -86,7 +87,11 @@ func TestDecode(t *testing.T) {
 
 			var d Decoder
 			var got meta.Object
-			err := d.Decode("file.yml", ".", []byte(tc.in), &got)
+			ctx := decoder.Context{
+				Filename:  "file.json",
+				Delimiter: ".",
+			}
+			err := d.Decode(ctx, []byte(tc.in), &got)
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)

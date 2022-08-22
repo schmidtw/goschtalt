@@ -46,7 +46,7 @@ func (d Decoder) Extensions() []string {
 }
 
 // Decode decodes a byte arreay into the meta.Object tree.
-func (d Decoder) Decode(filename, _ string, b []byte, m *meta.Object) error {
+func (d Decoder) Decode(ctx decoder.Context, b []byte, m *meta.Object) error {
 	var raw map[string]any
 
 	// Use the official unmarshal() function to prevent introducing defects
@@ -72,7 +72,7 @@ func (d Decoder) Decode(filename, _ string, b []byte, m *meta.Object) error {
 		return err
 	}
 
-	*m = annotate(0, filename, objs, node, node)
+	*m = annotate(0, ctx.Filename, objs, node, node)
 	return nil
 }
 

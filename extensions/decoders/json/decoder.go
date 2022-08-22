@@ -48,7 +48,7 @@ func (d Decoder) Extensions() []string {
 }
 
 // Decode decodes a byte arreay into the meta.Object tree.
-func (d Decoder) Decode(filename, _ string, b []byte, m *meta.Object) error {
+func (d Decoder) Decode(ctx decoder.Context, b []byte, m *meta.Object) error {
 	var raw map[string]any
 
 	if len(b) == 0 {
@@ -65,7 +65,7 @@ func (d Decoder) Decode(filename, _ string, b []byte, m *meta.Object) error {
 	objs := meta.ObjectFromRaw(raw)
 
 	// TODO use the stream processor to find the line and column information.
-	*m = annotate(filename, objs)
+	*m = annotate(ctx.Filename, objs)
 	return nil
 }
 

@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/psanford/memfs"
 	"github.com/schmidtw/goschtalt"
+	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -100,7 +101,11 @@ func TestDecode(t *testing.T) {
 				b, err = json.Marshal(tc.file)
 				require.NoError(err)
 			}
-			err = d.Decode("filename.CLI", ".", b, &got)
+			ctx := decoder.Context{
+				Filename:  "filename.CLI",
+				Delimiter: ".",
+			}
+			err = d.Decode(ctx, b, &got)
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
@@ -125,7 +130,7 @@ func (d testDecoder) Extensions() []string {
 }
 
 // Decode decodes a byte arreay into the meta.Object tree.
-func (d testDecoder) Decode(filename, _ string, b []byte, m *meta.Object) error {
+func (d testDecoder) Decode(ctx decoder.Context, b []byte, m *meta.Object) error {
 	var raw map[string]any
 
 	if len(b) == 0 {

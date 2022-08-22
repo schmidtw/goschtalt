@@ -43,29 +43,33 @@ func (dr *decoderRegistry) extensions() (list []string) {
 	return list
 }
 
-// find the codec of interest and return it.
+// find the decoder of interest and return it.
 func (dr *decoderRegistry) find(ext string) (decoder.Decoder, error) {
 	ext = strings.ToLower(ext)
 
 	dr.mutex.Lock()
-	codec, ok := dr.decoders[ext]
+	dec, ok := dr.decoders[ext]
 	dr.mutex.Unlock()
 
 	if !ok {
 		return nil, fmt.Errorf("extension '%s' %w", ext, ErrNotFound)
 	}
 
-	return codec, nil
+	return dec, nil
 }
 
 // decode decodes based on the specified extension.
 func (dr *decoderRegistry) decode(ext, file, keyDelimiter string, b []byte, o *meta.Object) error {
-	codec, err := dr.find(ext)
+	dec, err := dr.find(ext)
 	if err != nil {
 		return err
 	}
 
-	err = codec.Decode(file, keyDelimiter, b, o)
+	ctx := decoder.Context{
+		Filename:  file,
+		Delimiter: keyDelimiter,
+	}
+	err = dec.Decode(ctx, b, o)
 	if err != nil {
 		return fmt.Errorf("decoder error for extension '%s' processing file '%s' %w %v",
 			ext, file, ErrDecoding, err)

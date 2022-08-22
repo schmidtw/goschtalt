@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 )
@@ -132,7 +133,11 @@ f = false`,
 
 			var d Decoder
 			var got meta.Object
-			err := d.Decode("file.properties", ".", []byte(tc.in), &got)
+			ctx := decoder.Context{
+				Filename:  "file.properties",
+				Delimiter: ".",
+			}
+			err := d.Decode(ctx, []byte(tc.in), &got)
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)

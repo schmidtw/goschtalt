@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/schmidtw/goschtalt"
+	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -92,7 +93,11 @@ func TestDecode(t *testing.T) {
 				os.Setenv(val.k, val.v)
 				defer os.Unsetenv(val.k)
 			}
-			err := d.Decode("filename.ENVIRONMENT_VARIABLE", ".", []byte(tc.file), &got)
+			ctx := decoder.Context{
+				Filename:  "filename.ENVIRONMENT_VARIABLE",
+				Delimiter: ".",
+			}
+			err := d.Decode(ctx, []byte(tc.file), &got)
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
