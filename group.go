@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/fs"
 	iofs "io/fs"
 	"path"
 	"path/filepath"
@@ -92,32 +93,27 @@ func (group Group) enumerate(exts []string) ([]string, error) {
 }
 
 func (group Group) collectAndDecode(decoders *decoderRegistry, file, keyDelimiter string) (meta.Object, error) {
+	var err error
 	var m meta.Object
+	var f fs.File
 
 	buf := bytes.NewBuffer(nil)
 	ext := strings.TrimPrefix(filepath.Ext(file), ".")
 
-	f, err := group.FS.Open(file)
-	if err != nil {
-		return meta.Object{}, err
+	f, err = group.FS.Open(file)
+	if err == nil {
+		var info fs.FileInfo
+		info, err = f.Stat()
+		if err == nil {
+			_, err = io.Copy(buf, f)
+			if err == nil {
+				err = decoders.decode(ext, info.Name(), keyDelimiter, buf.Bytes(), &m)
+			}
+		}
 	}
-	info, err := f.Stat()
-	if err != nil {
-		_ = f.Close()
-		return meta.Object{}, err
-	}
-	_, err = io.Copy(buf, f)
 	_ = f.Close()
-	if err != nil {
-		return meta.Object{}, err
-	}
 
-	err = decoders.decode(ext, info.Name(), keyDelimiter, buf.Bytes(), &m)
-	if err != nil {
-		return meta.Object{}, err
-	}
-
-	return m, nil
+	return m, err
 }
 
 type fileObject struct {
