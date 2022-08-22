@@ -40,7 +40,7 @@
 // otherwise independent (different go modules).  They can be found here:
 // https://github.com/schmidtw/goschtalt/tree/main/extensions/decoders
 //
-//	cli        - provides a configuration decoder for command line arguments (coming soon)
+//	cli        - provides a configuration decoder for command line arguments
 //	env        - provides a configuration decoder for environment variables
 //	json       - provides a configuration decoder for json files
 //	properties - provides a configuration decoder for properties files
