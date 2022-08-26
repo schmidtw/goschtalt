@@ -117,7 +117,7 @@ func TestEncoderRegistry_Encode(t *testing.T) {
 		}, {
 			description: "Fail to find an encoder.",
 			extension:   "invalid",
-			expectedErr: ErrNotFound,
+			expectedErr: ErrCodecNotFound,
 		}, {
 			description: "Encoding error.",
 			extension:   "JSON",
@@ -170,7 +170,7 @@ func TestEncoderRegistry_EncodeExtended(t *testing.T) {
 		}, {
 			description: "Fail to find an encoder.",
 			extension:   "invalid",
-			expectedErr: ErrNotFound,
+			expectedErr: ErrCodecNotFound,
 		}, {
 			description: "Encoding error.",
 			extension:   "JSON",

@@ -126,6 +126,13 @@ func TestUnmarshal(t *testing.T) {
 				Foo: "bar",
 			},
 		}, {
+			description: "Verify the Optional() behavior.",
+			key:         "not_present",
+			input:       `{"flags":"bar"}`,
+			opts:        []UnmarshalOption{Optional()},
+			want:        simple{},
+			expected:    simple{},
+		}, {
 			description: "Verify the MatchName() behavior succeeds.",
 			input:       `{"flags":"bar"}`,
 			opts: []UnmarshalOption{MatchName(func(key, fieldName string) bool {

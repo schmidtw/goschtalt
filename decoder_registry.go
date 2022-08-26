@@ -52,7 +52,7 @@ func (dr *decoderRegistry) find(ext string) (decoder.Decoder, error) {
 	dr.mutex.Unlock()
 
 	if !ok {
-		return nil, fmt.Errorf("extension '%s' %w", ext, ErrNotFound)
+		return nil, fmt.Errorf("extension '%s' %w", ext, ErrCodecNotFound)
 	}
 
 	return dec, nil

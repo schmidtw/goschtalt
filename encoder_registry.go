@@ -52,7 +52,7 @@ func (er *encoderRegistry) find(ext string) (encoder.Encoder, error) {
 	er.mutex.RUnlock()
 
 	if !ok {
-		return nil, fmt.Errorf("extension '%s' %w", ext, ErrNotFound)
+		return nil, fmt.Errorf("extension '%s' %w", ext, ErrCodecNotFound)
 	}
 
 	return encoder, nil

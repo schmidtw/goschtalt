@@ -3,13 +3,23 @@
 
 package goschtalt
 
-import "github.com/mitchellh/mapstructure"
+import (
+	"errors"
+
+	"github.com/mitchellh/mapstructure"
+	"github.com/schmidtw/goschtalt/pkg/meta"
+)
+
+type unmarshalConfig struct {
+	optional bool
+	cfg      mapstructure.DecoderConfig
+}
 
 // UnmarshalOption is used for configuring the mapstructure unmarshal operation.
 //
 // All of these options are directly concerned with the mitchellh/mapstructure
 // package.  For additional details please see: https://github.com/mitchellh/mapstructure
-type UnmarshalOption func(*mapstructure.DecoderConfig)
+type UnmarshalOption func(*unmarshalConfig)
 
 // DecodeHook, will be called before any decoding and any type conversion (if
 // WeaklyTypedInput is on). This lets you modify the values before they're set
@@ -22,8 +32,8 @@ type UnmarshalOption func(*mapstructure.DecoderConfig)
 //
 // Defaults to nothing set.
 func DecodeHook(hook mapstructure.DecodeHookFunc) UnmarshalOption {
-	return func(cfg *mapstructure.DecoderConfig) {
-		cfg.DecodeHook = hook
+	return func(u *unmarshalConfig) {
+		u.cfg.DecodeHook = hook
 	}
 }
 
@@ -33,8 +43,8 @@ func DecodeHook(hook mapstructure.DecodeHookFunc) UnmarshalOption {
 //
 // Defaults to false.
 func ErrorUnused(unused bool) UnmarshalOption {
-	return func(cfg *mapstructure.DecoderConfig) {
-		cfg.ErrorUnused = unused
+	return func(u *unmarshalConfig) {
+		u.cfg.ErrorUnused = unused
 	}
 }
 
@@ -45,8 +55,8 @@ func ErrorUnused(unused bool) UnmarshalOption {
 //
 // Defaults to false.
 func ErrorUnset(unset bool) UnmarshalOption {
-	return func(cfg *mapstructure.DecoderConfig) {
-		cfg.ErrorUnset = unset
+	return func(u *unmarshalConfig) {
+		u.cfg.ErrorUnset = unset
 	}
 }
 
@@ -69,8 +79,8 @@ func ErrorUnset(unset bool) UnmarshalOption {
 //
 // Defaults to false.
 func WeaklyTypedInput(weak bool) UnmarshalOption {
-	return func(cfg *mapstructure.DecoderConfig) {
-		cfg.WeaklyTypedInput = weak
+	return func(u *unmarshalConfig) {
+		u.cfg.WeaklyTypedInput = weak
 	}
 }
 
@@ -78,8 +88,8 @@ func WeaklyTypedInput(weak bool) UnmarshalOption {
 //
 // This defaults to "mapstructure".
 func TagName(name string) UnmarshalOption {
-	return func(cfg *mapstructure.DecoderConfig) {
-		cfg.TagName = name
+	return func(u *unmarshalConfig) {
+		u.cfg.TagName = name
 	}
 }
 
@@ -90,8 +100,8 @@ func TagName(name string) UnmarshalOption {
 //
 // Defaults to false.
 func IgnoreUntaggedFields(ignore bool) UnmarshalOption {
-	return func(cfg *mapstructure.DecoderConfig) {
-		cfg.IgnoreUntaggedFields = ignore
+	return func(u *unmarshalConfig) {
+		u.cfg.IgnoreUntaggedFields = ignore
 	}
 }
 
@@ -101,8 +111,16 @@ func IgnoreUntaggedFields(ignore bool) UnmarshalOption {
 //
 // Defaults to nil.
 func MatchName(fn func(mapKey, fieldName string) bool) UnmarshalOption {
-	return func(cfg *mapstructure.DecoderConfig) {
-		cfg.MatchName = fn
+	return func(u *unmarshalConfig) {
+		u.cfg.MatchName = fn
+	}
+}
+
+// Optional causes the unmarshal operation to ignore missing parts of the tree
+// and simply pass back the object unchanged.
+func Optional() UnmarshalOption {
+	return func(u *unmarshalConfig) {
+		u.optional = true
 	}
 }
 
@@ -123,22 +141,25 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	var u unmarshalConfig
+	u.cfg.Result = result
+
+	for _, opt := range c.unmarshalOptions {
+		opt(&u)
+	}
+	for _, opt := range opts {
+		opt(&u)
+	}
+
 	tree, _, err := c.fetchWithOrigin(key)
 	if err != nil {
+		if errors.Is(err, meta.ErrNotFound) && u.optional {
+			return nil
+		}
 		return err
 	}
 
-	var cfg mapstructure.DecoderConfig
-	cfg.Result = result
-
-	for _, opt := range c.unmarshalOptions {
-		opt(&cfg)
-	}
-	for _, opt := range opts {
-		opt(&cfg)
-	}
-
-	decoder, err := mapstructure.NewDecoder(&cfg)
+	decoder, err := mapstructure.NewDecoder(&u.cfg)
 	if err != nil {
 		return err
 	}

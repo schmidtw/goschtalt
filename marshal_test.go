@@ -52,13 +52,13 @@ func TestMarshal(t *testing.T) {
 			description: "No format exporter found.",
 			input:       `{"foo":"bar"}`,
 			opts:        []MarshalOption{UseFormat("unsupported")},
-			expectedErr: ErrNotFound,
+			expectedErr: ErrCodecNotFound,
 		}, {
 			description: "No format exporter found.",
 			input:       `{"foo":"bar"}`,
 			noEncoders:  true,
 			opts:        []MarshalOption{UseFormat("json")},
-			expectedErr: ErrNotFound,
+			expectedErr: ErrCodecNotFound,
 		},
 	}
 	for _, tc := range tests {

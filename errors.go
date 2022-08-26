@@ -10,7 +10,7 @@ var (
 	ErrDuplicateFound = errors.New("duplicate found")
 	ErrEncoding       = errors.New("encoding error")
 	ErrNotCompiled    = errors.New("the Compile() function must be called first")
-	ErrNotFound       = errors.New("not found")
+	ErrCodecNotFound  = errors.New("encoder/decoder not found")
 	ErrTypeMismatch   = errors.New("type mismatch")
 	ErrConfigMissing  = errors.New("Config is missing a required configuration")
 )

@@ -153,7 +153,7 @@ func TestDecoderRegistry_Decode(t *testing.T) {
 		}, {
 			description: "Fail to find a decoder.",
 			extension:   "invalid",
-			expectedErr: ErrNotFound,
+			expectedErr: ErrCodecNotFound,
 		}, {
 			description: "Decoding error.",
 			extension:   "JSON",
