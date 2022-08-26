@@ -144,3 +144,32 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 	}
 	return decoder.Decode(tree)
 }
+
+// UnmarshalFn returns a function that takes a goschtalt Config structure and
+// returns a function that allows for unmarshalling of a portion of the tree
+// specified by the key into a zero value type.
+//
+// This function is specifically helpful with DI frameworks like Uber's fx
+// framework.
+//
+// In this short example, the type myStruct is created and populated with the
+// configuring values found under the "conf" key in the goschtalt configuration.
+//
+//	app := fx.New(
+//		fx.Provide(
+//			goschtalt.UnmarshalFn[myStruct]("conf"),
+//		),
+//	)
+func UnmarshalFn[T any](key string, opts ...UnmarshalOption) func(*Config) (T, error) {
+	return func(cfg *Config) (T, error) {
+		var zeroVal T
+		var obj T
+
+		err := cfg.Unmarshal(key, &obj, opts...)
+		if err != nil {
+			return zeroVal, err
+		}
+
+		return obj, nil
+	}
+}

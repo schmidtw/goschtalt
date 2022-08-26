@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/mitchellh/mapstructure"
+	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -204,6 +205,72 @@ func TestUnmarshal(t *testing.T) {
 			if tc.expectedErr != unknownErr {
 				assert.ErrorIs(err, tc.expectedErr)
 			}
+		})
+	}
+}
+
+func TestUnmarshalFn(t *testing.T) {
+	type sub struct {
+		Foo string
+	}
+
+	tests := []struct {
+		description string
+		key         string
+		opts        []UnmarshalOption
+		skipCompile bool
+		want        sub
+		expectedErr bool
+	}{
+		{
+			description: "An empty struct",
+			key:         "test",
+			skipCompile: true,
+			expectedErr: true,
+		}, {
+			description: "An valid struct",
+			key:         "test",
+			want: sub{
+				Foo: "bar",
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			g, err := New()
+			require.NoError(err)
+			require.NotNil(g)
+			if !tc.skipCompile {
+				err = g.Compile()
+				require.NoError(err)
+				g.tree = meta.Object{
+					Map: map[string]meta.Object{
+						"test": {
+							Map: map[string]meta.Object{
+								"foo": {
+									Value: "bar",
+								},
+							},
+						},
+					},
+				}
+			}
+
+			fn := UnmarshalFn[sub](tc.key, tc.opts...)
+			require.NotNil(fn)
+
+			got, err := fn(g)
+
+			if tc.expectedErr == false {
+				assert.NoError(err)
+				assert.Equal(tc.want.Foo, got.Foo)
+				return
+			}
+
+			assert.NotNil(err)
 		})
 	}
 }
