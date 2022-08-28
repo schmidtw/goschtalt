@@ -185,3 +185,11 @@ func (c *Config) OrderList(list []string) (files []string) {
 
 	return files
 }
+
+// Extensions returns the extensions this config object supports.
+func (c *Config) Extensions() []string {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	return c.decoders.extensions()
+}

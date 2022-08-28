@@ -232,3 +232,34 @@ func TestOrderList(t *testing.T) {
 		})
 	}
 }
+
+func TestExtensions(t *testing.T) {
+	tests := []struct {
+		description string
+		opts        []Option
+		expect      []string
+	}{
+		{
+			description: "An empty list",
+		}, {
+			description: "A simple list",
+			opts:        []Option{DecoderRegister(&testDecoder{extensions: []string{"json"}})},
+			expect:      []string{"json"},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			cfg, err := New(tc.opts...)
+			require.NotNil(cfg)
+			require.NoError(err)
+
+			got := cfg.Extensions()
+
+			assert.Empty(cmp.Diff(tc.expect, got))
+		})
+	}
+}
