@@ -6,6 +6,7 @@ on:
     branches:
       - main
     paths-ignore:
+      - 'tools/**'
       - '**.md'
       - '.gitignore'
   pull_request:
@@ -274,7 +275,11 @@ jobs:
           do
               d=`dirname $i`
               fn=$(echo "$d" | sed -e 's/[\/\.]/_/g')
-              cp .licensed.yml $d/.licensed.yml
+              if [ "$d" != "." ]; then
+                cp .licensed.yml $d/.licensed.yml
+              else
+                fn='goschtalt'
+              fi
               pushd $d
               echo "Examining: $d"
               go get ./...
