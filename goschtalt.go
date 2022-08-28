@@ -5,6 +5,8 @@ package goschtalt
 
 import (
 	"fmt"
+	"path/filepath"
+	"strings"
 	"sync"
 
 	"github.com/schmidtw/goschtalt/pkg/meta"
@@ -19,6 +21,7 @@ var DefaultOptions = []Option{
 // Config is a configurable, prioritized, merging configuration registry.
 type Config struct {
 	mutex           sync.Mutex
+	files           []string
 	tree            meta.Object
 	hasBeenCompiled bool
 
@@ -122,6 +125,7 @@ func (c *Config) Compile() error {
 	}
 
 	c.sorter(cfgs)
+	var files []string
 
 	for _, cfg := range cfgs {
 		var err error
@@ -130,8 +134,54 @@ func (c *Config) Compile() error {
 		if err != nil {
 			return err
 		}
+		files = append(files, cfg.File)
 	}
+	c.files = files
 	c.tree = merged
 	c.hasBeenCompiled = true
 	return nil
+}
+
+// ShowOrder is a helper function that provides the order the configuration
+// files were combined based on the present configuration.  This can only
+// be called after the Compile() has been called.
+func (c *Config) ShowOrder() ([]string, error) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	if !c.hasBeenCompiled {
+		return []string{}, ErrNotCompiled
+	}
+
+	return c.files, nil
+}
+
+// OrderList is a helper function that sorts a caller provided list of filenames
+// exectly the same way the Config object would sort them when reading and
+// merging the files when the configuration is being compiled.  It also filters
+// the list based on the decoders present.
+func (c *Config) OrderList(list []string) (files []string) {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	var cfgs []fileObject
+
+	for _, item := range list {
+		cfgs = append(cfgs, fileObject{File: item})
+	}
+
+	c.sorter(cfgs)
+
+	for _, cfg := range cfgs {
+		file := cfg.File
+
+		// Only include the file if there is a decoder for it.
+		ext := strings.TrimPrefix(filepath.Ext(file), ".")
+		_, err := c.decoders.find(ext)
+		if err == nil {
+			files = append(files, file)
+		}
+	}
+
+	return files
 }

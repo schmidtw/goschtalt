@@ -36,6 +36,13 @@ func determineNumberBlock(s string, val byte, max int, pos *int) int {
 	return num_len
 }
 
+// Compare compares 2 strings and provides the order in natural sort order.
+//
+// Note that only integers are compared.  Floating point numbers are treated
+// like 2 integers separated by the '.' rune.  See the test file for a list
+// examples.
+//
+// Note that any leading 0 values are dropped from the number.
 func Compare(a, b string) bool {
 	len_a := len(a)
 	len_b := len(b)

@@ -83,6 +83,7 @@ func TestCompile(t *testing.T) {
 		opts        []Option
 		want        any
 		expect      any
+		files       []string
 		expectedErr error
 	}{
 		{
@@ -106,6 +107,7 @@ func TestCompile(t *testing.T) {
 				Blue:  "bird",
 				Madd:  "cat",
 			},
+			files: []string{"1.json", "2.json", "3.json", "90.json"},
 		}, {
 			description: "An empty case.",
 			opts: []Option{
@@ -169,6 +171,12 @@ func TestCompile(t *testing.T) {
 				require.NoError(err)
 
 				assert.Empty(cmp.Diff(tc.expect, tc.want))
+
+				// check the file order
+				got, err := cfg.ShowOrder()
+				require.NoError(err)
+
+				assert.Empty(cmp.Diff(tc.files, got))
 				return
 			}
 
@@ -176,6 +184,51 @@ func TestCompile(t *testing.T) {
 			if tc.expectedErr != unknownErr {
 				assert.ErrorIs(err, tc.expectedErr)
 			}
+
+			// check the file order is correct
+			got, err := cfg.ShowOrder()
+			assert.ErrorIs(err, ErrNotCompiled)
+			assert.Empty(got)
+		})
+	}
+}
+
+func TestOrderList(t *testing.T) {
+	tests := []struct {
+		description string
+		in          []string
+		expect      []string
+	}{
+		{
+			description: "An empty list",
+		}, {
+			description: "A simple list",
+			in: []string{
+				"9.json",
+				"3.txt",
+				"1.json",
+				"2.json",
+			},
+			expect: []string{
+				"1.json",
+				"2.json",
+				"9.json",
+			},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			cfg, err := New(DecoderRegister(&testDecoder{extensions: []string{"json"}}))
+			require.NotNil(cfg)
+			require.NoError(err)
+
+			got := cfg.OrderList(tc.in)
+
+			assert.Empty(cmp.Diff(tc.expect, got))
 		})
 	}
 }
