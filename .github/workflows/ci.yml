@@ -56,6 +56,22 @@ jobs:
       # Duplicated for each extension package.
       # Duplicated for each extension package.
 
+      # --- extensions/cli/simple
+
+      - name: extensions/cli/simple -- Build & Test
+        working-directory: ./extensions/cli/simple
+        run: |
+          go build ./...
+          go test ./...
+
+      - name: extensions/cli/simple -- Coverage
+        working-directory: ./extensions/cli/simple
+        if: |
+          matrix.os == 'ubuntu-latest' &&
+          matrix.go == env.go_version
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.out ./...
+
       # --- extensions/decoders/cli
 
       - name: extensions/decoders/cli -- Build & Test
@@ -162,7 +178,7 @@ jobs:
         with:
           flags: unittests
           files: >-
-            ./coverage.out,./extensions/decoders/cli/coverage.out,./extensions/decoders/env/coverage.out,./extensions/decoders/json/coverage.out,./extensions/decoders/properties/coverage.out,./extensions/decoders/yaml/coverage.out,./extensions/encoders/yaml/coverage.out
+            ./coverage.out,./extensions/cli/simple/coverage.out,./extensions/decoders/cli/coverage.out,./extensions/decoders/env/coverage.out,./extensions/decoders/json/coverage.out,./extensions/decoders/properties/coverage.out,./extensions/decoders/yaml/coverage.out,./extensions/encoders/yaml/coverage.out
 
       # Update the results on goreportcard.com
       - name: Go report card
