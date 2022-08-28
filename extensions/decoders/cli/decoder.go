@@ -22,7 +22,7 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
-const extension = `CLI`
+const extension = `cli`
 
 var _ decoder.Decoder = (*cliDecoder)(nil)
 

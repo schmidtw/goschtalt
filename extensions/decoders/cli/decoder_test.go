@@ -49,19 +49,19 @@ func TestDecode(t *testing.T) {
 				},
 			},
 			expected: meta.Object{
-				Origins: []meta.Origin{{File: "filename.CLI"}},
+				Origins: []meta.Origin{{File: "filename.cli"}},
 				Map: map[string]meta.Object{
 					"foo": {
-						Origins: []meta.Origin{{File: "filename.CLI"}},
+						Origins: []meta.Origin{{File: "filename.cli"}},
 						Map: map[string]meta.Object{
 							"bar": {
-								Origins: []meta.Origin{{File: "filename.CLI"}},
+								Origins: []meta.Origin{{File: "filename.cli"}},
 								Array: []meta.Object{
 									{
-										Origins: []meta.Origin{{File: "filename.CLI"}},
+										Origins: []meta.Origin{{File: "filename.cli"}},
 										Value:   "zero",
 									}, {
-										Origins: []meta.Origin{{File: "filename.CLI"}},
+										Origins: []meta.Origin{{File: "filename.cli"}},
 										Value:   "one",
 									},
 								},
@@ -69,11 +69,11 @@ func TestDecode(t *testing.T) {
 						},
 					},
 					"a": {
-						Origins: []meta.Origin{{File: "filename.CLI"}},
+						Origins: []meta.Origin{{File: "filename.cli"}},
 						Value:   "one",
 					},
 					"b": {
-						Origins: []meta.Origin{{File: "filename.CLI"}},
+						Origins: []meta.Origin{{File: "filename.cli"}},
 						Value:   "two",
 					},
 				},
@@ -102,7 +102,7 @@ func TestDecode(t *testing.T) {
 				require.NoError(err)
 			}
 			ctx := decoder.Context{
-				Filename:  "filename.CLI",
+				Filename:  "filename.cli",
 				Delimiter: ".",
 			}
 			err = d.Decode(ctx, b, &got)
@@ -172,7 +172,7 @@ func TestEndToEnd(t *testing.T) {
 			expected: []expect{
 				{key: "foo", val: "etc", filename: "test.json"},
 				{key: "bar", val: "local", filename: "local.json"},
-				{key: "cli", val: "yes", filename: "cli.CLI"},
+				{key: "cli", val: "yes", filename: "cli.cli"},
 			},
 			notExpected: []expect{
 				{key: "car", val: "red", filename: "other.json"},
@@ -189,7 +189,7 @@ func TestEndToEnd(t *testing.T) {
 			expected: []expect{
 				{key: "foo", val: "etc", filename: "test.json"},
 				{key: "bar", val: "local", filename: "local.json"},
-				{key: "cli", val: "yes", filename: "cli.CLI"},
+				{key: "cli", val: "yes", filename: "cli.cli"},
 				{key: "car", val: "red", filename: "other.json"},
 			},
 			notExpected: []expect{
@@ -205,7 +205,7 @@ func TestEndToEnd(t *testing.T) {
 			expected: []expect{
 				{key: "foo", val: "etc", filename: "test.json"},
 				{key: "bar", val: "local", filename: "local.json"},
-				{key: "cli", val: "yes", filename: "cli.CLI"},
+				{key: "cli", val: "yes", filename: "cli.cli"},
 				{key: "food", val: "nuts", filename: "test2.json"},
 			},
 			notExpected: []expect{
@@ -221,7 +221,7 @@ func TestEndToEnd(t *testing.T) {
 			expected: []expect{
 				{key: "foo", val: "etc", filename: "test.json"},
 				{key: "bar", val: "local", filename: "local.json"},
-				{key: "cli", val: "yes", filename: "cli.CLI"},
+				{key: "cli", val: "yes", filename: "cli.cli"},
 			},
 			notExpected: []expect{
 				{key: "car", val: "red", filename: "other.json"},
@@ -237,7 +237,7 @@ func TestEndToEnd(t *testing.T) {
 			expected: []expect{
 				{key: "foo", val: "etc", filename: "test.json"},
 				{key: "bar", val: "local", filename: "local.json"},
-				{key: "cli", val: "yes", filename: "cli.CLI"},
+				{key: "cli", val: "yes", filename: "cli.cli"},
 				{key: "food", val: "nuts", filename: "test2.json"},
 			},
 			notExpected: []expect{
