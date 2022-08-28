@@ -18,7 +18,8 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
-const extension = `environ`
+// The extension this decoder uses since the decode itself isn't public.
+const Extension = `environ`
 
 var _ decoder.Decoder = (*envDecoder)(nil)
 
@@ -27,7 +28,7 @@ type envDecoder struct{}
 
 // Extensions returns the supported extensions.
 func (d envDecoder) Extensions() []string {
-	return []string{extension}
+	return []string{Extension}
 }
 
 type instructions struct {
@@ -81,7 +82,7 @@ func (d envDecoder) Decode(ctx decoder.Context, b []byte, m *meta.Object) error 
 //
 // If you need multiple prefix values, this option is safe to use multiple times.
 func EnvVarConfig(filename, prefix, delimiter string) []goschtalt.Option {
-	fn := fmt.Sprintf("%s.%s", filename, extension)
+	fn := fmt.Sprintf("%s.%s", filename, Extension)
 
 	inst := instructions{
 		Prefix:    prefix,
@@ -112,7 +113,7 @@ func EnvVarConfig(filename, prefix, delimiter string) []goschtalt.Option {
 	}
 
 	return []goschtalt.Option{
-		goschtalt.DecoderRemove(extension),
+		goschtalt.DecoderRemove(Extension),
 		goschtalt.DecoderRegister(envDecoder{}),
 		goschtalt.FileGroup(group),
 	}

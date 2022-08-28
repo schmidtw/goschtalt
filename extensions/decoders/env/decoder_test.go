@@ -21,7 +21,7 @@ import (
 func TestExtensions(t *testing.T) {
 	assert := assert.New(t)
 
-	want := []string{extension}
+	want := []string{Extension}
 	got := envDecoder{}.Extensions()
 
 	assert.Empty(cmp.Diff(want, got))

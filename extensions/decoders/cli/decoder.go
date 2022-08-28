@@ -22,7 +22,8 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
-const extension = `cli`
+// The extension this decoder uses since the decode itself isn't public.
+const Extension = `cli`
 
 var _ decoder.Decoder = (*cliDecoder)(nil)
 
@@ -33,7 +34,7 @@ type cliDecoder struct{}
 
 // Extensions returns the supported extensions.
 func (d cliDecoder) Extensions() []string {
-	return []string{extension}
+	return []string{Extension}
 }
 
 type kvp struct {
@@ -108,7 +109,7 @@ func Options(filename, delimiter string, args []string, dirFS ...func(string) fs
 	}
 
 	options := []goschtalt.Option{
-		goschtalt.DecoderRemove(extension),
+		goschtalt.DecoderRemove(Extension),
 		goschtalt.DecoderRegister(cliDecoder{}),
 	}
 
@@ -170,7 +171,7 @@ func Options(filename, delimiter string, args []string, dirFS ...func(string) fs
 		}
 	}
 
-	fn := fmt.Sprintf("%s.%s", filename, extension)
+	fn := fmt.Sprintf("%s.%s", filename, Extension)
 
 	b, err := json.Marshal(inst)
 	if err != nil {
