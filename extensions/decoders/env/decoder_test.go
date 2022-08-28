@@ -51,19 +51,19 @@ func TestDecode(t *testing.T) {
 			},
 			file: `{ "prefix": "GOSCHTALT_", "delimiter": "_" }`,
 			expected: meta.Object{
-				Origins: []meta.Origin{{File: "filename.ENVIRONMENT_VARIABLE"}},
+				Origins: []meta.Origin{{File: "filename.environ"}},
 				Map: map[string]meta.Object{
 					"foo": {
-						Origins: []meta.Origin{{File: "filename.ENVIRONMENT_VARIABLE"}},
+						Origins: []meta.Origin{{File: "filename.environ"}},
 						Map: map[string]meta.Object{
 							"bar": {
-								Origins: []meta.Origin{{File: "filename.ENVIRONMENT_VARIABLE"}},
+								Origins: []meta.Origin{{File: "filename.environ"}},
 								Array: []meta.Object{
 									{
-										Origins: []meta.Origin{{File: "filename.ENVIRONMENT_VARIABLE"}},
+										Origins: []meta.Origin{{File: "filename.environ"}},
 										Value:   "zero",
 									}, {
-										Origins: []meta.Origin{{File: "filename.ENVIRONMENT_VARIABLE"}},
+										Origins: []meta.Origin{{File: "filename.environ"}},
 										Value:   "one",
 									},
 								},
@@ -71,11 +71,11 @@ func TestDecode(t *testing.T) {
 						},
 					},
 					"a": {
-						Origins: []meta.Origin{{File: "filename.ENVIRONMENT_VARIABLE"}},
+						Origins: []meta.Origin{{File: "filename.environ"}},
 						Value:   "one",
 					},
 					"b": {
-						Origins: []meta.Origin{{File: "filename.ENVIRONMENT_VARIABLE"}},
+						Origins: []meta.Origin{{File: "filename.environ"}},
 						Value:   "two",
 					},
 				},
@@ -94,7 +94,7 @@ func TestDecode(t *testing.T) {
 				defer os.Unsetenv(val.k)
 			}
 			ctx := decoder.Context{
-				Filename:  "filename.ENVIRONMENT_VARIABLE",
+				Filename:  "filename.environ",
 				Delimiter: ".",
 			}
 			err := d.Decode(ctx, []byte(tc.file), &got)
@@ -211,7 +211,7 @@ func TestEndToEnd(t *testing.T) {
 					assert.Equal(val.val, got)
 					assert.NoError(err)
 					assert.Equal(len(origin), 1)
-					fn := fmt.Sprintf("%s.ENVIRONMENT_VARIABLE", val.filename)
+					fn := fmt.Sprintf("%s.environ", val.filename)
 					assert.Equal(fn, origin[0].File)
 					assert.Equal(0, origin[0].Line)
 					assert.Equal(0, origin[0].Col)

@@ -18,7 +18,7 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
-const extension = `ENVIRONMENT_VARIABLE`
+const extension = `environ`
 
 var _ decoder.Decoder = (*envDecoder)(nil)
 
