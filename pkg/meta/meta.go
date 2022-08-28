@@ -41,19 +41,20 @@ type Origin struct {
 // String returns a useful representation for the origin.
 func (o Origin) String() string {
 	file := "unknown"
-	line := "???"
-	col := "???"
+	line := ""
+	col := ""
 
 	if len(o.File) > 0 {
 		file = o.File
 	}
-	if o.Line > 0 {
-		line = strconv.Itoa(o.Line)
+	if o.Line > 0 || o.Col > 0 {
+		line = fmt.Sprintf(":%d", o.Line)
 	}
 	if o.Col > 0 {
-		col = strconv.Itoa(o.Col)
+		col = fmt.Sprintf("[%d]", o.Col)
 	}
-	return fmt.Sprintf("%s:%s[%s]", file, line, col)
+
+	return fmt.Sprintf("%s%s%s", file, line, col)
 }
 
 const (

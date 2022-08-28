@@ -32,7 +32,21 @@ func TestOrigin_String(t *testing.T) {
 	}{
 		{
 			description: "Output an empty origin.",
-			expected:    "unknown:???[???]",
+			expected:    "unknown",
+		}, {
+			description: "Output a partially filled out origin.",
+			origin: Origin{
+				File: "magic.file",
+				Col:  88,
+			},
+			expected: "magic.file:0[88]",
+		}, {
+			description: "Output a partially filled out origin, no col.",
+			origin: Origin{
+				File: "magic.file",
+				Line: 88,
+			},
+			expected: "magic.file:88",
 		}, {
 			description: "Output an filled out origin.",
 			origin: Origin{
@@ -1183,7 +1197,7 @@ func TestOrigin_OriginString(t *testing.T) {
 			obj: Object{
 				Origins: []Origin{{}},
 			},
-			expected: "unknown:???[???]",
+			expected: "unknown",
 		}, {
 			description: "Output an filled out origin.",
 			obj: Object{
