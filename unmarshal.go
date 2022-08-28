@@ -144,11 +144,11 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 	var u unmarshalConfig
 	u.cfg.Result = result
 
-	for _, opt := range c.unmarshalOptions {
-		opt(&u)
-	}
-	for _, opt := range opts {
-		opt(&u)
+	full := append(c.unmarshalOptions, opts...)
+	for _, opt := range full {
+		if opt != nil {
+			opt(&u)
+		}
 	}
 
 	tree, _, err := c.fetchWithOrigin(key)

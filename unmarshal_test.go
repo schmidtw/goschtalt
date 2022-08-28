@@ -17,6 +17,7 @@ import (
 )
 
 func TestUnmarshal(t *testing.T) {
+	var zeroOpt UnmarshalOption
 	unknownErr := fmt.Errorf("unknown error")
 	type simple struct {
 		Foo   string
@@ -65,6 +66,12 @@ func TestUnmarshal(t *testing.T) {
 			description: "A simple tree showing the duration doesn't decode.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
 			opts:        []UnmarshalOption{},
+			want:        withDuration{},
+			expectedErr: unknownErr,
+		}, {
+			description: "A simple tree showing the duration doesn't decode, with zero option.",
+			input:       `{"foo":"bar", "delta": "1s"}`,
+			opts:        []UnmarshalOption{zeroOpt},
 			want:        withDuration{},
 			expectedErr: unknownErr,
 		}, {

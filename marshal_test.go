@@ -13,6 +13,8 @@ import (
 )
 
 func TestMarshal(t *testing.T) {
+	var zeroOpt MarshalOption
+
 	tests := []struct {
 		description string
 		input       string
@@ -26,6 +28,11 @@ func TestMarshal(t *testing.T) {
 			description: "Import and export a normal tree.",
 			input:       `{"foo":"bar"}`,
 			opts:        []MarshalOption{UseFormat("json")},
+			expected:    `{"foo":"bar"}`,
+		}, {
+			description: "Import and export a normal tree, with an empty option.",
+			input:       `{"foo":"bar"}`,
+			opts:        []MarshalOption{UseFormat("json"), zeroOpt},
 			expected:    `{"foo":"bar"}`,
 		}, {
 			description: "Import and export a tree with a secret.",

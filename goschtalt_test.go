@@ -15,6 +15,7 @@ import (
 )
 
 func TestNew(t *testing.T) {
+	var zeroOpt Option
 	tests := []struct {
 		description string
 		opts        []Option
@@ -25,6 +26,9 @@ func TestNew(t *testing.T) {
 		}, {
 			description: "A normal case with options.",
 			opts:        []Option{KeyCaseLower()},
+		}, {
+			description: "A case with an empty option.",
+			opts:        []Option{zeroOpt},
 		}, {
 			description: "An error case where duplicate decoders are added.",
 			opts:        []Option{DecoderRegister(&testDecoder{extensions: []string{"json", "json"}})},

@@ -92,8 +92,10 @@ func (c *Config) With(opts ...Option) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 	for _, opt := range opts {
-		if err := opt(c); err != nil {
-			return err
+		if opt != nil {
+			if err := opt(c); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

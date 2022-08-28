@@ -54,7 +54,9 @@ func (c *Config) Marshal(opts ...MarshalOption) ([]byte, error) {
 		cfg.format = exts[0]
 	}
 	for _, opt := range opts {
-		opt(&cfg)
+		if opt != nil {
+			opt(&cfg)
+		}
 	}
 
 	tree := c.tree
