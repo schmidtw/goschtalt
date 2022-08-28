@@ -18,7 +18,7 @@ type fake struct{}
 func (f fake) Decode(_ decoder.Context, _ []byte, _ *meta.Object) error { return nil }
 func (f fake) Extensions() []string                                     { return []string{"yml", "yaml", "json"} }
 
-func ExampleOrderList() {
+func ExampleConfig_OrderList() {
 	g, err := goschtalt.New(goschtalt.DecoderRegister(fake{}))
 	if err != nil {
 		panic(err)
