@@ -39,7 +39,7 @@ func FileSortOrderLexical() Option {
 //     by the '.' rune.
 //   - Any leading 0 values are dropped from the number.
 //
-// Example sort order for reference:
+// Example sort order:
 //
 //	01_foo.yml
 //	2_foo.yml
