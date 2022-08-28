@@ -246,7 +246,6 @@ jobs:
     - name: REUSE Compliance Check
       uses: fsfe/reuse-action@v1
 
-  # TODO - include the extensions better
   license:
     name: License Checking
     runs-on: [ 'ubuntu-latest' ]
@@ -264,14 +263,29 @@ jobs:
         uses: jonabc/setup-licensed@v1
         with:
          version: 3.x
-      - run: go get ./...
-      - run: licensed cache
 
       - name: Validate compliance
         run: |
-          licensed status -f yaml > licensing.yml || true
-          yq eval 'del(.apps[].sources[].dependencies[] | select(.allowed == "true") )' licensing.yml > disallowed.yml
-          licensed status
+          list=(`find . -name go.mod`)
+
+          mkdir -p licensed
+
+          for i in "${list[@]}"
+          do
+              d=`dirname $i`
+              fn=$(echo "$d" | sed -e 's/[\/\.]/_/g')
+              cp .licensed.yml $d/.licensed.yml
+              pushd $d
+              echo "Examining: $d"
+              go get ./...
+              licensed cache
+              licensed status -f yaml > licensing.yml || true
+              yq eval 'del(.apps[].sources[].dependencies[] | select(.allowed == "true") )' licensing.yml > disallowed.yml
+              licensed status
+              popd
+              mv $d/licensing.yml  "licensed/${fn}_licensing.yml"
+              mv $d/disallowed.yml "licensed/${fn}_disallowed.yml"
+          done
 
       - name: Archive license results
         if: always()
@@ -279,8 +293,7 @@ jobs:
         with:
           name: licensing
           path: |
-            licensing.yml
-            disallowed.yml
+            licensed/**.yml
 
   release:
     name: Release
