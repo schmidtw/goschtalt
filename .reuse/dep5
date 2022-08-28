@@ -7,6 +7,10 @@ Files: CODE_OF_CONDUCT.md
 Copyright: SPDX-FileCopyrightText: 2014-2021 Coraline Ada Ehmke and contributors
 License: CC-BY-4.0
 
+Files: extensions/cli/simple/go.mod extensions/cli/simple/go.sum
+Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
+License: Apache-2.0
+
 Files: extensions/decoders/cli/go.mod extensions/decoders/cli/go.sum
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: Apache-2.0
