@@ -8,3 +8,4 @@ allowed:
 # that apply.  Use the spdx license name for consistency.
 reviewed:
   go:
+    - github.com/magiconair/properties  # BSD-2-Clause license

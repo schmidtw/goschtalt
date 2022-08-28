@@ -22,3 +22,11 @@
 
 # Don't include any workspace files.
 go.work
+go.work.sum
+
+# Ignore license artifacts
+extensions/**/.licensed.yml
+**/licensing.yml
+**/disallowed.yml
+.licenses/
+licensed
