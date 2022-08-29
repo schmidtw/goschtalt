@@ -455,7 +455,11 @@ func (obj Object) merge(cmd command, next Object) (Object, error) {
 		rv := obj
 		switch cmd.cmd {
 		case cmdReplace, "":
-			rv = next
+			var err error
+			rv, err = next.resolveCommands(obj.secret)
+			if err != nil {
+				return Object{}, err
+			}
 		case cmdKeep:
 		case cmdFail:
 			return Object{}, ErrConflict

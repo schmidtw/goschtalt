@@ -891,6 +891,7 @@ func TestResolveCommands(t *testing.T) {
 
 func TestMerge(t *testing.T) {
 	tests := []struct {
+		run         bool
 		description string
 		in          string
 		next        string
@@ -1056,6 +1057,21 @@ func TestMerge(t *testing.T) {
 				Origins: []Origin{},
 			},
 		}, {
+			run:         true,
+			description: "Merge into an empty structure.",
+			in:          `{}`,
+			next:        `{"foo((secret))":"car"}`,
+			expected: Object{
+				Origins: []Origin{},
+				Map: map[string]Object{
+					"foo": {
+						Origins: []Origin{},
+						secret:  true,
+						Value:   "car",
+					},
+				},
+			},
+		}, {
 			description: "Append to a secret node and make sure it stays secret.",
 			in:          `{"foo((secret))":["bar"]}`,
 			next:        `{"foo((append))":["car"]}`,
@@ -1165,6 +1181,10 @@ func TestMerge(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
+
+			if !tc.run {
+				return
+			}
 
 			in, err := decode(tc.in).resolveCommands(false)
 			require.NoError(err)
