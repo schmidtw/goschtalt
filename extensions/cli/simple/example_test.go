@@ -12,7 +12,7 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 
 	// Uncomment the next line to use the yaml decoder automatically.
-	//_ "github.com/schmidtw/goschtalt/pkg/decoder/yaml"
+	//_ "github.com/schmidtw/goschtalt/extensions/decoders/yaml"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
@@ -30,6 +30,11 @@ func alterArgs() {
 	// os.Args = append(os.Args, "-s")
 }
 
+func register() goschtalt.Option {
+	// Change the line below to return nil to use the yml decoder
+	return goschtalt.DecoderRegister(fake{})
+}
+
 func Example() {
 	alterArgs() // This makes the function act like the command line.
 
@@ -45,7 +50,12 @@ Example:
 		Ext: "yml",
 	}
 
-	g, err := simple.GetConfig("example", defaults, goschtalt.DecoderRegister(fake{}))
+	p := simple.Program{
+		Name:    "example",
+		Default: defaults,
+	}
+
+	g, err := p.GetConfig(register())
 	if g == nil { // We've been told to exit.
 		if err != nil { // There was an error.
 			panic(err)

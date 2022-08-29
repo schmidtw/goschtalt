@@ -6,8 +6,10 @@ package simple
 import (
 	"bufio"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"runtime"
+	"strings"
 	"testing"
 
 	"github.com/schmidtw/goschtalt"
@@ -18,25 +20,48 @@ import (
 
 type fake struct{}
 
-func (f fake) Decode(_ decoder.Context, _ []byte, _ *meta.Object) error { return nil }
-func (f fake) Extensions() []string                                     { return []string{"yml", "yaml", "json"} }
+func (f fake) Decode(ctx decoder.Context, b []byte, m *meta.Object) error {
+	// Just eat the yaml ones.
+	if !strings.HasSuffix(ctx.Filename, "json") {
+		return nil
+	}
+
+	var data any
+	err := json.Unmarshal(b, &data)
+	if err != nil {
+		return err
+	}
+	*m = meta.ObjectFromRaw(data)
+	return nil
+}
+
+func (f fake) Extensions() []string { return []string{"yml", "yaml", "json"} }
 
 func TestGetConfig(t *testing.T) {
 	helpText := `Usage: app [OPTION]...
 
-  -f, --file file       File to process for configuration.  May be repeated.
-  -d, --dir dir         Directory to walk for configuration.  Does not recurse.  May be repeated.
-  -r, --recurse dir     Recursively walk directory for configuration.  May be repeated.
-      --kvp key value   Set a key/value pair as configuration.  May be repeated.  Filename: '1000.cli'
+  -f, --file file        File to process for configuration.  May be repeated.
+  -d, --dir dir          Directory to walk for configuration.  Does not recurse.  May be repeated.
+  -r, --recurse dir      Recursively walk directory for configuration.  May be repeated.
+      --kvp key value    Set a key/value pair as configuration.  May be repeated.
 
-  -s, --show-all        Show all configuration details, then exit.
-      --show-cfg        Show the redacted final configuration including the origin of the value, then exit.
-      --show-cfg-doc    Show built in config file with all options documentated.  Filename: '0.yml'
-      --show-exts       Show the supported configuration file extensions, then exit.
-      --show-files      Show files in the order processed, then exit.
+  -s, --show-all         Show all configuration details, then exit.
+      --show-cfg         Show the redacted final configuration including the origin of the value, then exit.
+      --show-cfg-doc     Show built in config file with all options documented.
+      --show-cfg-unsafe  Show the non-redacted version of --show-cfg.  Not included in --show-all or -s.
+      --show-exts        Show the supported configuration file extensions, then exit.
+      --show-files       Show files in the order processed, then exit.
 
-  -v, --version         Print the version information, then exit.
-  -h, --help            Output this text, then exit.
+  -l, --licensing        Show licensing details, then exit.
+  -v, --version          Print the version information, then exit.
+  -h, --help             Output this text, then exit.
+
+
+Automatic configuration files:
+
+  000.yml       built in configuration document
+  800.environ   environment variables
+  900.cli       command line arguments
 `
 
 	versionText := `app:
@@ -48,25 +73,23 @@ func TestGetConfig(t *testing.T) {
 `
 
 	showAll := `Supported File Extensions:
-	'cli', 'json', 'yaml', 'yml'
+	'cli', 'environ', 'json', 'yaml', 'yml'
 
-Files Processed first (top) to last (bottom):
-	1. 0.yml
-	2. 1000.cli
+Files Processed first (1) to last (3):
+	1. 000.yml
+	2. 800.environ
+	3. 900.cli
 
-Default Configuration:
--- vvv -------------------------------------------------------------------------
+-----BEGIN DEFAULT CONFIGURATION-----
 ---
   Foo: bar #comments
--- ^^^ -------------------------------------------------------------------------
+-----END DEFAULT CONFIGURATION-----
 
-Unified Configuration:
--- vvv -------------------------------------------------------------------------
-foo: # 1000.cli
-    bar: cat # 1000.cli
-    bear: brown # 1000.cli
-
--- ^^^ -------------------------------------------------------------------------
+-----BEGIN REDACTED UNIFIED CONFIGURATION-----
+foo: # 900.cli
+    bar: cat # 900.cli
+    bear: brown # 900.cli
+-----END REDACTED UNIFIED CONFIGURATION-----
 
 `
 
@@ -74,9 +97,15 @@ foo: # 1000.cli
 		Text: "---\n  Foo: bar #comments",
 		Ext:  "yml",
 	}
+	secretCfg := DefaultConfig{
+		Text: `{ "Foo": {"bar((secret))": "car"}}`,
+		Ext:  "json",
+	}
 	tests := []struct {
 		description string
 		name        string
+		prefix      string
+		license     string
 		args        []string
 		opts        []goschtalt.Option
 		defCfg      DefaultConfig
@@ -101,6 +130,19 @@ foo: # 1000.cli
 			args:        []string{"-v", "-h", "-d", "ignored"},
 			expect:      fmt.Sprintf(versionText, runtime.Version(), runtime.GOOS, runtime.GOARCH),
 		}, {
+			description: "Show the licensing output with no license.",
+			name:        "app",
+			defCfg:      defCfg,
+			args:        []string{"-l"},
+			expect:      "Licensing information is unavailable.\n",
+		}, {
+			description: "Show the licensing output with a license.",
+			name:        "app",
+			license:     "Apache license.",
+			defCfg:      defCfg,
+			args:        []string{"-l"},
+			expect:      "Licensing for app:\nApache license.\n",
+		}, {
 			description: "Show everything.",
 			name:        "app",
 			defCfg:      defCfg,
@@ -113,14 +155,14 @@ foo: # 1000.cli
 			defCfg:      defCfg,
 			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
 			args:        []string{"--show-files"},
-			expect:      "Files Processed first (top) to last (bottom):\n\t1. 0.yml\n\t2. 1000.cli\n\n",
+			expect:      "Files Processed first (1) to last (3):\n\t1. 000.yml\n\t2. 800.environ\n\t3. 900.cli\n\n",
 		}, {
 			description: "Show files only.",
 			name:        "app",
 			defCfg:      defCfg,
 			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
 			args:        []string{"--show-files"},
-			expect:      "Files Processed first (top) to last (bottom):\n\t1. 0.yml\n\t2. 1000.cli\n\n",
+			expect:      "Files Processed first (1) to last (3):\n\t1. 000.yml\n\t2. 800.environ\n\t3. 900.cli\n\n",
 		}, {
 			description: "Show config doc only.",
 			name:        "app",
@@ -134,14 +176,28 @@ foo: # 1000.cli
 			defCfg:      defCfg,
 			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
 			args:        []string{"--show-cfg", "--kvp", "Foo.bar", "cat"},
-			expect:      "foo: # 1000.cli\n    bar: cat # 1000.cli\n\n",
+			expect:      "foo: # 900.cli\n    bar: cat # 900.cli\n",
 		}, {
 			description: "Show extensions only.",
 			name:        "app",
 			defCfg:      defCfg,
 			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
 			args:        []string{"--show-exts"},
-			expect:      "Supported File Extensions:\n\t'cli', 'json', 'yaml', 'yml'\n\n",
+			expect:      "Supported File Extensions:\n\t'cli', 'environ', 'json', 'yaml', 'yml'\n\n",
+		}, {
+			description: "Show redacted.",
+			name:        "app",
+			defCfg:      secretCfg,
+			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
+			args:        []string{"--show-cfg"},
+			expect:      "foo:\n    bar: REDACTED\n",
+		}, {
+			description: "Show un-redacted.",
+			name:        "app",
+			defCfg:      secretCfg,
+			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
+			args:        []string{"--show-cfg-unsafe"},
+			expect:      "foo:\n    bar: car\n",
 		}, {
 			description: "End to end.",
 			name:        "app",
@@ -172,7 +228,19 @@ foo: # 1000.cli
 			var b bytes.Buffer
 			w := bufio.NewWriter(&b)
 
-			cfg, err := getConfig(tc.name, tc.defCfg, tc.args, w, tc.opts...)
+			p := Program{
+				Name:      tc.name,
+				Default:   tc.defCfg,
+				Prefix:    tc.prefix,
+				Licensing: tc.license,
+				Output:    w,
+			}
+
+			if len(p.Prefix) == 0 {
+				p.Prefix = "ILLEGAL.SO.NONE.MATCH"
+			}
+
+			cfg, err := p.getConfig(tc.args, tc.opts...)
 			_ = w.Flush()
 
 			if tc.expectedErr == nil {

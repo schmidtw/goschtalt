@@ -26,17 +26,26 @@ import (
 	"github.com/psanford/memfs"
 	"github.com/schmidtw/goschtalt"
 	"github.com/schmidtw/goschtalt/extensions/decoders/cli"
+	"github.com/schmidtw/goschtalt/extensions/decoders/env"
 	_ "github.com/schmidtw/goschtalt/extensions/encoders/yaml"
 )
 
 const (
-	showCfg = 1 << iota
-	showCfgDoc
-	showExts
-	showFiles
+	cmdShowCfg = 1 << iota
+	cmdShowCfgDoc
+	cmdShowCfgUnsafe
+	cmdShowExts
+	cmdShowFiles
+	cmdExitNow
 )
 
-// Use the -ldflags commandline to set the values of these three values at build
+const (
+	filenameDefault = "000"
+	filenameEnviron = "800"
+	filenameCLI     = "900"
+)
+
+// Use the -ldflags command line to set the values of these three values at build
 // time so they can be produced upon request from the command line interface upon
 // request.
 //
@@ -62,11 +71,74 @@ type DefaultConfig struct {
 	Ext  string // The extension of the default configuration.
 }
 
-// GetConfig takes the application name, a default configuration text that is built
-// in, the extension type of the configuration file and the goschtalt options to use for
-// handling the configuration for a simple server interface.  This call collects
-// the command line arguments and produces a goschtalt.Config object representing
-// what the caller has specified.
+func (d DefaultConfig) getFileGroup() (goschtalt.Option, error) {
+	if len(d.Text) == 0 || len(d.Ext) == 0 {
+		return nil, fmt.Errorf("%w: default configuration text must not be empty", ErrDefaultConfigInvalid)
+	}
+
+	fn := fmt.Sprintf("%s.%s", filenameDefault, d.Ext)
+
+	fs := memfs.New()
+	err := fs.WriteFile(fn, []byte(d.Text), 0755)
+	if err != nil {
+		return nil, fmt.Errorf("%w: probably an invalid extension: '%s' ... %v",
+			ErrDefaultConfigInvalid, d.Ext, err)
+	}
+
+	return goschtalt.FileGroup(goschtalt.Group{
+		FS:    fs,
+		Paths: []string{"."},
+	}), nil
+}
+
+func (d DefaultConfig) wereDefaultsUsed(g *goschtalt.Config) error {
+	var found bool
+
+	exts := g.Extensions()
+	for _, ext := range exts {
+		if d.Ext == ext {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return fmt.Errorf("%w: extension '%s' not supported: '%s'",
+			ErrDefaultConfigInvalid, d.Ext, strings.Join(exts, "', '"))
+	}
+
+	files, err := g.ShowOrder()
+	if err != nil {
+		return err
+	}
+
+	fn := fmt.Sprintf("%s.%s", filenameDefault, d.Ext)
+	for _, file := range files {
+		if file == fn {
+			return nil
+		}
+	}
+
+	// This should never happen, but if it does, we at least have an error.
+	return fmt.Errorf("%w: default configuration file '%s' was not included.",
+		ErrDefaultConfigInvalid, fn)
+}
+
+type Program struct {
+	Name      string        // Required - name of the application
+	Default   DefaultConfig // Required - default configuration
+	Prefix    string        // Optional - defaults to strings.ToUpper(Name)+"_" if empty
+	Licensing string        // Optional - if you want to include licensing details and option
+	Output    io.Writer     // Optional - defaults to os.Stderr
+}
+
+// GetConfig takes the assorted inputs and merges them into goschtalt.Config
+// objet.
+//
+//   - name is the application name.
+//   - prefix is the environment variable prefix to search for.
+//   - cfg is the default configuration text and extension.
+//   - opts are any options you would like to customize.
 //
 // Notes:
 //   - The caller must ensure there is a decoder available for the
@@ -75,58 +147,146 @@ type DefaultConfig struct {
 //   - A fully documented (with comments describing the configuration file options)
 //     config file is a great way to provide documentation to your users.
 //   - If a nil configuration is returned, that means the program should exit.  The
-//     error value indicates if an error occured or a graceful exit should happen.
-func GetConfig(name string, cfg DefaultConfig, opts ...goschtalt.Option) (*goschtalt.Config, error) {
-	return getConfig(name, cfg, os.Args[1:], os.Stderr, opts...)
+//     error value indicates if an error occurred or a graceful exit should happen.
+func (p Program) GetConfig(opts ...goschtalt.Option) (*goschtalt.Config, error) {
+	// Mostly this function lets us test the rest of the code easier.
+	return p.applyDefaults(os.Args[1:], opts...)
 }
 
-func getConfig(name string, cfg DefaultConfig, args []string, w io.Writer, opts ...goschtalt.Option) (*goschtalt.Config, error) {
-	var extra []string
-	var show int
-
-	if len(cfg.Text) == 0 || len(cfg.Ext) == 0 {
-		return nil, fmt.Errorf("%w: default config text must not be empty", ErrDefaultConfigInvalid)
+// applyDefaults applies the defaults for the program.  Mostly here to make testing
+// easier.
+func (p Program) applyDefaults(args []string, opts ...goschtalt.Option) (*goschtalt.Config, error) {
+	if len(p.Prefix) == 0 {
+		p.Prefix = strings.ToUpper(p.Name) + "_"
+	}
+	if p.Output == nil {
+		p.Output = os.Stderr
 	}
 
+	return p.getConfig(args, opts...)
+}
+
+func (p Program) getConfig(args []string, opts ...goschtalt.Option) (*goschtalt.Config, error) {
+	w := p.Output
+
+	defFG, err := p.Default.getFileGroup()
+	if err != nil {
+		return nil, err
+	}
+
+	extra, cmd := p.processArgs(args, w)
+	if cmd&cmdExitNow != 0 {
+		return nil, nil
+	}
+
+	// Append the specified options after these options in case they really
+	// want to overwrite something.
+	var allOpts []goschtalt.Option
+	allOpts = append(allOpts, defFG)
+	allOpts = append(allOpts, env.EnvVarConfig(filenameEnviron, p.Prefix, "_")...)
+	allOpts = append(allOpts, cli.Options(filenameCLI, ".", extra)...)
+	allOpts = append(allOpts, opts...)
+
+	g, err := goschtalt.New(allOpts...)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = g.Compile(); err != nil {
+		return nil, err
+	}
+
+	if err = p.Default.wereDefaultsUsed(g); err != nil {
+		return nil, err
+	}
+
+	showExtensions(cmd, w, g)
+	if err = showFileList(cmd, w, g); err != nil {
+		return nil, err
+	}
+	showCfgDoc(cmd, w, p.Default)
+	if err = showCfg(cmd, w, g); err != nil {
+		return nil, err
+	}
+
+	// If we showed anything stop processing.
+	if cmd != 0 {
+		return nil, nil
+	}
+
+	return g, nil
+}
+
+// processArgs handles the input arguments and groups them into a set of next
+// step commands.  The extra return value are the args that goschtalt should
+// process.  The cmd value indicates what should be shown/done.
+func (p Program) processArgs(args []string, w io.Writer) (extra []string, cmd int) {
 	for i := 0; i < len(args); i++ {
 		switch args[i] {
 		case "-h", "--help":
-			fmt.Fprintf(w, "Usage: %s [OPTION]...\n", name)
+			extWidth := getExtWidth(p.Default.Ext)
+
+			fmt.Fprintf(w, "Usage: %s [OPTION]...\n", p.Name)
 			fmt.Fprintf(w, "\n")
-			fmt.Fprintf(w, "  -f, --file file       File to process for configuration.  May be repeated.\n")
-			fmt.Fprintf(w, "  -d, --dir dir         Directory to walk for configuration.  Does not recurse.  May be repeated.\n")
-			fmt.Fprintf(w, "  -r, --recurse dir     Recursively walk directory for configuration.  May be repeated.\n")
-			fmt.Fprintf(w, "      --kvp key value   Set a key/value pair as configuration.  May be repeated.  Filename: '1000.cli'\n")
+			fmt.Fprintf(w, "  -f, --file file        File to process for configuration.  May be repeated.\n")
+			fmt.Fprintf(w, "  -d, --dir dir          Directory to walk for configuration.  Does not recurse.  May be repeated.\n")
+			fmt.Fprintf(w, "  -r, --recurse dir      Recursively walk directory for configuration.  May be repeated.\n")
+			fmt.Fprintf(w, "      --kvp key value    Set a key/value pair as configuration.  May be repeated.\n")
 			fmt.Fprintf(w, "\n")
-			fmt.Fprintf(w, "  -s, --show-all        Show all configuration details, then exit.\n")
-			fmt.Fprintf(w, "      --show-cfg        Show the redacted final configuration including the origin of the value, then exit.\n")
-			fmt.Fprintf(w, "      --show-cfg-doc    Show built in config file with all options documentated.  Filename: '0.%s'\n", cfg.Ext)
-			fmt.Fprintf(w, "      --show-exts       Show the supported configuration file extensions, then exit.\n")
-			fmt.Fprintf(w, "      --show-files      Show files in the order processed, then exit.\n")
+			fmt.Fprintf(w, "  -s, --show-all         Show all configuration details, then exit.\n")
+			fmt.Fprintf(w, "      --show-cfg         Show the redacted final configuration including the origin of the value, then exit.\n")
+			fmt.Fprintf(w, "      --show-cfg-doc     Show built in config file with all options documented.\n")
+			fmt.Fprintf(w, "      --show-cfg-unsafe  Show the non-redacted version of --show-cfg.  Not included in --show-all or -s.\n")
+			fmt.Fprintf(w, "      --show-exts        Show the supported configuration file extensions, then exit.\n")
+			fmt.Fprintf(w, "      --show-files       Show files in the order processed, then exit.\n")
 			fmt.Fprintf(w, "\n")
-			fmt.Fprintf(w, "  -v, --version         Print the version information, then exit.\n")
-			fmt.Fprintf(w, "  -h, --help            Output this text, then exit.\n")
-			return nil, nil
+			fmt.Fprintf(w, "  -l, --licensing        Show licensing details, then exit.\n")
+			fmt.Fprintf(w, "  -v, --version          Print the version information, then exit.\n")
+			fmt.Fprintf(w, "  -h, --help             Output this text, then exit.\n")
+			fmt.Fprintf(w, "\n")
+			fmt.Fprintf(w, "\n")
+			fmt.Fprintf(w, "Automatic configuration files:\n")
+			fmt.Fprintf(w, "\n")
+			fmt.Fprintf(w, "  %s.%-*s   built in configuration document\n", filenameDefault, extWidth, p.Default.Ext)
+			fmt.Fprintf(w, "  %s.%-*s   environment variables\n", filenameEnviron, extWidth, env.Extension)
+			fmt.Fprintf(w, "  %s.%-*s   command line arguments\n", filenameCLI, extWidth, cli.Extension)
+			return []string{}, cmdExitNow
+
+		case "-l", "--licensing":
+			if len(p.Licensing) == 0 {
+				fmt.Fprintf(w, "Licensing information is unavailable.\n")
+			} else {
+				txt := ensureTrailingNewline(p.Licensing)
+				fmt.Fprintf(w, "Licensing for %s:\n%s", p.Name, txt)
+			}
+			return []string{}, cmdExitNow
 
 		case "-s", "--show-all":
-			show |= showCfg | showCfgDoc | showExts | showFiles
+			cmd |= cmdShowCfg | cmdShowCfgDoc | cmdShowExts | cmdShowFiles
+
 		case "--show-cfg":
-			show |= showCfg
+			cmd |= cmdShowCfg
+
 		case "--show-cfg-doc":
-			show |= showCfgDoc
+			cmd |= cmdShowCfgDoc
+
 		case "--show-exts":
-			show |= showExts
+			cmd |= cmdShowExts
+
 		case "--show-files":
-			show |= showFiles
+			cmd |= cmdShowFiles
+
+		case "--show-cfg-unsafe":
+			cmd |= cmdShowCfgUnsafe
 
 		case "-v", "--version":
-			fmt.Fprintf(w, "%s:\n", name)
+			fmt.Fprintf(w, "%s:\n", p.Name)
 			fmt.Fprintf(w, "  version:    %s\n", Version)
 			fmt.Fprintf(w, "  built time: %s\n", BuildTime)
 			fmt.Fprintf(w, "  git commit: %s\n", GitCommit)
 			fmt.Fprintf(w, "  go version: %s\n", runtime.Version())
 			fmt.Fprintf(w, "  os/arch:    %s/%s\n", runtime.GOOS, runtime.GOARCH)
-			return nil, nil
+			return []string{}, cmdExitNow
 
 		// The following are handled by the cli decoder:
 		//	-f, --file
@@ -138,94 +298,93 @@ func getConfig(name string, cfg DefaultConfig, args []string, w io.Writer, opts 
 		}
 	}
 
-	// Create the FS & FileGroup for the default configuration.
-	defaultsFS := memfs.New()
-	err := defaultsFS.WriteFile(fmt.Sprintf("0.%s", cfg.Ext), []byte(cfg.Text), 0755)
-	if err != nil {
-		return nil, fmt.Errorf("%w: probably an invalid extension: '%s' ... %v",
-			ErrDefaultConfigInvalid, cfg.Ext, err)
-	}
-	defaultGroup := goschtalt.FileGroup(goschtalt.Group{
-		FS:    defaultsFS,
-		Paths: []string{"."},
-	})
+	return extra, cmd
+}
 
-	// Append the specified options after these options in case they really
-	// want to overwrite something.
-	var allOpts []goschtalt.Option
-
-	allOpts = append(allOpts, defaultGroup)
-	allOpts = append(allOpts, cli.Options("1000", ".", extra)...)
-	allOpts = append(allOpts, opts...)
-
-	g, err := goschtalt.New(allOpts...)
-	if err != nil {
-		return nil, err
-	}
-
-	var found bool
-	exts := g.Extensions()
-	for _, ext := range exts {
-		if cfg.Ext == ext {
-			found = true
-			break
-		}
-	}
-	if !found {
-		return nil, fmt.Errorf("%w: extension '%s' not supported: '%s'",
-			ErrDefaultConfigInvalid, cfg.Ext, strings.Join(exts, "', '"))
-	}
-
-	err = g.Compile()
-	if err != nil {
-		return nil, err
-	}
-
-	if show&showExts != 0 {
+func showExtensions(cmd int, w io.Writer, g *goschtalt.Config) {
+	if cmd&cmdShowExts != 0 {
+		exts := g.Extensions()
 		fmt.Fprintf(w, "Supported File Extensions:\n\t'%s'\n\n",
 			strings.Join(exts, "', '"))
 	}
+}
 
-	if show&showFiles != 0 {
+func showFileList(cmd int, w io.Writer, g *goschtalt.Config) error {
+	if cmd&cmdShowFiles != 0 {
 		files, err := g.ShowOrder()
 		if err != nil {
-			return nil, err
+			return err
 		}
-		fmt.Fprintf(w, "Files Processed first (top) to last (bottom):\n")
+
+		fmt.Fprintf(w, "Files Processed first (1) to last (%d):\n", len(files))
 		for i, file := range files {
 			fmt.Fprintf(w, "\t%d. %s\n", i+1, file)
 		}
 		fmt.Fprintf(w, "\n")
 	}
+	return nil
+}
 
-	if show&showCfgDoc != 0 {
-		if show == showCfgDoc {
-			fmt.Fprintln(w, cfg.Text)
-		} else {
-			upper := "-- vvv -------------------------------------------------------------------------\n"
-			lower := "-- ^^^ -------------------------------------------------------------------------\n\n"
-			fmt.Fprintf(w, "Default Configuration:\n%s%s\n%s", upper, cfg.Text, lower)
+func showCfgDoc(cmd int, w io.Writer, cfg DefaultConfig) {
+	if cmd&cmdShowCfgDoc != 0 {
+		upper := "-----BEGIN DEFAULT CONFIGURATION-----\n"
+		lower := "-----END DEFAULT CONFIGURATION-----\n\n"
+		if cmd == cmdShowCfgDoc {
+			upper = ""
+			lower = ""
 		}
+		txt := ensureTrailingNewline(cfg.Text)
+		fmt.Fprintf(w, "%s%s%s", upper, txt, lower)
 	}
+}
 
-	if show&showCfg != 0 {
-		b, err := g.Marshal(goschtalt.IncludeOrigins(true), goschtalt.RedactSecrets(true))
+func showCfg(cmd int, w io.Writer, g *goschtalt.Config) error {
+	if cmd&(cmdShowCfg|cmdShowCfgUnsafe) != 0 {
+		// Only show the non-redacted version if it's the only item requested
+		redact := goschtalt.RedactSecrets(true)
+		if cmd == cmdShowCfgUnsafe {
+			redact = nil
+		}
+
+		b, err := g.Marshal(goschtalt.IncludeOrigins(true), redact)
 		if err != nil {
-			return nil, err
+			return err
 		}
-		if show == showCfg {
-			fmt.Fprintln(w, string(b))
-		} else {
-			upper := "-- vvv -------------------------------------------------------------------------\n"
-			lower := "-- ^^^ -------------------------------------------------------------------------\n\n"
-			fmt.Fprintf(w, "Unified Configuration:\n%s%s\n%s", upper, string(b), lower)
+
+		upper := "-----BEGIN REDACTED UNIFIED CONFIGURATION-----\n"
+		lower := "-----END REDACTED UNIFIED CONFIGURATION-----\n\n"
+		if cmd == cmdShowCfg || cmd == cmdShowCfgUnsafe {
+			upper = ""
+			lower = ""
+		}
+		txt := ensureTrailingNewline(string(b))
+		fmt.Fprintf(w, "%s%s%s", upper, txt, lower)
+	}
+
+	return nil
+}
+
+// ensureTrailingNewline makes the last character in a string a '\n' without
+// duplicating it if already present.  It will not alter what was there, so if
+// '\n\n' was already present, it will stay that way.
+func ensureTrailingNewline(s string) string {
+	if !strings.HasSuffix(s, "\n") {
+		s += "\n"
+	}
+	return s
+}
+
+// getExtWidth finds the extension with the longest width and returns that width.
+func getExtWidth(ext string) int {
+	s := []string{env.Extension, cli.Extension, ext}
+
+	rv := 0
+	for _, val := range s {
+		l := len(val)
+		if rv < l {
+			rv = l
 		}
 	}
 
-	// If we showed anything stop processing.
-	if show != 0 {
-		return nil, nil
-	}
-
-	return g, nil
+	return rv
 }
