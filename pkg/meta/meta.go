@@ -213,7 +213,7 @@ func (obj Object) add(keys []string, val any, origin ...Origin) (Object, error) 
 	kind := obj.Kind()
 
 	if len(origin) == 0 {
-		origin = []Origin{Origin{}}
+		origin = []Origin{{}}
 	}
 
 	if len(keys) == 0 {
