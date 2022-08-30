@@ -36,6 +36,8 @@ const (
 	cmdShowCfgUnsafe
 	cmdShowExts
 	cmdShowFiles
+	cmdSkipValidation
+	cmdExit
 	cmdExitNow
 )
 
@@ -130,6 +132,19 @@ type Program struct {
 	Prefix    string        // Optional - defaults to strings.ToUpper(Name)+"_" if empty
 	Licensing string        // Optional - if you want to include licensing details and option
 	Output    io.Writer     // Optional - defaults to os.Stderr
+
+	// An optional map of label to struct that will be used to validate
+	// the default configuration against.  The configuration is validated if
+	// exactly the same number of fields in the struct matches the fields in
+	// the configuration (honoring mapstruct instructions).  No more or no
+	// fewer are permitted.  This validation will be done at program start
+	// unless explicitly instructed to skip via the --skip-validation option
+	// is passed.
+	//
+	// Why provide this map?  This helps ensure your configuration documentation
+	// and your program are close, if not the same.  If there are areas that
+	// does not fit into this model well, feel free to leave them out.
+	Validate map[string]any
 }
 
 // GetConfig takes the assorted inputs and merges them into goschtalt.Config
@@ -179,6 +194,10 @@ func (p Program) getConfig(args []string, opts ...goschtalt.Option) (*goschtalt.
 		return nil, nil
 	}
 
+	if err = validateDefault(cmd, defFG, p.Validate, opts...); err != nil {
+		return nil, err
+	}
+
 	// Append the specified options after these options in case they really
 	// want to overwrite something.
 	var allOpts []goschtalt.Option
@@ -209,8 +228,7 @@ func (p Program) getConfig(args []string, opts ...goschtalt.Option) (*goschtalt.
 		return nil, err
 	}
 
-	// If we showed anything stop processing.
-	if cmd != 0 {
+	if cmd&cmdExit != 0 {
 		return nil, nil
 	}
 
@@ -240,6 +258,7 @@ func (p Program) processArgs(args []string, w io.Writer) (extra []string, cmd in
 			fmt.Fprintf(w, "      --show-exts        Show the supported configuration file extensions, then exit.\n")
 			fmt.Fprintf(w, "      --show-files       Show files in the order processed, then exit.\n")
 			fmt.Fprintf(w, "\n")
+			fmt.Fprintf(w, "      --skip-validation  Skips the validation of the default configuration against expected structs.\n")
 			fmt.Fprintf(w, "  -l, --licensing        Show licensing details, then exit.\n")
 			fmt.Fprintf(w, "  -v, --version          Print the version information, then exit.\n")
 			fmt.Fprintf(w, "  -h, --help             Output this text, then exit.\n")
@@ -262,22 +281,25 @@ func (p Program) processArgs(args []string, w io.Writer) (extra []string, cmd in
 			return []string{}, cmdExitNow
 
 		case "-s", "--show-all":
-			cmd |= cmdShowCfg | cmdShowCfgDoc | cmdShowExts | cmdShowFiles
+			cmd |= cmdShowCfg | cmdShowCfgDoc | cmdShowExts | cmdShowFiles | cmdExit
 
 		case "--show-cfg":
-			cmd |= cmdShowCfg
+			cmd |= cmdShowCfg | cmdExit
 
 		case "--show-cfg-doc":
-			cmd |= cmdShowCfgDoc
+			cmd |= cmdShowCfgDoc | cmdExit
 
 		case "--show-exts":
-			cmd |= cmdShowExts
+			cmd |= cmdShowExts | cmdExit
 
 		case "--show-files":
-			cmd |= cmdShowFiles
+			cmd |= cmdShowFiles | cmdExit
 
 		case "--show-cfg-unsafe":
-			cmd |= cmdShowCfgUnsafe
+			cmd |= cmdShowCfgUnsafe | cmdExit
+
+		case "--skip-validation":
+			cmd |= cmdSkipValidation
 
 		case "-v", "--version":
 			fmt.Fprintf(w, "%s:\n", p.Name)
@@ -299,6 +321,34 @@ func (p Program) processArgs(args []string, w io.Writer) (extra []string, cmd in
 	}
 
 	return extra, cmd
+}
+
+func validateDefault(cmd int, def goschtalt.Option, what map[string]any, optsIn ...goschtalt.Option) error {
+	if cmd&cmdSkipValidation == 0 && len(what) > 0 {
+		// create a single use goschtalt.Config to just validate the default.
+		opts := []goschtalt.Option{def}
+		opts = append(opts, cli.Options(filenameCLI, ".", []string{})...)
+		opts = append(opts, optsIn...)
+
+		g, err := goschtalt.New(opts...)
+		if err != nil {
+			return err
+		}
+
+		if err = g.Compile(); err != nil {
+			return err
+		}
+
+		for k, v := range what {
+			if err = g.Unmarshal(k, v, goschtalt.ErrorUnused(true),
+				goschtalt.ErrorUnset(true)); err != nil {
+				return fmt.Errorf("%w: default configuration issue: %v",
+					ErrDefaultConfigInvalid, err)
+			}
+		}
+	}
+
+	return nil
 }
 
 func showExtensions(cmd int, w io.Writer, g *goschtalt.Config) {
@@ -326,6 +376,7 @@ func showFileList(cmd int, w io.Writer, g *goschtalt.Config) error {
 }
 
 func showCfgDoc(cmd int, w io.Writer, cfg DefaultConfig) {
+	cmd = cmd ^ cmdExit
 	if cmd&cmdShowCfgDoc != 0 {
 		upper := "-----BEGIN DEFAULT CONFIGURATION-----\n"
 		lower := "-----END DEFAULT CONFIGURATION-----\n\n"
@@ -339,6 +390,7 @@ func showCfgDoc(cmd int, w io.Writer, cfg DefaultConfig) {
 }
 
 func showCfg(cmd int, w io.Writer, g *goschtalt.Config) error {
+	cmd = cmd ^ cmdExit
 	if cmd&(cmdShowCfg|cmdShowCfgUnsafe) != 0 {
 		// Only show the non-redacted version if it's the only item requested
 		redact := goschtalt.RedactSecrets(true)

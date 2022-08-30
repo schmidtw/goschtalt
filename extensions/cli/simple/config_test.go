@@ -38,6 +38,7 @@ func (f fake) Decode(ctx decoder.Context, b []byte, m *meta.Object) error {
 func (f fake) Extensions() []string { return []string{"yml", "yaml", "json"} }
 
 func TestGetConfig(t *testing.T) {
+	unknown := fmt.Errorf("unknown")
 	helpText := `Usage: app [OPTION]...
 
   -f, --file file        File to process for configuration.  May be repeated.
@@ -52,6 +53,7 @@ func TestGetConfig(t *testing.T) {
       --show-exts        Show the supported configuration file extensions, then exit.
       --show-files       Show files in the order processed, then exit.
 
+      --skip-validation  Skips the validation of the default configuration against expected structs.
   -l, --licensing        Show licensing details, then exit.
   -v, --version          Print the version information, then exit.
   -h, --help             Output this text, then exit.
@@ -92,6 +94,9 @@ foo: # 900.cli
 -----END REDACTED UNIFIED CONFIGURATION-----
 
 `
+	type FooStruct struct {
+		Bar string
+	}
 
 	defCfg := DefaultConfig{
 		Text: "---\n  Foo: bar #comments",
@@ -109,6 +114,7 @@ foo: # 900.cli
 		args        []string
 		opts        []goschtalt.Option
 		defCfg      DefaultConfig
+		validate    map[string]any
 		expectedCfg bool
 		expectedErr error
 		expect      string
@@ -199,6 +205,81 @@ foo: # 900.cli
 			args:        []string{"--show-cfg-unsafe"},
 			expect:      "foo:\n    bar: car\n",
 		}, {
+			description: "Validate the structure.",
+			name:        "app",
+			defCfg: DefaultConfig{
+				Text: `{ "Foo": {"bar": "cat"}}`,
+				Ext:  "json",
+			},
+			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
+			args:        []string{},
+			validate:    map[string]any{"foo": &FooStruct{}},
+			expectedCfg: true,
+		}, {
+			description: "Validate the structure, but missing bar so fail.",
+			name:        "app",
+			defCfg: DefaultConfig{
+				Text: `{ "Foo": {"bart": "cat"}}`,
+				Ext:  "json",
+			},
+			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
+			args:        []string{},
+			validate:    map[string]any{"foo": &FooStruct{}},
+			expectedErr: ErrDefaultConfigInvalid,
+		}, {
+			description: "Validate the structure, missing bar, but skip validation.",
+			name:        "app",
+			defCfg: DefaultConfig{
+				Text: `{ "Foo": {"bart": "cat"}}`,
+				Ext:  "json",
+			},
+			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
+			args:        []string{"--skip-validation"},
+			validate:    map[string]any{"foo": &FooStruct{}},
+			expectedCfg: true,
+		}, {
+			description: "Invalid default file during validation.",
+			name:        "app",
+			defCfg: DefaultConfig{
+				Text: `{ "Foo": {"bart": "cat"}`,
+				Ext:  "json",
+			},
+			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
+			args:        []string{},
+			validate:    map[string]any{"foo": &FooStruct{}},
+			expectedErr: unknown,
+		}, {
+			description: "Invalid default file no validation.",
+			name:        "app",
+			defCfg: DefaultConfig{
+				Text: `{ "Foo": {"bart": "cat"}`,
+				Ext:  "json",
+			},
+			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
+			args:        []string{},
+			expectedErr: unknown,
+		}, {
+			description: "Invalid options during validation.",
+			name:        "app",
+			defCfg: DefaultConfig{
+				Text: `{ "Foo": {"bart": "cat"}}`,
+				Ext:  "json",
+			},
+			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{}), goschtalt.DecoderRegister(fake{})},
+			args:        []string{},
+			validate:    map[string]any{"foo": &FooStruct{}},
+			expectedErr: unknown,
+		}, {
+			description: "Invalid options no validation.",
+			name:        "app",
+			defCfg: DefaultConfig{
+				Text: `{ "Foo": {"bart": "cat"}}`,
+				Ext:  "json",
+			},
+			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{}), goschtalt.DecoderRegister(fake{})},
+			args:        []string{},
+			expectedErr: unknown,
+		}, {
 			description: "End to end.",
 			name:        "app",
 			defCfg:      defCfg,
@@ -234,6 +315,7 @@ foo: # 900.cli
 				Prefix:    tc.prefix,
 				Licensing: tc.license,
 				Output:    w,
+				Validate:  tc.validate,
 			}
 
 			if len(p.Prefix) == 0 {
@@ -257,7 +339,11 @@ foo: # 900.cli
 				assert.NoError(err)
 				return
 			}
-			assert.ErrorIs(err, tc.expectedErr)
+
+			assert.Error(err)
+			if tc.expectedErr != unknown {
+				assert.ErrorIs(err, tc.expectedErr)
+			}
 		})
 	}
 }
