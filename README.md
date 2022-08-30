@@ -79,7 +79,7 @@ in the program quite easily.
 package main
 
 import (
-    //_ "embed" // uncomment to automatically embed the default.yml file.
+    _ "embed"
 	"fmt"
 	"os"
 
@@ -88,20 +88,14 @@ import (
 	_ "github.com/schmidtw/goschtalt/extensions/decoders/yaml"
 )
 
+// Get the configuration from the config.yml file so you don't need to build
+// it into the program.  Go will do that for you.
+
 //go:embed config.yml
-//var defaultConfig string  // uncomment to automatically embed the default.yml file.
+var defaultConfig string
 
-const defaultConfig = `---
-# This is an example of documentation and default configuration.
-# this defenition can live somewhere else, outside of this file
-# or could be generated from a different file.  The choice is
-# yours.
-
-Example:
-  # color can be one of [ red, green, blue ]
-  color: blue # default to a popular color
-  crayons ((secret)): box of 24
-`
+//go:embed NOTICE
+var programLicense string
 
 // example struct to show validation.
 type all struct {
@@ -110,16 +104,13 @@ type all struct {
 }
 
 func main() {
-	// Clear out arguments and make it easy to try out in goplayground.
-	os.Args = []string{"exmaple"}
-
 	program := simple.Program{
 		Name: "example",
+		Licensing: programLicense,
 		Default: simple.DefaultConfig{
 			Text: defaultConfig,
 			Ext:  "yml",
 		},
-		Licensing: "Apache-2.0",
 		Validate: map[string]any{
 			"example": all{},
 		},
@@ -137,13 +128,9 @@ func main() {
 	// configuration and are ready to go do things with it.
 	//
 	// Go forth and code...
-
-	var s string
-	s, _ = goschtalt.Fetch(g, "example.color", s)
-	fmt.Println(s)
-
-	// Output:
-	// blue
 }
 ```
+
+A similar but slightly altered version that runs in goplayground.
+
 https://go.dev/play/p/Vbg3U6t0R4a
