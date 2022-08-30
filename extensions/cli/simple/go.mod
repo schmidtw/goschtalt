@@ -4,9 +4,10 @@ go 1.18
 
 require (
 	github.com/psanford/memfs v0.0.0-20210214183328-a001468d78ef
-	github.com/schmidtw/goschtalt v0.0.0-20220828040412-19948fd670ff
-	github.com/schmidtw/goschtalt/extensions/decoders/cli v0.0.0-20220828040412-19948fd670ff
-	github.com/schmidtw/goschtalt/extensions/encoders/yaml v0.0.0-20220828040412-19948fd670ff
+	github.com/schmidtw/goschtalt v0.0.0-20220829051717-0f5f79b33e3a
+	github.com/schmidtw/goschtalt/extensions/decoders/cli v0.0.0-20220829051717-0f5f79b33e3a
+	github.com/schmidtw/goschtalt/extensions/decoders/env v0.0.0-20220829051717-0f5f79b33e3a
+	github.com/schmidtw/goschtalt/extensions/encoders/yaml v0.0.0-20220829051717-0f5f79b33e3a
 	github.com/stretchr/testify v1.8.0
 )
 
