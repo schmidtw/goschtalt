@@ -296,9 +296,11 @@ jobs:
 
   goreportcard:
     name: Update goreportcard.com
-    needs: [ test, style, lint, reuse, license ]
     runs-on: [ 'ubuntu-latest' ]
     steps:
+      - name: Checkout the code
+        uses: actions/checkout@v3
+
       # Update the results on goreportcard.com
       - name: Go report card
         run: |
@@ -308,7 +310,8 @@ jobs:
           do
               d=`dirname $i`
               path=$(echo "$d" | sed -e 's/[\.]//')
-              curl -X POST -F "repo=github.com/${{ github.repository }}${path}" https://goreportcard.com/checks
+              echo "Processing: 'github.com/${{ github.repository }}${path}'"
+              curl -s -o /dev/null -w "HTTP Status: %{http_code}\n" -X POST -F "repo=github.com/${{ github.repository }}${path}" https://goreportcard.com/checks
           done
 
   release:
