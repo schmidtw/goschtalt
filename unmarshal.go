@@ -116,11 +116,13 @@ func MatchName(fn func(mapKey, fieldName string) bool) UnmarshalOption {
 	}
 }
 
-// Optional causes the unmarshal operation to ignore missing parts of the tree
-// and simply pass back the object unchanged.
-func Optional() UnmarshalOption {
+// Optional set to true causes the unmarshal operation to ignore missing parts
+// of the tree and simply pass back the object unchanged.
+//
+// Defaults to false.
+func Optional(optional bool) UnmarshalOption {
 	return func(u *unmarshalConfig) {
-		u.optional = true
+		u.optional = optional
 	}
 }
 

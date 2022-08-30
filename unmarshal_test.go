@@ -136,7 +136,7 @@ func TestUnmarshal(t *testing.T) {
 			description: "Verify the Optional() behavior.",
 			key:         "not_present",
 			input:       `{"flags":"bar"}`,
-			opts:        []UnmarshalOption{Optional()},
+			opts:        []UnmarshalOption{Optional(true)},
 			want:        simple{},
 			expected:    simple{},
 		}, {
