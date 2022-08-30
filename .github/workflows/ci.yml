@@ -181,12 +181,6 @@ jobs:
           files: >-
             ./coverage.out,./extensions/cli/simple/coverage.out,./extensions/decoders/cli/coverage.out,./extensions/decoders/env/coverage.out,./extensions/decoders/json/coverage.out,./extensions/decoders/properties/coverage.out,./extensions/decoders/yaml/coverage.out,./extensions/encoders/yaml/coverage.out
 
-      # Update the results on goreportcard.com
-      - name: Go report card
-        if: |
-          matrix.os == 'ubuntu-latest' &&
-          matrix.go == env.go_version
-        uses: creekorful/goreportcard-action@v1.0
 
   style:
     name: Check code style
@@ -299,6 +293,23 @@ jobs:
           name: licensing
           path: |
             licensed/**.yml
+
+  goreportcard:
+    name: Update goreportcard.com
+    needs: [ test, style, lint, reuse, license ]
+    runs-on: [ 'ubuntu-latest' ]
+    steps:
+      # Update the results on goreportcard.com
+      - name: Go report card
+        run: |
+          list=(`find . -name go.mod`)
+
+          for i in "${list[@]}"
+          do
+              d=`dirname $i`
+              path=$(echo "$d" | sed -e 's/[\.]//')
+              curl -X POST -F "repo=github.com/${{ github.repository }}${path}" https://goreportcard.com/checks
+          done
 
   release:
     name: Release
