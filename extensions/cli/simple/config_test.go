@@ -97,6 +97,7 @@ foo: # 900.cli
 	type FooStruct struct {
 		Bar string
 	}
+	empty := FooStruct{}
 
 	defCfg := DefaultConfig{
 		Text: "---\n  Foo: bar #comments",
@@ -205,7 +206,7 @@ foo: # 900.cli
 			args:        []string{"--show-cfg-unsafe"},
 			expect:      "foo:\n    bar: car\n",
 		}, {
-			description: "Validate the structure.",
+			description: "Validate the structure as a pointer.",
 			name:        "app",
 			defCfg: DefaultConfig{
 				Text: `{ "Foo": {"bar": "cat"}}`,
@@ -214,6 +215,28 @@ foo: # 900.cli
 			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
 			args:        []string{},
 			validate:    map[string]any{"foo": &FooStruct{}},
+			expectedCfg: true,
+		}, {
+			description: "Validate the pointer value isn't altered.",
+			name:        "app",
+			defCfg: DefaultConfig{
+				Text: `{ "Foo": {"bar": "cat"}}`,
+				Ext:  "json",
+			},
+			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
+			args:        []string{},
+			validate:    map[string]any{"foo": &empty},
+			expectedCfg: true,
+		}, {
+			description: "Validate the structure directly.",
+			name:        "app",
+			defCfg: DefaultConfig{
+				Text: `{ "Foo": {"bar": "cat"}}`,
+				Ext:  "json",
+			},
+			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
+			args:        []string{},
+			validate:    map[string]any{"foo": FooStruct{}},
 			expectedCfg: true,
 		}, {
 			description: "Validate the structure, but missing bar so fail.",
@@ -337,6 +360,7 @@ foo: # 900.cli
 					fmt.Printf("got:\n%s", got)
 				}
 				assert.NoError(err)
+				assert.Empty(empty)
 				return
 			}
 

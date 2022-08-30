@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"reflect"
 	"runtime"
 	"strings"
 
@@ -340,7 +341,19 @@ func validateDefault(cmd int, def goschtalt.Option, what map[string]any, optsIn 
 		}
 
 		for k, v := range what {
-			if err = g.Unmarshal(k, v, goschtalt.ErrorUnused(true),
+			// Take either a pointer or direct object and ensure we have a
+			// pointer to a unique object.  This prevents a partial configuration
+			// value from being leaked back to the caller by accident.
+			p := &v
+			if reflect.ValueOf(v).Kind() == reflect.Pointer {
+				// Get the type of the thing being pointed to
+				t := reflect.TypeOf(v).Elem()
+				// Make a new thing & convert it to an any so the object is right
+				n := reflect.New(t).Interface()
+				p = &n
+			}
+
+			if err = g.Unmarshal(k, p, goschtalt.ErrorUnused(true),
 				goschtalt.ErrorUnset(true)); err != nil {
 				return fmt.Errorf("%w: default configuration issue: %v",
 					ErrDefaultConfigInvalid, err)
