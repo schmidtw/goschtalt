@@ -66,3 +66,84 @@ files you're interested in.
 | [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/cli/simple)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/cli/simple) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/cli/simple)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/cli/simple) | `cli/simple` | A fairly feature complete solution for simple servers that only need configuration. |
 
 ## Examples
+
+Below uses the simple cli extension showing off it's many features.  You can
+easily build documented, default configuration into your program.  It's also
+easy to clear the configuration by having a file with `clear ((clear)): clear`
+in it.  Many helpful configuration command line tools are present and tested,
+making this a good place to start.  You also can see the ability to validate
+your documentation is complete.  Finally, you can include Licensing notices
+in the program quite easily.
+
+```golang
+package main
+
+import (
+    //_ "embed" // uncomment to automatically embed the default.yml file.
+	"fmt"
+	"os"
+
+	"github.com/schmidtw/goschtalt"
+	"github.com/schmidtw/goschtalt/extensions/cli/simple"
+	_ "github.com/schmidtw/goschtalt/extensions/decoders/yaml"
+)
+
+//go:embed config.yml
+//var defaultConfig string  // uncomment to automatically embed the default.yml file.
+
+const defaultConfig = `---
+# This is an example of documentation and default configuration.
+# this defenition can live somewhere else, outside of this file
+# or could be generated from a different file.  The choice is
+# yours.
+
+Example:
+  # color can be one of [ red, green, blue ]
+  color: blue # default to a popular color
+  crayons ((secret)): box of 24
+`
+
+// example struct to show validation.
+type all struct {
+	Color   string
+	Crayons string
+}
+
+func main() {
+	// Clear out arguments and make it easy to try out in goplayground.
+	os.Args = []string{"exmaple"}
+
+	program := simple.Program{
+		Name: "example",
+		Default: simple.DefaultConfig{
+			Text: defaultConfig,
+			Ext:  "yml",
+		},
+		Licensing: "Apache-2.0",
+		Validate: map[string]any{
+			"example": all{},
+		},
+	}
+
+	g, err := program.GetConfig()
+	if g == nil { // We've been told to exit.
+		if err != nil { // There was an error.
+			panic(err)
+		}
+		return // No error, just gracefully exit.
+	}
+
+	// At this point you have processed the cli inputs, built a complete
+	// configuration and are ready to go do things with it.
+	//
+	// Go forth and code...
+
+	var s string
+	s, _ = goschtalt.Fetch(g, "example.color", s)
+	fmt.Println(s)
+
+	// Output:
+	// blue
+}
+```
+https://go.dev/play/p/Vbg3U6t0R4a
