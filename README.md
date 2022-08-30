@@ -25,7 +25,9 @@ This package has not yet released, so APIs are subject to change for a bit longe
 ## Extensions
 
 These are just the extensions the goschtalt team maintains.  Others may be available
-and it's fairly easy to write your own.
+and it's fairly easy to write your own.  Extensions have their own go.mod files
+that independently track dependencies to keep dependencies only based on what
+you need, not what could be used.
 
 ### Configuration Decoders
 
@@ -35,11 +37,11 @@ the hardest part is determining where you are processing in the original file.
 
 | Status | GoDoc | Extension | Description |
 |--------|-------|-----------|-------------|
-| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/decoders/cli)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/decoders/cli) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/decoders/cli)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/decoders/cli) | `extensions/decoders/cli` | A command line argument based configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/decoders/env)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/decoders/env) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/decoders/env)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/decoders/env) | `extensions/decoders/env` | An environment variable based configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/decoders/json)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/decoders/json) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/decoders/json)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/decoders/json) | `extensions/decoders/json` | A JSON configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/decoders/properties)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/decoders/properties) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/decoders/properties)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/decoders/properties) | `extensions/decoders/properties` | A properties configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/decoders/yaml)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/decoders/yaml) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/decoders/yaml)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/decoders/yaml) | `extensions/decoders/yaml` | A YAML/YML configuration decoder |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/decoders/cli)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/decoders/cli) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/decoders/cli)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/decoders/cli) | `decoders/cli` | A command line argument based configuration decoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/decoders/env)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/decoders/env) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/decoders/env)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/decoders/env) | `decoders/env` | An environment variable based configuration decoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/decoders/json)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/decoders/json) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/decoders/json)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/decoders/json) | `decoders/json` | A JSON configuration decoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/decoders/properties)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/decoders/properties) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/decoders/properties)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/decoders/properties) | `decoders/properties` | A properties configuration decoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/decoders/yaml)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/decoders/yaml) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/decoders/yaml)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/decoders/yaml) | `decoders/yaml` | A YAML/YML configuration decoder |
 
 
 ### Configuration Encoders
@@ -50,7 +52,7 @@ from.
 
 | Status | GoDoc | Extension | Description |
 |--------|-------|-----------|-------------|
-| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/encoders/yaml)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/encoders/yaml) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/encoders/yaml)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/encoders/yaml) | `extensions/encoders/yaml` | A YAML/YML configuration encoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/encoders/yaml)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/encoders/yaml) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/encoders/yaml)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/encoders/yaml) | `encoders/yaml` | A YAML/YML configuration encoder. |
 
 
 ### Opinionated CLI Integrations
@@ -61,6 +63,6 @@ files you're interested in.
 
 | Status | GoDoc | Extension | Description |
 |--------|-------|-----------|-------------|
-| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/cli/simple)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/cli/simple) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/cli/simple)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/cli/simple) | `extensions/cli/simple` | A fairly feature complete solution for simple servers that only need configuration. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/cli/simple)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/cli/simple) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/cli/simple)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/cli/simple) | `cli/simple` | A fairly feature complete solution for simple servers that only need configuration. |
 
 ## Examples
