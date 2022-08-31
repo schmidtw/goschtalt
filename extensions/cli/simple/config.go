@@ -48,9 +48,9 @@ const (
 	filenameCLI     = "900"
 )
 
-// Use the -ldflags command line to set the values of these three values at build
-// time so they can be produced upon request from the command line interface upon
-// request.
+// Use the -ldflags command line option to set the values of these three values
+// at build time.  These values are produced upon request from the command line
+// interface upon request.
 //
 // Example:
 //
