@@ -68,7 +68,6 @@ func TestWalk(t *testing.T) {
 		}, {
 			description: "Process all files and fail.",
 			group: Group{
-				Paths:   []string{"."},
 				Recurse: true,
 			},
 			expectedErr: ErrDecoding,

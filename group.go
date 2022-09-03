@@ -34,6 +34,11 @@ type Group struct {
 func (group Group) enumerate(exts []string) ([]string, error) {
 	var files []string
 
+	// By default include everything in the base directory if nothing is specified.
+	if len(group.Paths) == 0 {
+		group.Paths = []string{"."}
+	}
+
 	for _, path := range group.Paths {
 		// Make sure the paths are consistent across FS implementations with
 		// go's documentation.  This prevents errors due to some FS accepting
