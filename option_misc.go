@@ -8,6 +8,16 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 )
 
+// AndCompile instructs New() to also compile the configuration if successful
+// up to that point.  The error could be from creating the Config object or
+// from the call to Compile().
+func AndCompile() Option {
+	return func(c *Config) error {
+		c.compileNow = true
+		return nil
+	}
+}
+
 // DecoderRegister registers a Decoder for the specific file extensions provided.
 // Attempting to register a duplicate extension is not supported.
 func DecoderRegister(d decoder.Decoder) Option {

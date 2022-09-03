@@ -80,6 +80,17 @@ func TestKeyDelimiter(t *testing.T) {
 	assert.Equal(c.keyDelimiter, "<crazy>")
 }
 
+func TestAndCompile(t *testing.T) {
+	assert := assert.New(t)
+	require := require.New(t)
+
+	var c Config
+
+	assert.Equal(c.compileNow, false)
+	require.NoError(c.With(AndCompile()))
+	assert.Equal(c.compileNow, true)
+}
+
 func TestNoDefaults(t *testing.T) {
 	tests := []struct {
 		description string

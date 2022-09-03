@@ -26,6 +26,7 @@ type Config struct {
 	hasBeenCompiled bool
 
 	// options based things
+	compileNow       bool
 	ignoreDefaults   bool
 	decoders         *decoderRegistry
 	encoders         *encoderRegistry
@@ -82,6 +83,12 @@ func New(opts ...Option) (*Config, error) {
 
 	if c.keySwizzler == nil {
 		return nil, fmt.Errorf("%w: a KeyCase... option must be specified.", ErrConfigMissing)
+	}
+
+	if c.compileNow {
+		if err := c.Compile(); err != nil {
+			return nil, err
+		}
 	}
 
 	return c, nil
