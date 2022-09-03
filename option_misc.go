@@ -8,10 +8,10 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 )
 
-// AndCompile instructs New() to also compile the configuration if successful
+// CompileNow instructs New() to also compile the configuration if successful
 // up to that point.  The error could be from creating the Config object or
 // from the call to Compile().
-func AndCompile() Option {
+func CompileNow() Option {
 	return func(c *Config) error {
 		c.compileNow = true
 		return nil

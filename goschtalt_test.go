@@ -25,7 +25,7 @@ func TestNew(t *testing.T) {
 			description: "A normal case with no options.",
 		}, {
 			description: "A normal case with options.",
-			opts:        []Option{KeyCaseLower(), AndCompile()},
+			opts:        []Option{KeyCaseLower(), CompileNow()},
 		}, {
 			description: "A case with an empty option.",
 			opts:        []Option{zeroOpt},

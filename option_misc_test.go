@@ -80,14 +80,14 @@ func TestKeyDelimiter(t *testing.T) {
 	assert.Equal(c.keyDelimiter, "<crazy>")
 }
 
-func TestAndCompile(t *testing.T) {
+func TestCompileNow(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
 	var c Config
 
 	assert.Equal(c.compileNow, false)
-	require.NoError(c.With(AndCompile()))
+	require.NoError(c.With(CompileNow()))
 	assert.Equal(c.compileNow, true)
 }
 
