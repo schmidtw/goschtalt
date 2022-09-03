@@ -9,19 +9,22 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	//pp "github.com/k0kubun/pp/v3"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestFetch(t *testing.T) {
-	failureErr := fmt.Errorf("always fails.")
+	type Example struct {
+		Value []string
+	}
 
 	tests := []struct {
 		description     string
 		json            string
 		key             string
-		addGoodMapper   bool
-		addErrorMapper  bool
+		want            any
+		opts            []UnmarshalOption
 		expected        any
 		expectedErr     error
 		notCompiled     bool
@@ -31,74 +34,80 @@ func TestFetch(t *testing.T) {
 			description: "Fetch string with a matching type.",
 			json:        `{"foo":"bar"}`,
 			key:         "foo",
+			want:        "string",
 			expected:    "bar",
 		}, {
 			description: "Fetch float64 with a matching type.",
 			json:        `{"foo":[0.1, 0.2]}`,
 			key:         "foo.1",
+			want:        "float64",
 			expected:    float64(0.2),
+		}, {
+			description: "Fetch int64 with a matching type.",
+			json:        `{"foo":1}`,
+			key:         "foo",
+			want:        "int64",
+			expected:    int64(1),
+		}, {
+			description: "Fetch int with a matching type.",
+			json:        `{"foo":1}`,
+			key:         "foo",
+			want:        "int",
+			expected:    int(1),
 		}, {
 			description: "Fetch full tree.",
 			json:        `{"foo":["car", "bat"]}`,
 			key:         "",
+			want:        "map[string]any",
 			expected: map[string]any{
 				"foo": []any{
 					"car", "bat",
 				},
 			},
 		}, {
+			description: "Fetch an array of strings.",
+			json:        `{"foo":["car", "bat"]}`,
+			key:         "foo",
+			want:        "[]string",
+			expected:    []string{"car", "bat"},
+		}, {
+			description: "Fetch an array of strings.",
+			json:        `{"foo":["car", "bat"]}`,
+			key:         "foo",
+			want:        "[]string",
+			expected:    []string{"car", "bat"},
+		}, {
+			description: "Fetch an slice of structs.",
+			json:        `{"foo":[{"value":["a", "b"]},{"value":["c","d"]}]}`,
+			key:         "foo",
+			want:        "[]Example",
+			expected: []Example{
+				{
+					Value: []string{"a", "b"},
+				}, {
+					Value: []string{"c", "d"},
+				},
+			},
+		}, {
 			description: "Fetch something that isn't there.",
 			json:        `{"foo":"bar"}`,
 			key:         "goofy",
-			expected:    "ignored, but used for type",
+			want:        "string",
 			expectedErr: meta.ErrNotFound,
 		}, {
-			description:   "Fetch float64 with a non-matching type and a mapper.",
-			json:          `{"foo":[0.1, 0.2]}`,
-			key:           "foo.1",
-			expected:      "0.2",
-			addGoodMapper: true,
-		}, {
-			description:    "Fetch with a mapper that always return error.",
-			json:           `{"foo":[0.1, 0.2]}`,
-			key:            "foo.1",
-			expected:       "ignored, but used for type",
-			addErrorMapper: true,
-			expectedErr:    failureErr,
+			description: "Fetch float64 with a non-matching type and a mapper.",
+			json:        `{"foo":["0.1", "0.2"]}`,
+			key:         "foo.1",
+			want:        "float64",
+			expected:    float64(0.2),
+			opts:        []UnmarshalOption{WeaklyTypedInput(true)},
 		}, {
 			description: "Not compile yet.",
 			notCompiled: true,
 			json:        `{"foo":[0.1, 0.2]}`,
 			key:         "foo.1",
-			expected:    "ignored, but used for type",
+			want:        "string",
 			expectedErr: ErrNotCompiled,
-		}, {
-			description: "Fetch float64 with a non-matching type.",
-			json:        `{"foo":[0.1, 0.2]}`,
-			key:         "foo.1",
-			expected:    "ignored, but used for type",
-			expectedErr: ErrTypeMismatch,
-			// Normally checking error text is a bad idea, but since this will
-			// be hard to debug for the user, I think it's worth it in this case.
-			expectedErrText: "type mismatch: expected type 'string' does not match type found 'float64'",
-		}, {
-			description: "Fetch a missing value to check the error.",
-			json:        `{"foo":[{"car":"map"},{"dog": "cat"}]}`,
-			key:         "foo.1.rat",
-			expected:    "ignored, but used for type",
-			expectedErr: meta.ErrNotFound,
-			// Normally checking error text is a bad idea, but since this will
-			// be hard to debug for the user, I think it's worth it in this case.
-			expectedErrText: "with 'foo.1.rat' not found",
-		}, {
-			description: "Fetch float64 with a non-matching type.",
-			json:        `{"foo":[0.1, 0.2]}`,
-			key:         "foo.2.dog",
-			expected:    "ignored, but used for type",
-			expectedErr: meta.ErrArrayOutOfBounds,
-			// Normally checking error text is a bad idea, but since this will
-			// be hard to debug for the user, I think it's worth it in this case.
-			expectedErrText: "with array len of 2 and 'foo.2' array index is out of bounds",
 		},
 	}
 
@@ -109,26 +118,34 @@ func TestFetch(t *testing.T) {
 			c := Config{
 				tree:            decode("file", tc.json),
 				hasBeenCompiled: !tc.notCompiled,
-				typeMappers:     make(map[string]typeMapper),
 				keySwizzler:     strings.ToLower,
 				keyDelimiter:    ".",
 			}
 
-			if tc.addGoodMapper {
-				c.typeMappers["string"] = func(i any) (any, error) {
-					return "0.2", nil
-				}
-			}
-			if tc.addErrorMapper {
-				c.typeMappers["string"] = func(i any) (any, error) {
-					return nil, failureErr
-				}
-			}
+			var got any
+			var err error
 
-			got, err := Fetch(&c, tc.key, tc.expected)
+			switch tc.want {
+			case "int":
+				got, err = Fetch[int](&c, tc.key, tc.opts...)
+			case "int64":
+				got, err = Fetch[int64](&c, tc.key, tc.opts...)
+			case "string":
+				got, err = Fetch[string](&c, tc.key, tc.opts...)
+			case "[]string":
+				got, err = Fetch[[]string](&c, tc.key, tc.opts...)
+			case "float64":
+				got, err = Fetch[float64](&c, tc.key, tc.opts...)
+			case "map[string]any":
+				got, err = Fetch[map[string]any](&c, tc.key, tc.opts...)
+			case "[]Example":
+				got, err = Fetch[[]Example](&c, tc.key, tc.opts...)
+			}
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
+				//pp.Printf("Got:\n%s\n", got)
+				//pp.Printf("Expected:\n%s\n", tc.expected)
 				assert.Empty(cmp.Diff(tc.expected, got))
 				return
 			}
@@ -170,7 +187,6 @@ func TestFetchMethod(t *testing.T) {
 			c := Config{
 				tree:            decode("file", tc.json),
 				hasBeenCompiled: true,
-				typeMappers:     make(map[string]typeMapper),
 				keySwizzler:     strings.ToLower,
 				keyDelimiter:    ".",
 			}
@@ -225,7 +241,6 @@ func TestFetchWithOrigin(t *testing.T) {
 			c := Config{
 				tree:            decode("file", tc.json),
 				hasBeenCompiled: true,
-				typeMappers:     make(map[string]typeMapper),
 				keySwizzler:     strings.ToLower,
 				keyDelimiter:    ".",
 			}

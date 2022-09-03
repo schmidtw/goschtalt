@@ -4,6 +4,7 @@
 package goschtalt
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 
@@ -21,11 +22,19 @@ type testDecoder struct {
 }
 
 func (t *testDecoder) Decode(ctx decoder.Context, b []byte, m *meta.Object) error {
-	var data any
-	err := json.Unmarshal(b, &data)
-	if err != nil {
+	var data map[string]any
+
+	if len(b) == 0 {
+		*m = meta.Object{}
+		return nil
+	}
+
+	dec := json.NewDecoder(bytes.NewBuffer(b))
+	dec.UseNumber()
+	if err := dec.Decode(&data); err != nil {
 		return err
 	}
+
 	tmp := meta.ObjectFromRaw(data)
 	tmp = addOrigin(tmp, &meta.Origin{File: ctx.Filename, Line: 1, Col: 123})
 	*m = tmp

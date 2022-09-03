@@ -35,7 +35,6 @@ type Config struct {
 	keyDelimiter     string
 	keySwizzler      func(string) string
 	unmarshalOptions []UnmarshalOption
-	typeMappers      map[string]typeMapper
 }
 
 // Option is the type used for options.
@@ -43,10 +42,9 @@ type Option func(c *Config) error
 
 func newConfig() *Config {
 	return &Config{
-		tree:        meta.Object{},
-		decoders:    newDecoderRegistry(),
-		encoders:    newEncoderRegistry(),
-		typeMappers: make(map[string]typeMapper),
+		tree:     meta.Object{},
+		decoders: newDecoderRegistry(),
+		encoders: newEncoderRegistry(),
 	}
 }
 

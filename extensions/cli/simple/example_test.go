@@ -67,10 +67,10 @@ Example:
 	// Now let's us the configuration...
 
 	var s string
-	s, _ = goschtalt.Fetch(g, "example.color", s)
+	s, _ = goschtalt.Fetch[string](g, "example.color")
 	fmt.Println(s)
 
-	s, _ = goschtalt.Fetch(g, "muppet", s)
+	s, _ = goschtalt.Fetch[string](g, "muppet")
 	fmt.Println(s)
 
 	// Output:

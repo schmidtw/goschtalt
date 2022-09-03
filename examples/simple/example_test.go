@@ -59,8 +59,7 @@ func Example() {
 	//
 	// Go forth and code...
 
-	var s string
-	s, _ = goschtalt.Fetch(g, "example.color", s)
+	s, _ := goschtalt.Fetch[string](g, "example.color")
 	fmt.Println(s)
 
 	// Output:

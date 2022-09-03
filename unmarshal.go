@@ -185,14 +185,19 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 //	)
 func UnmarshalFn[T any](key string, opts ...UnmarshalOption) func(*Config) (T, error) {
 	return func(cfg *Config) (T, error) {
-		var zeroVal T
-		var obj T
-
-		err := cfg.Unmarshal(key, &obj, opts...)
-		if err != nil {
-			return zeroVal, err
-		}
-
-		return obj, nil
+		return Fetch[T](cfg, key, opts...)
 	}
+}
+
+// Fetch provides a generics based strict typed approach to fetching parts of the
+// configuration tree.
+func Fetch[T any](c *Config, key string, opts ...UnmarshalOption) (T, error) {
+	var rv T
+	err := c.Unmarshal(key, &rv, opts...)
+	if err != nil {
+		var zeroVal T
+		return zeroVal, err
+	}
+
+	return rv, nil
 }

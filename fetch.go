@@ -4,72 +4,10 @@
 package goschtalt
 
 import (
-	"fmt"
-	"reflect"
 	"strings"
 
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
-
-// Fetch provides a generic based strict typed approach to fetching parts of the
-// configuration tree.  The Config and key parameters are fairly
-// straighforward, but the want may not be.  The want parameter is used to
-// determine the type of the output object desired.  This allows this function
-// to do to handy things the c.Fetch() method can't do:
-//
-//   - Thes function is able to validate the type returned is the type desired,
-//     or return a descriptive error about why it can't do what was asked for.
-//
-//   - This function is also able to perform remapping from an existing type to
-//     what you want based on the typeMappers provided.  This allows you to
-//     automatically convert and cast a string to a time.Duration if you provide
-//     the mapper.
-//
-// Here is an example showing how to add a duration caster based on spf13/cast:
-//
-//	import (
-//	    "github.com/schmidtw/goschtalt"
-//	    "github.com/spf13/cast"
-//	)
-//
-//	func DurationMapper() goschtalt.Option {
-//	    var d time.Duration
-//	    return goschtalt.CustomMapper(d, func(i any) (any, error) {
-//	        return cast.ToDurationE(i)
-//	    })
-//	}
-//
-//	...
-//
-//	c := goschtalt.New(DurationMapper())
-//
-//	...
-func Fetch[T any](c *Config, key string, want T) (T, error) {
-	c.mutex.Lock()
-	defer c.mutex.Unlock()
-
-	var zeroVal T
-	rv, _, err := c.fetchWithOrigin(key)
-	if err != nil {
-		return zeroVal, err
-	}
-
-	if fn, found := c.typeMappers[reflect.TypeOf(want).String()]; found {
-		rv, err = fn(rv)
-		if err != nil {
-			return zeroVal, err
-		}
-	}
-
-	if reflect.TypeOf(want) != reflect.TypeOf(rv) {
-		return zeroVal, fmt.Errorf("%w: expected type '%s' does not match type found '%s'",
-			ErrTypeMismatch,
-			reflect.TypeOf(want),
-			reflect.TypeOf(rv))
-	}
-
-	return rv.(T), nil
-}
 
 // Fetch pulls the specified portion of the configuration tree and returns it to
 // the caller as an any, since it could be a map node or a specific value.
