@@ -785,6 +785,7 @@ func TestToExpanded(t *testing.T) {
 		in          Object
 		expected    Object
 		expectedErr error
+		origin      string
 		start       string
 		end         string
 		vars        map[string]string
@@ -867,6 +868,7 @@ func TestToExpanded(t *testing.T) {
 					},
 				},
 			},
+			origin: "expanded:test",
 			expected: Object{
 				Origins: []Origin{},
 				Map: map[string]Object{
@@ -883,7 +885,7 @@ func TestToExpanded(t *testing.T) {
 						Origins: []Origin{},
 						Array: []Object{
 							{
-								Origins: []Origin{{File: "expanded"}},
+								Origins: []Origin{{File: "expanded:test"}},
 								Value:   "food",
 							},
 						},
@@ -935,7 +937,7 @@ func TestToExpanded(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 
-			got, err := tc.in.ToExpanded(tc.start, tc.end, func(in string) string {
+			got, err := tc.in.ToExpanded(10000, tc.origin, tc.start, tc.end, func(in string) string {
 				out, found := tc.vars[in]
 				if found {
 					return out
@@ -955,7 +957,6 @@ func TestToExpanded(t *testing.T) {
 
 func TestExpand(t *testing.T) {
 	tests := []struct {
-		count       int
 		in          string
 		start       string
 		end         string
@@ -996,9 +997,6 @@ func TestExpand(t *testing.T) {
 			},
 			expectedErr: ErrRecursionTooDeep,
 		}, {
-			count:       10000,
-			expectedErr: ErrRecursionTooDeep,
-		}, {
 			// This appears to be a bit of a special case for the os.Expand() function
 			in:    "|nothing|",
 			start: "|",
@@ -1014,7 +1012,7 @@ func TestExpand(t *testing.T) {
 		t.Run(tc.in, func(t *testing.T) {
 			assert := assert.New(t)
 
-			got, changed, err := expand(0, tc.in, tc.start, tc.end, func(in string) string {
+			got, changed, err := expand(10000, tc.in, tc.start, tc.end, func(in string) string {
 				out, found := tc.vars[in]
 				if found {
 					return out

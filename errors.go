@@ -13,5 +13,5 @@ var (
 	ErrCodecNotFound  = errors.New("encoder/decoder not found")
 	ErrTypeMismatch   = errors.New("type mismatch")
 	ErrConfigMissing  = errors.New("Config is missing a required configuration")
-	ErrDelimiters     = errors.New("the start and stop deliminters may not be empty")
+	ErrInvalidInput   = errors.New("input is invalid")
 )

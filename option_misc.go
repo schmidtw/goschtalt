@@ -4,8 +4,6 @@
 package goschtalt
 
 import (
-	"fmt"
-
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 )
@@ -80,28 +78,64 @@ func NoDefaults() Option {
 	}
 }
 
+// ExpandVarsOpts controls how variables are identified and processed.
+type ExpandVarsOpts struct {
+	// Optional name showing where the value came from.
+	Name string
+
+	// The string that prefixes a variable.  "${{" or "${" are common examples.
+	// Defaults to "${" if equal to "".
+	Start string
+
+	// The string that trails a variable.  "}}" or "}" are common examples.
+	// Defaults to "}" if equal to "".
+	End string
+
+	// The string to string mapping function.
+	// Mapping request ignored if nil.
+	Mapper func(string) string
+
+	// The maximum expansions of a value before a recursion error is returned.
+	// Defaults to 10000 if set to less than 1.
+	Maximum int
+}
+
 // ExpandVars provides a way to expand variables in values throughout the
-// configuration tree.  Expanding environment variables is as simple as calling
-// ExpandVars("${{", "}}", os.Getenv).  If expansion is not wanted, simply pass
-// nil in for the fn value.
+// configuration tree.  ExpandVars() can be called multiple times to expand
+// variables based on additional configurations and mappers.  To remove all
+// expansion pass in nil for the cfg parameter.
 //
 // The initial discovery of a variable to expand in the configuration tree
-// value is determined by the start and stop delimiters provided. Further
+// value is determined by the Start and End delimiters provided. Further
 // expansions of values replaces ${var} or $var in the string based on the
 // mapping function provided.
-func ExpandVars(start, end string, fn func(string) string) Option {
+//
+// Expansions are done in the order specified.
+//
+// Here is an example of how to expand environment variables:
+//
+//	ExpandVars(&ExpandVarsOpts{Mapper: os.Getenv})
+func ExpandVars(cfg *ExpandVarsOpts) Option {
 	return func(c *Config) error {
-		if fn != nil {
-			if len(start) == 0 {
-				return fmt.Errorf("%w: start is ''", ErrDelimiters)
-			}
-			if len(end) == 0 {
-				return fmt.Errorf("%w: end is ''", ErrDelimiters)
-			}
+		if cfg == nil {
+			c.expansions = nil
+			return nil
 		}
-		c.expandStart = start
-		c.expandEnd = end
-		c.expandFn = fn
+
+		exp := *cfg
+
+		if len(exp.Start) == 0 {
+			exp.Start = "${"
+		}
+		if len(exp.End) == 0 {
+			exp.End = "}"
+		}
+		if exp.Maximum < 1 {
+			exp.Maximum = 10000
+		}
+		if exp.Mapper != nil {
+			c.expansions = append(c.expansions, exp)
+		}
 		return nil
 	}
 }

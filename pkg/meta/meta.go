@@ -325,14 +325,18 @@ func (obj Object) ToRedacted() Object {
 	return obj
 }
 
-func (obj Object) ToExpanded(start, end string, fn func(string) string) (Object, error) {
+// ToExpanded builds a copy of the tree where any matching variables are expanded
+// to the final instance.  The max value is used to prevent recursive substitutions
+// from never returning.  Instead the process is stopped and an error is returned.
+// The resulting tree is returned.
+func (obj Object) ToExpanded(max int, origin, start, end string, fn func(string) string) (Object, error) {
 	var err error
 
 	switch obj.Kind() {
 	case Array:
 		array := make([]Object, len(obj.Array))
 		for i, val := range obj.Array {
-			array[i], err = val.ToExpanded(start, end, fn)
+			array[i], err = val.ToExpanded(max, origin, start, end, fn)
 			if err != nil {
 				return Object{}, err
 			}
@@ -342,7 +346,7 @@ func (obj Object) ToExpanded(start, end string, fn func(string) string) (Object,
 		m := make(map[string]Object)
 
 		for key, val := range obj.Map {
-			m[key], err = val.ToExpanded(start, end, fn)
+			m[key], err = val.ToExpanded(max, origin, start, end, fn)
 			if err != nil {
 				return Object{}, err
 			}
@@ -351,13 +355,13 @@ func (obj Object) ToExpanded(start, end string, fn func(string) string) (Object,
 	case Value:
 		switch v := obj.Value.(type) {
 		case string:
-			val, changed, err := expand(0, v, start, end, fn)
+			val, changed, err := expand(max, v, start, end, fn)
 			if err != nil {
 				return Object{}, err
 			}
 			origins := obj.Origins
 			if changed {
-				origins = append(origins, Origin{File: "expanded"})
+				origins = append(origins, Origin{File: origin})
 			}
 			return Object{
 				Origins: origins,
@@ -371,11 +375,9 @@ func (obj Object) ToExpanded(start, end string, fn func(string) string) (Object,
 	return obj, nil
 }
 
-func expand(count int, in, startToken, endToken string, fn func(string) string) (string, bool, error) {
-	if 10000 < count {
-		return "", false, ErrRecursionTooDeep
-	}
-
+// expand performs the expansion of a string based on the starting and ending
+// tokens as well as the mapping function & max replacement depth.
+func expand(max int, in, startToken, endToken string, mapper func(string) string) (string, bool, error) {
 	start := strings.Index(in, startToken)
 	if -1 == start {
 		return in, false, nil
@@ -390,14 +392,14 @@ func expand(count int, in, startToken, endToken string, fn func(string) string) 
 	}
 
 	// Keep resolving variables until nothing changes.  Then we're done resolving.
-	replaced := os.Expand("$"+strings.TrimSpace(rest[:end]), fn)
+	replaced := os.Expand("$"+strings.TrimSpace(rest[:end]), mapper)
 	prev := replaced + "-"
 	c := 0
 	for prev != replaced {
 		prev = replaced
-		replaced = os.Expand(replaced, fn)
+		replaced = os.Expand(replaced, mapper)
 		c++
-		if 10000 < c {
+		if max < c {
 			return "", false, ErrRecursionTooDeep
 		}
 	}
@@ -405,7 +407,7 @@ func expand(count int, in, startToken, endToken string, fn func(string) string) 
 	after := rest[end+len(endToken):]
 
 	// Recurse and process the rest of the string until we're done.
-	trailer, _, err := expand(count+1, after, startToken, endToken, fn)
+	trailer, _, err := expand(max, after, startToken, endToken, mapper)
 	if err != nil {
 		return "", false, err
 	}

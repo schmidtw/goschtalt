@@ -161,33 +161,43 @@ func TestExpandVars(t *testing.T) {
 	}
 	tests := []struct {
 		description string
-		start       string
-		end         string
-		fn          func(string) string
-		expectedErr error
+		in          []*ExpandVarsOpts
+		count       int
 	}{
 		{
 			description: "Simple success",
-			start:       "${",
-			end:         "}",
-			fn:          fn,
+			in:          []*ExpandVarsOpts{&ExpandVarsOpts{Mapper: fn}},
+			count:       1,
 		}, {
-			description: "Set the fn to nil to not expand success",
-			start:       "",
-			end:         "",
-			fn:          nil,
+			description: "Fully defined",
+			in: []*ExpandVarsOpts{&ExpandVarsOpts{
+				Start:   "${{",
+				End:     "}}",
+				Mapper:  fn,
+				Maximum: 10,
+			}},
+			count: 1,
 		}, {
-			description: "empty start",
-			start:       "",
-			end:         "}",
-			fn:          fn,
-			expectedErr: ErrDelimiters,
+			description: "2 of them",
+			in: []*ExpandVarsOpts{
+				&ExpandVarsOpts{Mapper: fn},
+				&ExpandVarsOpts{Mapper: fn},
+			},
+			count: 2,
 		}, {
-			description: "empty end",
-			start:       "${",
-			end:         "",
-			fn:          fn,
-			expectedErr: ErrDelimiters,
+			description: "1 of them because no mapper in one",
+			in: []*ExpandVarsOpts{
+				&ExpandVarsOpts{Mapper: fn},
+				&ExpandVarsOpts{Mapper: nil},
+			},
+			count: 1,
+		}, {
+			description: "0 because it was cleared out",
+			in: []*ExpandVarsOpts{
+				&ExpandVarsOpts{Mapper: fn},
+				nil,
+			},
+			count: 0,
 		},
 	}
 
@@ -197,20 +207,12 @@ func TestExpandVars(t *testing.T) {
 
 			var c Config
 
-			err := c.With(ExpandVars(tc.start, tc.end, tc.fn))
-
-			if tc.expectedErr == nil {
+			for _, opt := range tc.in {
+				err := c.With(ExpandVars(opt))
 				assert.NoError(err)
-				if tc.fn == nil {
-					assert.Nil(c.expandFn)
-				} else {
-					assert.NotNil(c.expandFn)
-				}
-				return
 			}
 
-			assert.ErrorIs(err, tc.expectedErr)
-			assert.Nil(c.expandFn)
+			assert.Equal(tc.count, len(c.expansions))
 		})
 	}
 }

@@ -84,7 +84,7 @@ func TestCompile(t *testing.T) {
 
 	fs2 := memfs.New()
 	required.NoError(fs2.MkdirAll("b", 0777))
-	required.NoError(fs2.WriteFile("b/90.json", []byte(`{"madd": "cat", "blue": "bird"}`), 0755))
+	required.NoError(fs2.WriteFile("b/90.json", []byte(`{"madd": "cat", "blue": "${thing}"}`), 0755))
 
 	fs3 := memfs.New()
 	required.NoError(fs3.MkdirAll("b", 0777))
@@ -93,6 +93,38 @@ func TestCompile(t *testing.T) {
 	fs4 := memfs.New()
 	required.NoError(fs4.MkdirAll("b", 0777))
 	required.NoError(fs4.WriteFile("b/90.json", []byte(`I'm not valid json!`), 0755))
+
+	mapper1 := func(m string) string {
+		switch m {
+		case "thing":
+			return "|bird|"
+		}
+
+		return ""
+	}
+
+	mapper2 := func(m string) string {
+		switch m {
+		case "bird":
+			return "jay"
+		}
+
+		return ""
+	}
+
+	// Causes infinite loop
+	mapper3 := func(m string) string {
+		switch m {
+		case "thing":
+			return ".${bird}"
+		case "bird":
+			return ".${jay}"
+		case "jay":
+			return ".${bird}"
+		}
+
+		return ""
+	}
 
 	type st1 struct {
 		Hello string
@@ -126,7 +158,31 @@ func TestCompile(t *testing.T) {
 			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
-				Blue:  "bird",
+				Blue:  "${thing}",
+				Madd:  "cat",
+			},
+			files: []string{"1.json", "2.json", "3.json", "90.json"},
+		}, {
+			description: "A normal case with options including expansion.",
+			opts: []Option{
+				FileGroup(Group{
+					FS:      fs1,
+					Paths:   []string{"."},
+					Recurse: true,
+				}),
+				FileGroup(Group{
+					FS:      fs2,
+					Paths:   []string{"."},
+					Recurse: true,
+				}),
+				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
+				ExpandVars(&ExpandVarsOpts{Mapper: mapper1}),
+				ExpandVars(&ExpandVarsOpts{Start: "|", End: "|", Mapper: mapper2}),
+			},
+			want: st1{},
+			expect: st1{
+				Hello: "Mr. Blue Sky",
+				Blue:  "jay",
 				Madd:  "cat",
 			},
 			files: []string{"1.json", "2.json", "3.json", "90.json"},
@@ -169,6 +225,25 @@ func TestCompile(t *testing.T) {
 					Recurse: true,
 				}),
 				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
+			},
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: unknownErr,
+		}, {
+			description: "A recursion case where a failure results",
+			opts: []Option{
+				FileGroup(Group{
+					FS:      fs1,
+					Paths:   []string{"."},
+					Recurse: true,
+				}),
+				FileGroup(Group{
+					FS:      fs2,
+					Paths:   []string{"."},
+					Recurse: true,
+				}),
+				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
+				ExpandVars(&ExpandVarsOpts{Mapper: mapper3}),
 			},
 			want:        st1{},
 			expect:      st1{},
