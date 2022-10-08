@@ -883,7 +883,7 @@ func TestToExpanded(t *testing.T) {
 						Origins: []Origin{},
 						Array: []Object{
 							{
-								Origins: []Origin{Origin{File: "expanded"}},
+								Origins: []Origin{{File: "expanded"}},
 								Value:   "food",
 							},
 						},
