@@ -7,7 +7,7 @@ require (
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/psanford/memfs v0.0.0-20210214183328-a001468d78ef
 	github.com/stretchr/testify v1.8.0
-	gonum.org/v1/gonum v0.11.0
+	gonum.org/v1/gonum v0.12.0
 )
 
 require (
