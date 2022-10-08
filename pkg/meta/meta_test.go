@@ -779,6 +779,261 @@ func TestToRedacted(t *testing.T) {
 	}
 }
 
+func TestToExpanded(t *testing.T) {
+	tests := []struct {
+		description string
+		in          Object
+		expected    Object
+		expectedErr error
+		start       string
+		end         string
+		vars        map[string]string
+	}{
+		{
+			description: "Output an unchanged tree.",
+			in: Object{
+				Origins: []Origin{},
+				Map: map[string]Object{
+					"foo": {
+						Origins: []Origin{},
+						secret:  true,
+						Value:   "very secret.",
+					},
+					"bark": {
+						Origins: []Origin{},
+						Value:   12,
+					},
+					"candy": {
+						Origins: []Origin{},
+						Array: []Object{
+							{
+								Origins: []Origin{},
+								Value:   "${{bar",
+							},
+						},
+					},
+				},
+			},
+			expected: Object{
+				Origins: []Origin{},
+				Map: map[string]Object{
+					"foo": {
+						Origins: []Origin{},
+						secret:  true,
+						Value:   "very secret.",
+					},
+					"bark": {
+						Origins: []Origin{},
+						Value:   12,
+					},
+					"candy": {
+						Origins: []Origin{},
+						Array: []Object{
+							{
+								Origins: []Origin{},
+								Value:   "${{bar",
+							},
+						},
+					},
+				},
+			},
+			start: "${{",
+			end:   "}}",
+			vars: map[string]string{
+				"unused": "foo",
+			},
+		}, {
+			description: "Output a changed tree.",
+			in: Object{
+				Origins: []Origin{},
+				Map: map[string]Object{
+					"foo": {
+						Origins: []Origin{},
+						secret:  true,
+						Value:   "very secret.",
+					},
+					"bark": {
+						Origins: []Origin{},
+						Value:   12,
+					},
+					"candy": {
+						Origins: []Origin{},
+						Array: []Object{
+							{
+								Origins: []Origin{},
+								Value:   "${{bar}}",
+							},
+						},
+					},
+				},
+			},
+			expected: Object{
+				Origins: []Origin{},
+				Map: map[string]Object{
+					"foo": {
+						Origins: []Origin{},
+						secret:  true,
+						Value:   "very secret.",
+					},
+					"bark": {
+						Origins: []Origin{},
+						Value:   12,
+					},
+					"candy": {
+						Origins: []Origin{},
+						Array: []Object{
+							{
+								Origins: []Origin{Origin{File: "expanded"}},
+								Value:   "food",
+							},
+						},
+					},
+				},
+			},
+			start: "${{",
+			end:   "}}",
+			vars: map[string]string{
+				"bar":  "$foo",
+				"foo":  "${next}$unknown",
+				"next": "food",
+			},
+		}, {
+			description: "Recurse and fail.",
+			in: Object{
+				Origins: []Origin{},
+				Map: map[string]Object{
+					"foo": {
+						Origins: []Origin{},
+						secret:  true,
+						Value:   "very secret.",
+					},
+					"bark": {
+						Origins: []Origin{},
+						Value:   12,
+					},
+					"candy": {
+						Origins: []Origin{},
+						Array: []Object{
+							{
+								Origins: []Origin{},
+								Value:   "${{bar}}",
+							},
+						},
+					},
+				},
+			},
+			start: "${{",
+			end:   "}}",
+			vars: map[string]string{
+				"bar": "${car}",
+				"car": "${bar}",
+			},
+			expectedErr: ErrRecursionTooDeep,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			got, err := tc.in.ToExpanded(tc.start, tc.end, func(in string) string {
+				out, found := tc.vars[in]
+				if found {
+					return out
+				}
+				return ""
+			})
+
+			if tc.expectedErr == nil {
+				assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+				return
+			}
+
+			assert.ErrorIs(err, tc.expectedErr)
+		})
+	}
+}
+
+func TestExpand(t *testing.T) {
+	tests := []struct {
+		count       int
+		in          string
+		start       string
+		end         string
+		vars        map[string]string
+		expected    string
+		expectedErr error
+		changed     bool
+	}{
+		{
+			in:       "nothing found",
+			start:    "${{",
+			end:      "}}",
+			expected: "nothing found",
+			changed:  false,
+		}, {
+			in:    "|nothing| found",
+			start: "|",
+			end:   "|",
+			vars: map[string]string{
+				"nothing": "something",
+			},
+			expected: "something found",
+			changed:  true,
+		}, {
+			in:    "|nothing found",
+			start: "|",
+			end:   "|",
+			vars: map[string]string{
+				"nothing": "something",
+			},
+			expected: "|nothing found",
+		}, {
+			in:    "|oops|",
+			start: "|",
+			end:   "|",
+			vars: map[string]string{
+				"oops": ".${oops}",
+			},
+			expectedErr: ErrRecursionTooDeep,
+		}, {
+			count:       10000,
+			expectedErr: ErrRecursionTooDeep,
+		}, {
+			// This appears to be a bit of a special case for the os.Expand() function
+			in:    "|nothing|",
+			start: "|",
+			end:   "|",
+			vars: map[string]string{
+				"nothing": "${nothing}",
+			},
+			expected: "${nothing}",
+			changed:  true,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.in, func(t *testing.T) {
+			assert := assert.New(t)
+
+			got, changed, err := expand(0, tc.in, tc.start, tc.end, func(in string) string {
+				out, found := tc.vars[in]
+				if found {
+					return out
+				}
+				return ""
+			})
+			if tc.expectedErr == nil {
+				assert.Equal(tc.changed, changed)
+				assert.Equal(tc.expected, got)
+				return
+			}
+
+			assert.ErrorIs(err, tc.expectedErr)
+			assert.Equal("", got)
+			assert.Equal(false, changed)
+		})
+	}
+}
+
 func TestAlterKeyCase(t *testing.T) {
 	tests := []struct {
 		description string

@@ -35,6 +35,9 @@ type Config struct {
 	keyDelimiter     string
 	keySwizzler      func(string) string
 	unmarshalOptions []UnmarshalOption
+	expandFn         func(string) string
+	expandStart      string
+	expandEnd        string
 }
 
 // Option is the type used for options.
@@ -143,6 +146,15 @@ func (c *Config) Compile() error {
 		}
 		files = append(files, cfg.File)
 	}
+
+	if c.expandFn != nil && len(c.expandStart) > 0 && len(c.expandEnd) > 0 {
+		var err error
+		merged, err = merged.ToExpanded(c.expandStart, c.expandEnd, c.expandFn)
+		if err != nil {
+			return err
+		}
+	}
+
 	c.files = files
 	c.tree = merged
 	c.hasBeenCompiled = true

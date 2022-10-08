@@ -4,6 +4,8 @@
 package goschtalt
 
 import (
+	"fmt"
+
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 )
@@ -74,6 +76,32 @@ func KeyDelimiter(delimiter string) Option {
 func NoDefaults() Option {
 	return func(c *Config) error {
 		c.ignoreDefaults = true
+		return nil
+	}
+}
+
+// ExpandVars provides a way to expand variables in values throughout the
+// configuration tree.  Expanding environment variables is as simple as calling
+// ExpandVars("${{", "}}", os.Getenv).  If expansion is not wanted, simply pass
+// nil in for the fn value.
+//
+// The initial discovery of a variable to expand in the configuration tree
+// value is determined by the start and stop delimiters provided. Further
+// expansions of values replaces ${var} or $var in the string based on the
+// mapping function provided.
+func ExpandVars(start, end string, fn func(string) string) Option {
+	return func(c *Config) error {
+		if fn != nil {
+			if len(start) == 0 {
+				return fmt.Errorf("%w: start is ''", ErrDelimiters)
+			}
+			if len(end) == 0 {
+				return fmt.Errorf("%w: end is ''", ErrDelimiters)
+			}
+		}
+		c.expandStart = start
+		c.expandEnd = end
+		c.expandFn = fn
 		return nil
 	}
 }

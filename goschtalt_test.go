@@ -4,6 +4,7 @@
 package goschtalt
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 
@@ -13,6 +14,19 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+var errOpt = errors.New("option error")
+
+// When called the 2nd time (when there is a default sort order) results in an
+// error.
+func errOption() Option {
+	return func(c *Config) error {
+		if c.sorter != nil {
+			return errOpt
+		}
+		return nil
+	}
+}
 
 func TestNew(t *testing.T) {
 	var zeroOpt Option
@@ -33,6 +47,10 @@ func TestNew(t *testing.T) {
 			description: "An error case where duplicate decoders are added.",
 			opts:        []Option{DecoderRegister(&testDecoder{extensions: []string{"json", "json"}})},
 			expectedErr: ErrDuplicateFound,
+		}, {
+			description: "An error case where the 2nd time through the list there is a failure.",
+			opts:        []Option{errOption()},
+			expectedErr: errOpt,
 		},
 	}
 

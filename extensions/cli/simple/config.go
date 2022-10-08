@@ -27,7 +27,6 @@ import (
 	"github.com/psanford/memfs"
 	"github.com/schmidtw/goschtalt"
 	"github.com/schmidtw/goschtalt/extensions/decoders/cli"
-	"github.com/schmidtw/goschtalt/extensions/decoders/env"
 	_ "github.com/schmidtw/goschtalt/extensions/encoders/yaml"
 )
 
@@ -203,7 +202,6 @@ func (p Program) getConfig(args []string, opts ...goschtalt.Option) (*goschtalt.
 	// want to overwrite something.
 	var allOpts []goschtalt.Option
 	allOpts = append(allOpts, defFG)
-	allOpts = append(allOpts, env.EnvVarConfig(filenameEnviron, p.Prefix, "_")...)
 	allOpts = append(allOpts, cli.Options(filenameCLI, ".", extra)...)
 	allOpts = append(allOpts, opts...)
 
@@ -268,7 +266,6 @@ func (p Program) processArgs(args []string, w io.Writer) (extra []string, cmd in
 			fmt.Fprintf(w, "Automatic configuration files:\n")
 			fmt.Fprintf(w, "\n")
 			fmt.Fprintf(w, "  %s.%-*s   built in configuration document\n", filenameDefault, extWidth, p.Default.Ext)
-			fmt.Fprintf(w, "  %s.%-*s   environment variables\n", filenameEnviron, extWidth, env.Extension)
 			fmt.Fprintf(w, "  %s.%-*s   command line arguments\n", filenameCLI, extWidth, cli.Extension)
 			return []string{}, cmdExitNow
 
@@ -441,7 +438,7 @@ func ensureTrailingNewline(s string) string {
 
 // getExtWidth finds the extension with the longest width and returns that width.
 func getExtWidth(ext string) int {
-	s := []string{env.Extension, cli.Extension, ext}
+	s := []string{cli.Extension, ext}
 
 	rv := 0
 	for _, val := range s {

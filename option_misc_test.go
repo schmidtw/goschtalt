@@ -154,3 +154,63 @@ func TestNoDefaults(t *testing.T) {
 		})
 	}
 }
+
+func TestExpandVars(t *testing.T) {
+	fn := func(_ string) string {
+		return ""
+	}
+	tests := []struct {
+		description string
+		start       string
+		end         string
+		fn          func(string) string
+		expectedErr error
+	}{
+		{
+			description: "Simple success",
+			start:       "${",
+			end:         "}",
+			fn:          fn,
+		}, {
+			description: "Set the fn to nil to not expand success",
+			start:       "",
+			end:         "",
+			fn:          nil,
+		}, {
+			description: "empty start",
+			start:       "",
+			end:         "}",
+			fn:          fn,
+			expectedErr: ErrDelimiters,
+		}, {
+			description: "empty end",
+			start:       "${",
+			end:         "",
+			fn:          fn,
+			expectedErr: ErrDelimiters,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			var c Config
+
+			err := c.With(ExpandVars(tc.start, tc.end, tc.fn))
+
+			if tc.expectedErr == nil {
+				assert.NoError(err)
+				if tc.fn == nil {
+					assert.Nil(c.expandFn)
+				} else {
+					assert.NotNil(c.expandFn)
+				}
+				return
+			}
+
+			assert.ErrorIs(err, tc.expectedErr)
+			assert.Nil(c.expandFn)
+		})
+	}
+}

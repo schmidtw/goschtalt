@@ -6,6 +6,7 @@ package meta
 import (
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 )
@@ -29,6 +30,7 @@ var (
 	ErrNotFound         = errors.New("not found")
 	ErrArrayOutOfBounds = errors.New("array index is out of bounds")
 	ErrInvalidIndex     = errors.New("invalid index")
+	ErrRecursionTooDeep = errors.New("recursion too deep")
 )
 
 // Origin provides details about an origin of a parameter.
@@ -321,6 +323,93 @@ func (obj Object) ToRedacted() Object {
 	}
 
 	return obj
+}
+
+func (obj Object) ToExpanded(start, end string, fn func(string) string) (Object, error) {
+	var err error
+
+	switch obj.Kind() {
+	case Array:
+		array := make([]Object, len(obj.Array))
+		for i, val := range obj.Array {
+			array[i], err = val.ToExpanded(start, end, fn)
+			if err != nil {
+				return Object{}, err
+			}
+		}
+		obj.Array = array
+	case Map:
+		m := make(map[string]Object)
+
+		for key, val := range obj.Map {
+			m[key], err = val.ToExpanded(start, end, fn)
+			if err != nil {
+				return Object{}, err
+			}
+		}
+		obj.Map = m
+	case Value:
+		switch v := obj.Value.(type) {
+		case string:
+			val, changed, err := expand(0, v, start, end, fn)
+			if err != nil {
+				return Object{}, err
+			}
+			origins := obj.Origins
+			if changed {
+				origins = append(origins, Origin{File: "expanded"})
+			}
+			return Object{
+				Origins: origins,
+				Value:   val,
+				secret:  obj.secret,
+			}, nil
+		default:
+		}
+	}
+
+	return obj, nil
+}
+
+func expand(count int, in, startToken, endToken string, fn func(string) string) (string, bool, error) {
+	if 10000 < count {
+		return "", false, ErrRecursionTooDeep
+	}
+
+	start := strings.Index(in, startToken)
+	if -1 == start {
+		return in, false, nil
+	}
+
+	before := in[:start]
+	rest := in[start+len(startToken):]
+	end := strings.Index(rest, endToken)
+
+	if -1 == end {
+		return in, false, nil
+	}
+
+	// Keep resolving variables until nothing changes.  Then we're done resolving.
+	replaced := os.Expand("$"+strings.TrimSpace(rest[:end]), fn)
+	prev := replaced + "-"
+	c := 0
+	for prev != replaced {
+		prev = replaced
+		replaced = os.Expand(replaced, fn)
+		c++
+		if 10000 < c {
+			return "", false, ErrRecursionTooDeep
+		}
+	}
+
+	after := rest[end+len(endToken):]
+
+	// Recurse and process the rest of the string until we're done.
+	trailer, _, err := expand(count+1, after, startToken, endToken, fn)
+	if err != nil {
+		return "", false, err
+	}
+	return before + replaced + trailer, true, nil
 }
 
 // ConvertMapsToArrays walks the object tree and looks for any maps that contain

@@ -61,9 +61,8 @@ func TestGetConfig(t *testing.T) {
 
 Automatic configuration files:
 
-  000.yml       built in configuration document
-  800.environ   environment variables
-  900.cli       command line arguments
+  000.yml   built in configuration document
+  900.cli   command line arguments
 `
 
 	versionText := `app:
@@ -75,12 +74,11 @@ Automatic configuration files:
 `
 
 	showAll := `Supported File Extensions:
-	'cli', 'environ', 'json', 'yaml', 'yml'
+	'cli', 'json', 'yaml', 'yml'
 
-Files Processed first (1) to last (3):
+Files Processed first (1) to last (2):
 	1. 000.yml
-	2. 800.environ
-	3. 900.cli
+	2. 900.cli
 
 -----BEGIN DEFAULT CONFIGURATION-----
 ---
@@ -162,14 +160,14 @@ foo: # 900.cli
 			defCfg:      defCfg,
 			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
 			args:        []string{"--show-files"},
-			expect:      "Files Processed first (1) to last (3):\n\t1. 000.yml\n\t2. 800.environ\n\t3. 900.cli\n\n",
+			expect:      "Files Processed first (1) to last (2):\n\t1. 000.yml\n\t2. 900.cli\n\n",
 		}, {
 			description: "Show files only.",
 			name:        "app",
 			defCfg:      defCfg,
 			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
 			args:        []string{"--show-files"},
-			expect:      "Files Processed first (1) to last (3):\n\t1. 000.yml\n\t2. 800.environ\n\t3. 900.cli\n\n",
+			expect:      "Files Processed first (1) to last (2):\n\t1. 000.yml\n\t2. 900.cli\n\n",
 		}, {
 			description: "Show config doc only.",
 			name:        "app",
@@ -190,7 +188,7 @@ foo: # 900.cli
 			defCfg:      defCfg,
 			opts:        []goschtalt.Option{goschtalt.DecoderRegister(fake{})},
 			args:        []string{"--show-exts"},
-			expect:      "Supported File Extensions:\n\t'cli', 'environ', 'json', 'yaml', 'yml'\n\n",
+			expect:      "Supported File Extensions:\n\t'cli', 'json', 'yaml', 'yml'\n\n",
 		}, {
 			description: "Show redacted.",
 			name:        "app",
