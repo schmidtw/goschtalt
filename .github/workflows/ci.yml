@@ -32,7 +32,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup go version
-        uses: actions/setup-go@30b9ddff1180797dbf0efc06837929f98bdf7af7
+        uses: actions/setup-go@f556e5b7e01141ed7cf0a83664ed24417b8aa9a5
         with:
           go-version: ${{ matrix.go }}
           cache: true
@@ -174,7 +174,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup go version
-        uses: actions/setup-go@30b9ddff1180797dbf0efc06837929f98bdf7af7
+        uses: actions/setup-go@f556e5b7e01141ed7cf0a83664ed24417b8aa9a5
         with:
           go-version: ${{ env.go_version }}
           cache: true
@@ -197,7 +197,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup go version
-        uses: actions/setup-go@30b9ddff1180797dbf0efc06837929f98bdf7af7
+        uses: actions/setup-go@f556e5b7e01141ed7cf0a83664ed24417b8aa9a5
         with:
           go-version: ${{ env.go_version }}
           cache: true
@@ -233,7 +233,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Setup go version
-        uses: actions/setup-go@30b9ddff1180797dbf0efc06837929f98bdf7af7
+        uses: actions/setup-go@f556e5b7e01141ed7cf0a83664ed24417b8aa9a5
         with:
           go-version: ${{ env.go_version }}
           cache: true
