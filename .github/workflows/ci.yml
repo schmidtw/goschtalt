@@ -89,22 +89,6 @@ jobs:
         run: |
           go test -race -covermode=atomic -coverprofile=coverage.out ./...
 
-      # --- extensions/decoders/env
-
-      - name: extensions/decoders/env -- Build & Test
-        working-directory: ./extensions/decoders/env
-        run: |
-          go build ./...
-          go test ./...
-
-      - name: extensions/decoders/env -- Coverage
-        working-directory: ./extensions/decoders/env
-        if: |
-          matrix.os == 'ubuntu-latest' &&
-          matrix.go == env.go_version
-        run: |
-          go test -race -covermode=atomic -coverprofile=coverage.out ./...
-
       # --- extensions/decoders/json
 
       - name: extensions/decoders/json -- Build & Test
