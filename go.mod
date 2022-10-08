@@ -3,7 +3,7 @@ module github.com/schmidtw/goschtalt
 go 1.18
 
 require (
-	github.com/google/go-cmp v0.5.8
+	github.com/google/go-cmp v0.5.9
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/psanford/memfs v0.0.0-20210214183328-a001468d78ef
 	github.com/stretchr/testify v1.8.0
