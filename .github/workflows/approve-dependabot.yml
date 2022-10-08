@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 env:
-  MAX_SEMVER='minor'
+  MAX_SEMVER: minor
 
 jobs:
   dependabot:
