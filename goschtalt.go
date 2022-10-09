@@ -4,7 +4,6 @@
 package goschtalt
 
 import (
-	"fmt"
 	"path/filepath"
 	"strings"
 	"sync"
@@ -16,6 +15,13 @@ var DefaultOptions = []Option{
 	FileSortOrderNatural(),
 	KeyCaseLower(),
 	KeyDelimiter("."),
+}
+
+// Add options to validate things so the code is a cleaner.
+var validatorOptions = []Option{
+	validateSorter(),
+	validateKeyDelimiter(),
+	validateKeySwizzler(),
 }
 
 // Config is a configurable, prioritized, merging configuration registry.
@@ -54,7 +60,7 @@ func New(opts ...Option) (*Config, error) {
 	// Check to see if an option indicates to not apply defaults on a
 	// throw-away object.
 	tmp := newConfig()
-	err := tmp.With(opts...)
+	err := tmp.with(opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -63,31 +69,14 @@ func New(opts ...Option) (*Config, error) {
 	if !tmp.ignoreDefaults {
 		allOpts = append(allOpts, DefaultOptions...)
 	}
+	allOpts = append(allOpts, opts...)
+	allOpts = append(allOpts, validatorOptions...)
 
 	c := newConfig()
 
-	allOpts = append(allOpts, opts...)
 	err = c.With(allOpts...)
 	if err != nil {
 		return nil, err
-	}
-
-	if c.sorter == nil {
-		return nil, fmt.Errorf("%w: a FileSortOrder... option must be specified.", ErrConfigMissing)
-	}
-
-	if len(c.keyDelimiter) == 0 {
-		return nil, fmt.Errorf("%w: KeyDelimiter() option must be specified.", ErrConfigMissing)
-	}
-
-	if c.keySwizzler == nil {
-		return nil, fmt.Errorf("%w: a KeyCase... option must be specified.", ErrConfigMissing)
-	}
-
-	if c.compileNow {
-		if err := c.Compile(); err != nil {
-			return nil, err
-		}
 	}
 
 	return c, nil
@@ -97,6 +86,23 @@ func New(opts ...Option) (*Config, error) {
 func (c *Config) With(opts ...Option) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
+
+	err := c.with(opts...)
+	if err != nil {
+		return err
+	}
+
+	if c.compileNow {
+		if err := c.compile(); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// with is the internal looper for applying options.
+func (c *Config) with(opts ...Option) error {
 	for _, opt := range opts {
 		if opt != nil {
 			if err := opt(c); err != nil {
@@ -104,6 +110,7 @@ func (c *Config) With(opts ...Option) error {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -113,6 +120,11 @@ func (c *Config) Compile() error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	return c.compile()
+}
+
+// compile is the internal compile function.
+func (c *Config) compile() error {
 	var cfgs []fileObject
 
 	for _, group := range c.groups {

@@ -133,12 +133,13 @@ func TestCompile(t *testing.T) {
 	}
 
 	tests := []struct {
-		description string
-		opts        []Option
-		want        any
-		expect      any
-		files       []string
-		expectedErr error
+		description   string
+		compileOption bool
+		opts          []Option
+		want          any
+		expect        any
+		files         []string
+		expectedErr   error
 	}{
 		{
 			description: "A normal case with options.",
@@ -154,6 +155,7 @@ func TestCompile(t *testing.T) {
 					Recurse: true,
 				}),
 				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
+				CompileNow(),
 			},
 			want: st1{},
 			expect: st1{
@@ -244,10 +246,12 @@ func TestCompile(t *testing.T) {
 				}),
 				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
 				ExpandVars(&ExpandVarsOpts{Mapper: mapper3}),
+				CompileNow(),
 			},
-			want:        st1{},
-			expect:      st1{},
-			expectedErr: unknownErr,
+			compileOption: true,
+			want:          st1{},
+			expect:        st1{},
+			expectedErr:   unknownErr,
 		},
 	}
 
@@ -257,9 +261,11 @@ func TestCompile(t *testing.T) {
 			require := require.New(t)
 
 			cfg, err := New(tc.opts...)
-			require.NoError(err)
 
-			err = cfg.Compile()
+			if !tc.compileOption {
+				require.NoError(err)
+				err = cfg.Compile()
+			}
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
@@ -282,10 +288,12 @@ func TestCompile(t *testing.T) {
 				assert.ErrorIs(err, tc.expectedErr)
 			}
 
-			// check the file order is correct
-			got, err := cfg.ShowOrder()
-			assert.ErrorIs(err, ErrNotCompiled)
-			assert.Empty(got)
+			if !tc.compileOption {
+				// check the file order is correct
+				got, err := cfg.ShowOrder()
+				assert.ErrorIs(err, ErrNotCompiled)
+				assert.Empty(got)
+			}
 		})
 	}
 }
