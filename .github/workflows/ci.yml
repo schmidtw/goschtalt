@@ -55,7 +55,6 @@ jobs:
           go test -race -covermode=atomic -coverprofile=coverage.out ./...
 
       # Duplicated for each extension package.
-      # Duplicated for each extension package.
 
       # --- extensions/cli/simple
 
@@ -83,6 +82,22 @@ jobs:
 
       - name: extensions/decoders/cli -- Coverage
         working-directory: ./extensions/decoders/cli
+        if: |
+          matrix.os == 'ubuntu-latest' &&
+          matrix.go == env.go_version
+        run: |
+          go test -race -covermode=atomic -coverprofile=coverage.out ./...
+
+      # --- extensions/decoders/env
+
+      - name: extensions/decoders/env -- Build & Test
+        working-directory: ./extensions/decoders/env
+        run: |
+          go build ./...
+          go test ./...
+
+      - name: extensions/decoders/env -- Coverage
+        working-directory: ./extensions/decoders/env
         if: |
           matrix.os == 'ubuntu-latest' &&
           matrix.go == env.go_version
