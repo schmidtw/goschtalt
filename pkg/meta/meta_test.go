@@ -1324,6 +1324,11 @@ func TestMerge(t *testing.T) {
 				},
 			},
 		}, {
+			description: "Merge into an empty structure, but fail due to invalid command.",
+			in:          `{}`,
+			next:        `{"foo((invalid))":"car"}`,
+			expectedErr: ErrInvalidCommand,
+		}, {
 			description: "Append to a secret node and make sure it stays secret.",
 			in:          `{"foo((secret))":["bar"]}`,
 			next:        `{"foo((append))":["car"]}`,
