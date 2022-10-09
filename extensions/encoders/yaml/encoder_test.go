@@ -26,6 +26,7 @@ func TestEncodeExtended(t *testing.T) {
 		in               meta.Object
 		expected         string
 		expectedExtended string
+		expectedErr      error
 	}{
 		{
 			description:      "A test of empty.",
@@ -48,56 +49,56 @@ func TestEncodeExtended(t *testing.T) {
 			//            - water
 			//    trending: now
 			in: meta.Object{
-				Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 1, Col: 1}},
+				Origins: []meta.Origin{{File: "file.yml", Line: 1, Col: 1}},
 				Map: map[string]meta.Object{
-					"candy": meta.Object{
-						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 1, Col: 8}},
+					"candy": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 1, Col: 8}},
 						Value:   "bar",
 					},
-					"cats": meta.Object{
-						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 2, Col: 1}},
+					"cats": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 2, Col: 1}},
 						Array: []meta.Object{
-							meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 3, Col: 7}},
+							{
+								Origins: []meta.Origin{{File: "file.yml", Line: 3, Col: 7}},
 								Value:   "madd",
 							},
-							meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 4, Col: 7}},
+							{
+								Origins: []meta.Origin{{File: "file.yml", Line: 4, Col: 7}},
 								Value:   "tabby",
 							},
 						},
 					},
-					"other": meta.Object{
-						Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 5, Col: 1}},
+					"other": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 5, Col: 1}},
 						Map: map[string]meta.Object{
-							"things": meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 6, Col: 5}},
+							"things": {
+								Origins: []meta.Origin{{File: "file.yml", Line: 6, Col: 5}},
 								Map: map[string]meta.Object{
-									"red": meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 7, Col: 14}},
+									"red": {
+										Origins: []meta.Origin{{File: "file.yml", Line: 7, Col: 14}},
 										Value:   "balloons",
 									},
-									"green": meta.Object{
-										Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 8, Col: 9}},
+									"green": {
+										Origins: []meta.Origin{{File: "file.yml", Line: 8, Col: 9}},
 										Array: []meta.Object{
-											meta.Object{
-												Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 9, Col: 15}},
+											{
+												Origins: []meta.Origin{{File: "file.yml", Line: 9, Col: 15}},
 												Value:   "grass",
 											},
-											meta.Object{
-												Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 10, Col: 15}},
+											{
+												Origins: []meta.Origin{{File: "file.yml", Line: 10, Col: 15}},
 												Value:   "ground",
 											},
-											meta.Object{
-												Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 11, Col: 15}},
+											{
+												Origins: []meta.Origin{{File: "file.yml", Line: 11, Col: 15}},
 												Value:   "water",
 											},
 										},
 									},
 								},
 							},
-							"trending": meta.Object{
-								Origins: []meta.Origin{meta.Origin{File: "file.yml", Line: 12, Col: 15}},
+							"trending": {
+								Origins: []meta.Origin{{File: "file.yml", Line: 12, Col: 15}},
 								Value:   "now",
 							},
 						},
@@ -131,6 +132,80 @@ other: # file.yml:5[1]
     trending: now # file.yml:12[15]
 `,
 		},
+		{
+			description: "try to encode a channel (invalid) for verifying the failure path",
+			// Input vector in yaml:
+			//candy: bar
+			//cats:
+			//    - madd
+			//    - tabby
+			//other:
+			//    things:
+			//        red: balloons
+			//        green:
+			//            - grass
+			//            - ground
+			//            - <invalid channel>
+			//    trending: now
+			in: meta.Object{
+				Origins: []meta.Origin{{File: "file.yml", Line: 1, Col: 1}},
+				Map: map[string]meta.Object{
+					"candy": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 1, Col: 8}},
+						Value:   "bar",
+					},
+					"cats": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 2, Col: 1}},
+						Array: []meta.Object{
+							{
+								Origins: []meta.Origin{{File: "file.yml", Line: 3, Col: 7}},
+								Value:   "madd",
+							},
+							{
+								Origins: []meta.Origin{{File: "file.yml", Line: 4, Col: 7}},
+								Value:   "tabby",
+							},
+						},
+					},
+					"other": {
+						Origins: []meta.Origin{{File: "file.yml", Line: 5, Col: 1}},
+						Map: map[string]meta.Object{
+							"things": {
+								Origins: []meta.Origin{{File: "file.yml", Line: 6, Col: 5}},
+								Map: map[string]meta.Object{
+									"red": {
+										Origins: []meta.Origin{{File: "file.yml", Line: 7, Col: 14}},
+										Value:   "balloons",
+									},
+									"green": {
+										Origins: []meta.Origin{{File: "file.yml", Line: 8, Col: 9}},
+										Array: []meta.Object{
+											{
+												Origins: []meta.Origin{{File: "file.yml", Line: 9, Col: 15}},
+												Value:   "grass",
+											},
+											{
+												Origins: []meta.Origin{{File: "file.yml", Line: 10, Col: 15}},
+												Value:   "ground",
+											},
+											{
+												Origins: []meta.Origin{{File: "file.yml", Line: 11, Col: 15}},
+												Value:   make(chan int),
+											},
+										},
+									},
+								},
+							},
+							"trending": {
+								Origins: []meta.Origin{{File: "file.yml", Line: 12, Col: 15}},
+								Value:   "now",
+							},
+						},
+					},
+				},
+			},
+			expectedErr: ErrEncoding,
+		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
@@ -138,14 +213,21 @@ other: # file.yml:5[1]
 
 			var e Encoder
 			got, err := e.EncodeExtended(tc.in)
-			assert.NoError(err)
-			assert.Empty(cmp.Diff(tc.expectedExtended, string(got)))
 
-			raw := tc.in.ToRaw()
+			if tc.expectedErr == nil {
+				assert.NoError(err)
+				assert.Empty(cmp.Diff(tc.expectedExtended, string(got)))
 
-			got, err = e.Encode(raw)
-			assert.NoError(err)
-			assert.Empty(cmp.Diff(tc.expected, string(got)))
+				raw := tc.in.ToRaw()
+
+				got, err = e.Encode(raw)
+				assert.NoError(err)
+				assert.Empty(cmp.Diff(tc.expected, string(got)))
+				return
+			}
+
+			assert.ErrorIs(err, tc.expectedErr)
+			assert.Nil(got)
 		})
 	}
 }

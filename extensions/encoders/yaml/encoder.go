@@ -6,12 +6,17 @@
 package yaml
 
 import (
+	"errors"
 	"sort"
 
 	"github.com/schmidtw/goschtalt"
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 	yml "gopkg.in/yaml.v3"
+)
+
+var (
+	ErrEncoding = errors.New("encoding error")
 )
 
 // Ensure interface compliance.
@@ -58,6 +63,18 @@ func (e Encoder) EncodeExtended(obj meta.Object) ([]byte, error) {
 	return yml.Marshal(&doc)
 }
 
+// encoderWrapper handles the fact that the yaml decoder may panic instead of
+// returning an error.
+func encoderWrapper(n *yml.Node, v any) (err error) {
+	defer func() {
+		if r := recover(); r != nil {
+			err = ErrEncoding
+		}
+	}()
+
+	return n.Encode(v)
+}
+
 // encode is an internal helper function that builds the yml.Node based tree
 // to give to the yaml encoder.  This is likely specific to this yaml encoder.
 func encode(obj meta.Object) (n yml.Node, err error) {
@@ -65,7 +82,8 @@ func encode(obj meta.Object) (n yml.Node, err error) {
 	kind := obj.Kind()
 
 	if kind == meta.Value {
-		err = n.Encode(obj.Value)
+		err = encoderWrapper(&n, obj.Value)
+
 		if err != nil {
 			return yml.Node{}, err
 		}
