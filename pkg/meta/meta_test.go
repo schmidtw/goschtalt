@@ -862,7 +862,7 @@ func TestToExpanded(t *testing.T) {
 						Array: []Object{
 							{
 								Origins: []Origin{},
-								Value:   "${{bar}}",
+								Value:   "${{bar}} ... ${{bar}}",
 							},
 						},
 					},
@@ -886,7 +886,7 @@ func TestToExpanded(t *testing.T) {
 						Array: []Object{
 							{
 								Origins: []Origin{{File: "expanded:test"}},
-								Value:   "food",
+								Value:   "food ... food",
 							},
 						},
 					},
@@ -918,7 +918,7 @@ func TestToExpanded(t *testing.T) {
 						Array: []Object{
 							{
 								Origins: []Origin{},
-								Value:   "${{bar}}",
+								Value:   "${{cat}} ${{bar}}",
 							},
 						},
 					},
@@ -929,6 +929,7 @@ func TestToExpanded(t *testing.T) {
 			vars: map[string]string{
 				"bar": "${car}",
 				"car": "${bar}",
+				"cat": "tom",
 			},
 			expectedErr: ErrRecursionTooDeep,
 		},
