@@ -68,9 +68,8 @@ func (d Decoder) Decode(ctx decoder.Context, b []byte, m *meta.Object) error {
 
 	// Now let's try to annotate our tree by examining the yml.Node tree.
 	var node yml.Node
-	if err := yml.Unmarshal(b, &node); err != nil {
-		return err
-	}
+	// This has been decoded once without issue, it can't error.
+	_ = yml.Unmarshal(b, &node)
 
 	*m = annotate(0, ctx.Filename, objs, node, node)
 	return nil

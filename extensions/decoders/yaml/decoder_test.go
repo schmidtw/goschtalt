@@ -4,6 +4,7 @@
 package yaml
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -23,6 +24,8 @@ func TestExtensions(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
+	unknownErr := errors.New("unknown error")
+
 	tests := []struct {
 		description string
 		in          string
@@ -207,6 +210,10 @@ h:
 					},
 				},
 			},
+		}, {
+			description: "An invalid yaml file",
+			in:          `this is invalid=yaml`,
+			expectedErr: unknownErr,
 		},
 	}
 
@@ -225,7 +232,15 @@ h:
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(meta.Object{})))
+				return
 			}
+
+			if errors.Is(unknownErr, tc.expectedErr) {
+				assert.Error(err)
+				return
+			}
+
+			assert.ErrorIs(err, tc.expectedErr)
 		})
 	}
 }
