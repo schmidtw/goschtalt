@@ -35,12 +35,7 @@ func TestUnmarshal(t *testing.T) {
 		Foo string `goschtalt:"flags"`
 		Bob string
 	}
-	/* Currently not needed due to what appears to be a broken upstream feature.
-	type withSomeTags struct {
-		Foo string `mapstructure:"foo"`
-		Bob string //`mapstructure:"-"`
-	}
-	*/
+
 	tests := []struct {
 		description string
 		key         string
@@ -149,17 +144,6 @@ func TestUnmarshal(t *testing.T) {
 			expected: simple{
 				Foo: "bar",
 			},
-			/*  This test is broken since the IgnoreUntaggedFields field appears
-			    broken in mapstructure.
-			}, {
-				description: "Verify the IgnoreUntaggedFields() behavior fails.",
-				input:       `{"foo":"bar", "bob": "dog"}`,
-				opts:        []UnmarshalOption{IgnoreUntaggedFields(true)},
-				want:        withSomeTags{},
-				expected: withSomeTags{
-					Foo: "bar",
-				},
-			*/
 		}, {
 			description: "A struct that wasn't compiled.",
 			input:       `{"foo":"bar", "delta": "1s"}`,

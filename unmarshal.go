@@ -93,18 +93,6 @@ func TagName(name string) UnmarshalOption {
 	}
 }
 
-// IgnoreUntaggedFields ignores all struct fields without explicit
-// TagName, comparable to `mapstructure:"-"` as default behaviour.
-//
-// NOTE: This appears broken upstream in mapstructure.
-//
-// Defaults to false.
-func IgnoreUntaggedFields(ignore bool) UnmarshalOption {
-	return func(u *unmarshalConfig) {
-		u.cfg.IgnoreUntaggedFields = ignore
-	}
-}
-
 // MatchName is the function used to match the map key to the struct
 // field name or tag. Defaults to `strings.EqualFold`. This can be used
 // to implement case-sensitive tag values, support snake casing, etc.
