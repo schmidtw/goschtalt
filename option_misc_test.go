@@ -166,11 +166,11 @@ func TestExpandVars(t *testing.T) {
 	}{
 		{
 			description: "Simple success",
-			in:          []*ExpandVarsOpts{&ExpandVarsOpts{Mapper: fn}},
+			in:          []*ExpandVarsOpts{{Mapper: fn}},
 			count:       1,
 		}, {
 			description: "Fully defined",
-			in: []*ExpandVarsOpts{&ExpandVarsOpts{
+			in: []*ExpandVarsOpts{{
 				Start:   "${{",
 				End:     "}}",
 				Mapper:  fn,
@@ -180,21 +180,21 @@ func TestExpandVars(t *testing.T) {
 		}, {
 			description: "2 of them",
 			in: []*ExpandVarsOpts{
-				&ExpandVarsOpts{Mapper: fn},
-				&ExpandVarsOpts{Mapper: fn},
+				{Mapper: fn},
+				{Mapper: fn},
 			},
 			count: 2,
 		}, {
 			description: "1 of them because no mapper in one",
 			in: []*ExpandVarsOpts{
-				&ExpandVarsOpts{Mapper: fn},
-				&ExpandVarsOpts{Mapper: nil},
+				{Mapper: fn},
+				{Mapper: nil},
 			},
 			count: 1,
 		}, {
 			description: "0 because it was cleared out",
 			in: []*ExpandVarsOpts{
-				&ExpandVarsOpts{Mapper: fn},
+				{Mapper: fn},
 				nil,
 			},
 			count: 0,
