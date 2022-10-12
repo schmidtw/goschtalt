@@ -30,3 +30,6 @@ extensions/**/.licensed.yml
 **/disallowed.yml
 .licenses/
 licensed
+
+# Ignore helper shell scripts in root.
+*.sh
