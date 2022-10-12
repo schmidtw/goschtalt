@@ -18,13 +18,13 @@ func TestDecoderOptions(t *testing.T) {
 	c := Config{
 		decoders: newDecoderRegistry(),
 	}
-	require.NoError(c.With(DecoderRegister(&testDecoder{extensions: []string{"json"}})))
+	require.NoError(c.With(RegisterDecoder(&testDecoder{extensions: []string{"json"}})))
 	assert.Empty(cmp.Diff([]string{"json"}, c.decoders.extensions()))
 
-	require.NoError(c.With(DecoderRegister(&testDecoder{extensions: []string{"yml"}})))
+	require.NoError(c.With(RegisterDecoder(&testDecoder{extensions: []string{"yml"}})))
 	assert.Empty(cmp.Diff([]string{"json", "yml"}, c.decoders.extensions()))
 
-	require.NoError(c.With(DecoderRemove("json")))
+	require.NoError(c.With(RemoveDecoder("json")))
 	assert.Empty(cmp.Diff([]string{"yml"}, c.decoders.extensions()))
 }
 
@@ -35,13 +35,13 @@ func TestEncoderOptions(t *testing.T) {
 	c := Config{
 		encoders: newEncoderRegistry(),
 	}
-	require.NoError(c.With(EncoderRegister(&testEncoder{extensions: []string{"json"}})))
+	require.NoError(c.With(RegisterEncoder(&testEncoder{extensions: []string{"json"}})))
 	assert.Empty(cmp.Diff([]string{"json"}, c.encoders.extensions()))
 
-	require.NoError(c.With(EncoderRegister(&testEncoder{extensions: []string{"yml"}})))
+	require.NoError(c.With(RegisterEncoder(&testEncoder{extensions: []string{"yml"}})))
 	assert.Empty(cmp.Diff([]string{"json", "yml"}, c.encoders.extensions()))
 
-	require.NoError(c.With(EncoderRemove("json")))
+	require.NoError(c.With(RemoveEncoder("json")))
 	assert.Empty(cmp.Diff([]string{"yml"}, c.encoders.extensions()))
 }
 

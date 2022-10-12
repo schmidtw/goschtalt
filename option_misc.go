@@ -18,34 +18,34 @@ func AutoCompile() Option {
 	}
 }
 
-// DecoderRegister registers a Decoder for the specific file extensions provided.
+// RegisterDecoder registers a Decoder for the specific file extensions provided.
 // Attempting to register a duplicate extension is not supported.
-func DecoderRegister(d decoder.Decoder) Option {
+func RegisterDecoder(d decoder.Decoder) Option {
 	return func(c *Config) error {
 		return c.decoders.register(d)
 	}
 }
 
-// DecoderRemove provides a mechanism for removing the decoders from use for
+// RemoveDecoder provides a mechanism for removing the decoders from use for
 // specific file types.
-func DecoderRemove(exts ...string) Option {
+func RemoveDecoder(exts ...string) Option {
 	return func(c *Config) error {
 		c.decoders.deregister(exts...)
 		return nil
 	}
 }
 
-// EncoderRegister registers a Encoder for the specific file extensions provided.
+// RegisterEncoder registers a Encoder for the specific file extensions provided.
 // Attempting to register a duplicate extension is not supported.
-func EncoderRegister(d encoder.Encoder) Option {
+func RegisterEncoder(d encoder.Encoder) Option {
 	return func(c *Config) error {
 		return c.encoders.register(d)
 	}
 }
 
-// EncoderRemove provides a mechanism for removing the encoders from use for
+// RemoveEncoder provides a mechanism for removing the encoders from use for
 // specific file types.
-func EncoderRemove(exts ...string) Option {
+func RemoveEncoder(exts ...string) Option {
 	return func(c *Config) error {
 		c.encoders.deregister(exts...)
 		return nil

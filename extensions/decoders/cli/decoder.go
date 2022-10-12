@@ -109,8 +109,8 @@ func Options(filename, delimiter string, args []string, dirFS ...func(string) fs
 	}
 
 	options := []goschtalt.Option{
-		goschtalt.DecoderRemove(Extension),
-		goschtalt.DecoderRegister(cliDecoder{}),
+		goschtalt.RemoveDecoder(Extension),
+		goschtalt.RegisterDecoder(cliDecoder{}),
 	}
 
 	inst := instructions{

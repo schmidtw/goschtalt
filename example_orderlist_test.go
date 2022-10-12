@@ -19,7 +19,7 @@ func (f fake) Decode(_ decoder.Context, _ []byte, _ *meta.Object) error { return
 func (f fake) Extensions() []string                                     { return []string{"yml", "yaml", "json"} }
 
 func ExampleConfig_OrderList() {
-	g, err := goschtalt.New(goschtalt.DecoderRegister(fake{}))
+	g, err := goschtalt.New(goschtalt.RegisterDecoder(fake{}))
 	if err != nil {
 		panic(err)
 	}

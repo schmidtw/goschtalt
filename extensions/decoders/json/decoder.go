@@ -36,7 +36,7 @@ var _ decoder.Decoder = (*Decoder)(nil)
 // simply by including this package.
 func init() {
 	var d Decoder
-	goschtalt.DefaultOptions = append(goschtalt.DefaultOptions, goschtalt.DecoderRegister(d))
+	goschtalt.DefaultOptions = append(goschtalt.DefaultOptions, goschtalt.RegisterDecoder(d))
 }
 
 // Decoder is a class for the json decoder.

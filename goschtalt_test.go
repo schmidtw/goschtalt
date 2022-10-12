@@ -45,7 +45,7 @@ func TestNew(t *testing.T) {
 			opts:        []Option{zeroOpt},
 		}, {
 			description: "An error case where duplicate decoders are added.",
-			opts:        []Option{DecoderRegister(&testDecoder{extensions: []string{"json", "json"}})},
+			opts:        []Option{RegisterDecoder(&testDecoder{extensions: []string{"json", "json"}})},
 			expectedErr: ErrDuplicateFound,
 		}, {
 			description: "An error case where the 2nd time through the list there is a failure.",
@@ -154,7 +154,7 @@ func TestCompile(t *testing.T) {
 					Paths:   []string{"."},
 					Recurse: true,
 				}),
-				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
+				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 			},
 			want: st1{},
@@ -177,7 +177,7 @@ func TestCompile(t *testing.T) {
 					Paths:   []string{"."},
 					Recurse: true,
 				}),
-				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
+				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
 				ExpandVars(&ExpandVarsOpts{Mapper: mapper1}),
 				ExpandVars(&ExpandVarsOpts{Start: "|", End: "|", Mapper: mapper2}),
 			},
@@ -191,7 +191,7 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "An empty case.",
 			opts: []Option{
-				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
+				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
 			want:   st1{},
 			expect: st1{},
@@ -208,7 +208,7 @@ func TestCompile(t *testing.T) {
 					Paths:   []string{"."},
 					Recurse: true,
 				}),
-				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
+				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
 			want:        st1{},
 			expect:      st1{},
@@ -226,7 +226,7 @@ func TestCompile(t *testing.T) {
 					Paths:   []string{"."},
 					Recurse: true,
 				}),
-				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
+				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
 			want:        st1{},
 			expect:      st1{},
@@ -244,7 +244,7 @@ func TestCompile(t *testing.T) {
 					Paths:   []string{"."},
 					Recurse: true,
 				}),
-				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
+				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
 				ExpandVars(&ExpandVarsOpts{Mapper: mapper3}),
 				AutoCompile(),
 			},
@@ -327,7 +327,7 @@ func TestOrderList(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			cfg, err := New(DecoderRegister(&testDecoder{extensions: []string{"json"}}))
+			cfg, err := New(RegisterDecoder(&testDecoder{extensions: []string{"json"}}))
 			require.NotNil(cfg)
 			require.NoError(err)
 
@@ -348,7 +348,7 @@ func TestExtensions(t *testing.T) {
 			description: "An empty list",
 		}, {
 			description: "A simple list",
-			opts:        []Option{DecoderRegister(&testDecoder{extensions: []string{"json"}})},
+			opts:        []Option{RegisterDecoder(&testDecoder{extensions: []string{"json"}})},
 			expect:      []string{"json"},
 		},
 	}

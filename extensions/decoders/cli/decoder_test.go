@@ -337,7 +337,7 @@ func TestEndToEnd(t *testing.T) {
 				return nil
 			}
 
-			allOpts := append(Options("cli", ".", tc.args, dirfs), goschtalt.DecoderRegister(testDecoder{}))
+			allOpts := append(Options("cli", ".", tc.args, dirfs), goschtalt.RegisterDecoder(testDecoder{}))
 			c, err := goschtalt.New(allOpts...)
 			if err == nil {
 				err = c.Compile()

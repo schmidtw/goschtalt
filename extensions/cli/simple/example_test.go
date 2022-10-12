@@ -32,7 +32,7 @@ func alterArgs() {
 
 func register() goschtalt.Option {
 	// Change the line below to return nil to use the yml decoder
-	return goschtalt.DecoderRegister(fake{})
+	return goschtalt.RegisterDecoder(fake{})
 }
 
 func Example() {
