@@ -80,15 +80,15 @@ func TestKeyDelimiter(t *testing.T) {
 	assert.Equal(c.keyDelimiter, "<crazy>")
 }
 
-func TestCompileNow(t *testing.T) {
+func TestAutoCompile(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
 	var c Config
 
-	assert.Equal(c.compileNow, false)
-	require.NoError(c.With(CompileNow()))
-	assert.Equal(c.compileNow, true)
+	assert.Equal(c.autoCompile, false)
+	require.NoError(c.With(AutoCompile()))
+	assert.Equal(c.autoCompile, true)
 }
 
 func TestNoDefaults(t *testing.T) {

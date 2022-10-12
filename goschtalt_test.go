@@ -39,7 +39,7 @@ func TestNew(t *testing.T) {
 			description: "A normal case with no options.",
 		}, {
 			description: "A normal case with options.",
-			opts:        []Option{KeyCaseLower(), CompileNow()},
+			opts:        []Option{KeyCaseLower(), AutoCompile()},
 		}, {
 			description: "A case with an empty option.",
 			opts:        []Option{zeroOpt},
@@ -155,7 +155,7 @@ func TestCompile(t *testing.T) {
 					Recurse: true,
 				}),
 				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
-				CompileNow(),
+				AutoCompile(),
 			},
 			want: st1{},
 			expect: st1{
@@ -246,7 +246,7 @@ func TestCompile(t *testing.T) {
 				}),
 				DecoderRegister(&testDecoder{extensions: []string{"json"}}),
 				ExpandVars(&ExpandVarsOpts{Mapper: mapper3}),
-				CompileNow(),
+				AutoCompile(),
 			},
 			compileOption: true,
 			want:          st1{},

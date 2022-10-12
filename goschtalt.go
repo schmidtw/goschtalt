@@ -32,7 +32,7 @@ type Config struct {
 	hasBeenCompiled bool
 
 	// options based things
-	compileNow       bool
+	autoCompile      bool
 	ignoreDefaults   bool
 	decoders         *decoderRegistry
 	encoders         *encoderRegistry
@@ -92,7 +92,7 @@ func (c *Config) With(opts ...Option) error {
 		return err
 	}
 
-	if c.compileNow {
+	if c.autoCompile {
 		if err := c.compile(); err != nil {
 			return err
 		}

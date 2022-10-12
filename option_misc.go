@@ -8,12 +8,12 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 )
 
-// CompileNow instructs New() to also compile the configuration if successful
+// AutoCompile instructs New() to also compile the configuration if successful
 // up to that point.  The error could be from creating the Config object or
 // from the call to Compile().
-func CompileNow() Option {
+func AutoCompile() Option {
 	return func(c *Config) error {
-		c.compileNow = true
+		c.autoCompile = true
 		return nil
 	}
 }
