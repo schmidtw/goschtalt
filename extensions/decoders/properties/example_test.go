@@ -31,7 +31,7 @@ func getFS() fs.FS {
 }
 
 func Example() {
-	g, err := goschtalt.New(goschtalt.FileGroup(
+	g, err := goschtalt.New(goschtalt.AddFileGroup(
 		goschtalt.Group{
 			FS:    getFS(),       // Normally, you use something like os.DirFS("/etc/program")
 			Paths: []string{"."}, // Look in '.'

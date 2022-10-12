@@ -144,12 +144,12 @@ func TestCompile(t *testing.T) {
 		{
 			description: "A normal case with options.",
 			opts: []Option{
-				FileGroup(Group{
+				AddFileGroup(Group{
 					FS:      fs1,
 					Paths:   []string{"."},
 					Recurse: true,
 				}),
-				FileGroup(Group{
+				AddFileGroup(Group{
 					FS:      fs2,
 					Paths:   []string{"."},
 					Recurse: true,
@@ -167,12 +167,12 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A normal case with options including expansion.",
 			opts: []Option{
-				FileGroup(Group{
+				AddFileGroup(Group{
 					FS:      fs1,
 					Paths:   []string{"."},
 					Recurse: true,
 				}),
-				FileGroup(Group{
+				AddFileGroup(Group{
 					FS:      fs2,
 					Paths:   []string{"."},
 					Recurse: true,
@@ -198,12 +198,12 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A merge failure case.",
 			opts: []Option{
-				FileGroup(Group{
+				AddFileGroup(Group{
 					FS:      fs1,
 					Paths:   []string{"."},
 					Recurse: true,
 				}),
-				FileGroup(Group{
+				AddFileGroup(Group{
 					FS:      fs3,
 					Paths:   []string{"."},
 					Recurse: true,
@@ -216,12 +216,12 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A decode failure case.",
 			opts: []Option{
-				FileGroup(Group{
+				AddFileGroup(Group{
 					FS:      fs1,
 					Paths:   []string{"."},
 					Recurse: true,
 				}),
-				FileGroup(Group{
+				AddFileGroup(Group{
 					FS:      fs4,
 					Paths:   []string{"."},
 					Recurse: true,
@@ -234,12 +234,12 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A recursion case where a failure results",
 			opts: []Option{
-				FileGroup(Group{
+				AddFileGroup(Group{
 					FS:      fs1,
 					Paths:   []string{"."},
 					Recurse: true,
 				}),
-				FileGroup(Group{
+				AddFileGroup(Group{
 					FS:      fs2,
 					Paths:   []string{"."},
 					Recurse: true,

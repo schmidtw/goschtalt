@@ -52,9 +52,9 @@ func RemoveEncoder(exts ...string) Option {
 	}
 }
 
-// FileGroup provides a group of files, directories or both to examine for
+// AddFileGroup provides a group of files, directories or both to examine for
 // configuration files.
-func FileGroup(group Group) Option {
+func AddFileGroup(group Group) Option {
 	return func(c *Config) error {
 		c.groups = append(c.groups, group)
 		return nil

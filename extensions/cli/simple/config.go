@@ -73,7 +73,7 @@ type DefaultConfig struct {
 	Ext  string // The extension of the default configuration.
 }
 
-func (d DefaultConfig) getFileGroup() (goschtalt.Option, error) {
+func (d DefaultConfig) getAddFileGroup() (goschtalt.Option, error) {
 	if len(d.Text) == 0 || len(d.Ext) == 0 {
 		return nil, fmt.Errorf("%w: default configuration text must not be empty", ErrDefaultConfigInvalid)
 	}
@@ -87,7 +87,7 @@ func (d DefaultConfig) getFileGroup() (goschtalt.Option, error) {
 			ErrDefaultConfigInvalid, d.Ext, err)
 	}
 
-	return goschtalt.FileGroup(goschtalt.Group{
+	return goschtalt.AddFileGroup(goschtalt.Group{
 		FS:    fs,
 		Paths: []string{"."},
 	}), nil
@@ -184,7 +184,7 @@ func (p Program) applyDefaults(args []string, opts ...goschtalt.Option) (*goscht
 func (p Program) getConfig(args []string, opts ...goschtalt.Option) (*goschtalt.Config, error) {
 	w := p.Output
 
-	defFG, err := p.Default.getFileGroup()
+	defFG, err := p.Default.getAddFileGroup()
 	if err != nil {
 		return nil, err
 	}

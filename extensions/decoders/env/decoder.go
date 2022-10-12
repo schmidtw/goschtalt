@@ -115,6 +115,6 @@ func EnvVarConfig(filename, prefix, delimiter string) []goschtalt.Option {
 	return []goschtalt.Option{
 		goschtalt.RemoveDecoder(Extension),
 		goschtalt.RegisterDecoder(envDecoder{}),
-		goschtalt.FileGroup(group),
+		goschtalt.AddFileGroup(group),
 	}
 }

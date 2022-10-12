@@ -133,7 +133,7 @@ func Options(filename, delimiter string, args []string, dirFS ...func(string) fs
 				FS:    dirfs(path.Dir(file)),
 				Paths: []string{path.Base(file)},
 			}
-			options = append(options, goschtalt.FileGroup(group))
+			options = append(options, goschtalt.AddFileGroup(group))
 		case "-d", "--dir", "-r", "--recurse":
 			// Make i point to the dir part of `-d dir` or `-r dir`
 			i++
@@ -151,7 +151,7 @@ func Options(filename, delimiter string, args []string, dirFS ...func(string) fs
 			if arg == "-r" || arg == "--recurse" {
 				group.Recurse = true
 			}
-			options = append(options, goschtalt.FileGroup(group))
+			options = append(options, goschtalt.AddFileGroup(group))
 		case "--kvp":
 			if len(args) <= (i + 2) {
 				return retErr(fmt.Errorf("%w: cli option [--kvp key value] missing parameters '%s'",
@@ -188,7 +188,7 @@ func Options(filename, delimiter string, args []string, dirFS ...func(string) fs
 		FS:    clifs,
 		Paths: []string{"."},
 	}
-	options = append(options, goschtalt.FileGroup(group))
+	options = append(options, goschtalt.AddFileGroup(group))
 
 	return options
 }

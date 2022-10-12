@@ -45,7 +45,7 @@ func TestEncoderOptions(t *testing.T) {
 	assert.Empty(cmp.Diff([]string{"yml"}, c.encoders.extensions()))
 }
 
-func TestFileGroup(t *testing.T) {
+func TestAddFileGroup(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 
@@ -58,11 +58,11 @@ func TestFileGroup(t *testing.T) {
 		Paths: []string{"group 2"},
 	}
 
-	require.NoError(c.With(FileGroup(g0)))
+	require.NoError(c.With(AddFileGroup(g0)))
 	require.Equal(1, len(c.groups))
 	assert.Empty(cmp.Diff(g0, c.groups[0]))
 
-	require.NoError(c.With(FileGroup(g1)))
+	require.NoError(c.With(AddFileGroup(g1)))
 	require.Equal(2, len(c.groups))
 	assert.Empty(cmp.Diff(g1, c.groups[1]))
 }
