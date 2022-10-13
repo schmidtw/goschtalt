@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDecoderOptions(t *testing.T) {
+func TestMapstructureOptions(t *testing.T) {
 	assert := assert.New(t)
 	require := require.New(t)
 

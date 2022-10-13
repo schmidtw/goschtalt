@@ -40,7 +40,7 @@ type Config struct {
 	sorter           func([]fileObject)
 	keyDelimiter     string
 	keySwizzler      func(string) string
-	unmarshalOptions []UnmarshalOption
+	unmarshalOptions []MapstructureOption
 	expansions       []Expand
 }
 

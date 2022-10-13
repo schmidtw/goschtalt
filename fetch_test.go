@@ -24,7 +24,7 @@ func TestFetch(t *testing.T) {
 		json            string
 		key             string
 		want            any
-		opts            []UnmarshalOption
+		opts            []MapstructureOption
 		expected        any
 		expectedErr     error
 		notCompiled     bool
@@ -100,7 +100,7 @@ func TestFetch(t *testing.T) {
 			key:         "foo.1",
 			want:        "float64",
 			expected:    float64(0.2),
-			opts:        []UnmarshalOption{WeaklyTypedInput(true)},
+			opts:        []MapstructureOption{WeaklyTypedInput(true)},
 		}, {
 			description: "Not compile yet.",
 			notCompiled: true,
