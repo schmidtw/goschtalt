@@ -114,10 +114,10 @@ func Optional(optional bool) UnmarshalOption {
 	}
 }
 
-// DefaultUnmarshalOption allows customization of the desired options for all
+// AddDefaultUnmarshalOption allows customization of the desired options for all
 // invocations of the Unmarshal() function.  This should make consistent use
 // use of the Unmarshal() call easier.
-func DefaultUnmarshalOption(opt UnmarshalOption) Option {
+func AddDefaultUnmarshalOption(opt UnmarshalOption) Option {
 	return func(c *Config) error {
 		c.unmarshalOptions = append(c.unmarshalOptions, opt)
 		return nil

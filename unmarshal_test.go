@@ -158,9 +158,9 @@ func TestUnmarshal(t *testing.T) {
 			opts:        []UnmarshalOption{},
 			expectedErr: unknownErr,
 		}, {
-			description: "Verify the DefaultUnmarshalOption() works.",
+			description: "Verify the AddDefaultUnmarshalOption() works.",
 			input:       `{"foo":"bar", "bool": "T"}`,
-			defOpts:     []Option{DefaultUnmarshalOption(WeaklyTypedInput(true))},
+			defOpts:     []Option{AddDefaultUnmarshalOption(WeaklyTypedInput(true))},
 			want:        withBool{},
 			expected: withBool{
 				Foo:  "bar",
