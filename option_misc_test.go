@@ -155,22 +155,22 @@ func TestNoDefaults(t *testing.T) {
 	}
 }
 
-func TestExpandVars(t *testing.T) {
+func TestAddExpansion(t *testing.T) {
 	fn := func(_ string) string {
 		return ""
 	}
 	tests := []struct {
 		description string
-		in          []*ExpandVarsOpts
+		in          []*Expand
 		count       int
 	}{
 		{
 			description: "Simple success",
-			in:          []*ExpandVarsOpts{{Mapper: fn}},
+			in:          []*Expand{{Mapper: fn}},
 			count:       1,
 		}, {
 			description: "Fully defined",
-			in: []*ExpandVarsOpts{{
+			in: []*Expand{{
 				Start:   "${{",
 				End:     "}}",
 				Mapper:  fn,
@@ -179,21 +179,21 @@ func TestExpandVars(t *testing.T) {
 			count: 1,
 		}, {
 			description: "2 of them",
-			in: []*ExpandVarsOpts{
+			in: []*Expand{
 				{Mapper: fn},
 				{Mapper: fn},
 			},
 			count: 2,
 		}, {
 			description: "1 of them because no mapper in one",
-			in: []*ExpandVarsOpts{
+			in: []*Expand{
 				{Mapper: fn},
 				{Mapper: nil},
 			},
 			count: 1,
 		}, {
 			description: "0 because it was cleared out",
-			in: []*ExpandVarsOpts{
+			in: []*Expand{
 				{Mapper: fn},
 				nil,
 			},
@@ -208,7 +208,7 @@ func TestExpandVars(t *testing.T) {
 			var c Config
 
 			for _, opt := range tc.in {
-				err := c.With(ExpandVars(opt))
+				err := c.With(AddExpansion(opt))
 				assert.NoError(err)
 			}
 

@@ -41,7 +41,7 @@ type Config struct {
 	keyDelimiter     string
 	keySwizzler      func(string) string
 	unmarshalOptions []UnmarshalOption
-	expansions       []ExpandVarsOpts
+	expansions       []Expand
 }
 
 // Option is the type used for options.

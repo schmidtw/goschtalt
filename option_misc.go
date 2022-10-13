@@ -78,8 +78,8 @@ func NoDefaults() Option {
 	}
 }
 
-// ExpandVarsOpts controls how variables are identified and processed.
-type ExpandVarsOpts struct {
+// Expand controls how variables are identified and processed.
+type Expand struct {
 	// Optional name showing where the value came from.
 	Name string
 
@@ -100,8 +100,8 @@ type ExpandVarsOpts struct {
 	Maximum int
 }
 
-// ExpandVars provides a way to expand variables in values throughout the
-// configuration tree.  ExpandVars() can be called multiple times to expand
+// AddExpansion provides a way to expand variables in values throughout the
+// configuration tree.  AddExpansion() can be called multiple times to expand
 // variables based on additional configurations and mappers.  To remove all
 // expansion pass in nil for the cfg parameter.
 //
@@ -114,8 +114,8 @@ type ExpandVarsOpts struct {
 //
 // Here is an example of how to expand environment variables:
 //
-//	ExpandVars(&ExpandVarsOpts{Mapper: os.Getenv})
-func ExpandVars(cfg *ExpandVarsOpts) Option {
+//	AddExpansion(&Expand{Mapper: os.Getenv})
+func AddExpansion(cfg *Expand) Option {
 	return func(c *Config) error {
 		if cfg == nil {
 			c.expansions = nil
