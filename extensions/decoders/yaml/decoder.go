@@ -34,7 +34,7 @@ var _ decoder.Decoder = (*Decoder)(nil)
 // simply by including this package.
 func init() {
 	var d Decoder
-	goschtalt.DefaultOptions = append(goschtalt.DefaultOptions, goschtalt.RegisterDecoder(d))
+	goschtalt.DefaultOptions = append(goschtalt.DefaultOptions, goschtalt.WithDecoder(d))
 }
 
 // Decoder is a class for the yaml decoder.

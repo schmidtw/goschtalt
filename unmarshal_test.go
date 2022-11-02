@@ -17,7 +17,7 @@ import (
 )
 
 func TestUnmarshal(t *testing.T) {
-	var zeroOpt MapstructureOption
+	var zeroOpt UnmarshalOption
 	unknownErr := fmt.Errorf("unknown error")
 	type simple struct {
 		Foo   string
@@ -42,7 +42,7 @@ func TestUnmarshal(t *testing.T) {
 		input       string
 		want        any
 		defOpts     []Option
-		opts        []MapstructureOption
+		opts        []UnmarshalOption
 		notCompiled bool
 		nilWanted   bool
 		expected    any
@@ -51,7 +51,7 @@ func TestUnmarshal(t *testing.T) {
 		{
 			description: "A simple tree.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
-			opts:        []MapstructureOption{},
+			opts:        []UnmarshalOption{},
 			want:        simple{},
 			expected: simple{
 				Foo:   "bar",
@@ -60,21 +60,22 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "A simple tree showing the duration doesn't decode.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
-			opts:        []MapstructureOption{},
+			opts:        []UnmarshalOption{},
 			want:        withDuration{},
 			expectedErr: unknownErr,
 		}, {
 			description: "A simple tree showing the duration doesn't decode, with zero option.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
-			opts:        []MapstructureOption{zeroOpt},
+			opts:        []UnmarshalOption{zeroOpt},
 			want:        withDuration{},
 			expectedErr: unknownErr,
 		}, {
 			description: "A simple tree with the DecodeHook() behavior works with duration hook.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
-			opts: []MapstructureOption{DecodeHook(
-				mapstructure.ComposeDecodeHookFunc(
-					mapstructure.StringToTimeDurationHookFunc()))},
+			opts: []UnmarshalOption{UnmarshalWith(
+				DecodeHook(
+					mapstructure.ComposeDecodeHookFunc(
+						mapstructure.StringToTimeDurationHookFunc())))},
 			want: withDuration{},
 			expected: withDuration{
 				Foo:   "bar",
@@ -83,7 +84,7 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "Verify the ErrorUnused() behavior succeeds.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
-			opts:        []MapstructureOption{ErrorUnused(true)},
+			opts:        []UnmarshalOption{UnmarshalWith(ErrorUnused(true))},
 			want:        simple{},
 			expected: simple{
 				Foo:   "bar",
@@ -92,13 +93,13 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "Verify the ErrorUnused behavior fails.",
 			input:       `{"foo":"bar", "delta": "1s", "extra": "arg"}`,
-			opts:        []MapstructureOption{ErrorUnused(true)},
+			opts:        []UnmarshalOption{UnmarshalWith(ErrorUnused(true))},
 			want:        simple{},
 			expectedErr: unknownErr,
 		}, {
 			description: "Verify the ErrorUnset() behavior succeeds.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
-			opts:        []MapstructureOption{ErrorUnset(true)},
+			opts:        []UnmarshalOption{UnmarshalWith(ErrorUnset(true))},
 			want:        simple{},
 			expected: simple{
 				Foo:   "bar",
@@ -107,13 +108,13 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "Verify the ErrorUnset() behavior fails.",
 			input:       `{"foo":"bar", "extra": "arg"}`,
-			opts:        []MapstructureOption{ErrorUnset(true)},
+			opts:        []UnmarshalOption{UnmarshalWith(ErrorUnset(true))},
 			want:        simple{},
 			expectedErr: unknownErr,
 		}, {
 			description: "Verify the WeaklyTypedInput() behavior succeeds.",
 			input:       `{"foo":"bar", "bool": "T"}`,
-			opts:        []MapstructureOption{WeaklyTypedInput(true)},
+			opts:        []UnmarshalOption{UnmarshalWith(WeaklyTypedInput(true))},
 			want:        withBool{},
 			expected: withBool{
 				Foo:  "bar",
@@ -122,24 +123,23 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "Verify the TagName() behavior succeeds.",
 			input:       `{"flags":"bar"}`,
-			opts:        []MapstructureOption{TagName("goschtalt")},
+			opts:        []UnmarshalOption{UnmarshalWith(TagName("goschtalt"))},
 			want:        withAltTags{},
 			expected: withAltTags{
 				Foo: "bar",
 			},
 		}, {
-			description: "Verify the Optional() behavior.",
+			description: "Verify the optional behavior.",
 			key:         "not_present",
 			input:       `{"flags":"bar"}`,
-			opts:        []MapstructureOption{Optional(true)},
 			want:        simple{},
 			expected:    simple{},
 		}, {
 			description: "Verify the MatchName() behavior succeeds.",
 			input:       `{"flags":"bar"}`,
-			opts: []MapstructureOption{MatchName(func(key, fieldName string) bool {
+			opts: []UnmarshalOption{UnmarshalWith(MatchName(func(key, fieldName string) bool {
 				return key == "flags" && strings.ToLower(fieldName) == "foo"
-			})},
+			}))},
 			want: simple{},
 			expected: simple{
 				Foo: "bar",
@@ -148,19 +148,19 @@ func TestUnmarshal(t *testing.T) {
 			description: "A struct that wasn't compiled.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
 			notCompiled: true,
-			opts:        []MapstructureOption{},
+			opts:        []UnmarshalOption{},
 			want:        simple{},
 			expectedErr: ErrNotCompiled,
 		}, {
 			description: "A nil result value.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
 			nilWanted:   true,
-			opts:        []MapstructureOption{},
+			opts:        []UnmarshalOption{},
 			expectedErr: unknownErr,
 		}, {
 			description: "Verify the AddDefaultUnmarshalOption() works.",
 			input:       `{"foo":"bar", "bool": "T"}`,
-			defOpts:     []Option{AddDefaultUnmarshalOptions(WeaklyTypedInput(true))},
+			defOpts:     []Option{DefaultUnmarshalOptions(UnmarshalWith(WeaklyTypedInput(true)))},
 			want:        withBool{},
 			expected: withBool{
 				Foo:  "bar",
@@ -177,14 +177,16 @@ func TestUnmarshal(t *testing.T) {
 			require.NoError(err)
 
 			c := Config{
-				tree:            tree,
-				hasBeenCompiled: !tc.notCompiled,
-				keySwizzler:     strings.ToLower,
-				keyDelimiter:    ".",
+				tree:     tree,
+				compiled: !tc.notCompiled,
+				opts: options{
+					keySwizzler:  strings.ToLower,
+					keyDelimiter: ".",
+				},
 			}
 
 			for _, opt := range tc.defOpts {
-				require.NoError(opt(&c))
+				require.NoError(opt.apply(&c.opts))
 			}
 
 			if tc.nilWanted {
@@ -215,7 +217,7 @@ func TestUnmarshalFn(t *testing.T) {
 	tests := []struct {
 		description string
 		key         string
-		opts        []MapstructureOption
+		opts        []UnmarshalOption
 		skipCompile bool
 		want        sub
 		expectedErr bool

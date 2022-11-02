@@ -6,6 +6,7 @@ package goschtalt
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -16,17 +17,6 @@ import (
 )
 
 var errOpt = errors.New("option error")
-
-// When called the 2nd time (when there is a default sort order) results in an
-// error.
-func errOption() Option {
-	return func(c *Config) error {
-		if c.sorter != nil {
-			return errOpt
-		}
-		return nil
-	}
-}
 
 func TestNew(t *testing.T) {
 	var zeroOpt Option
@@ -39,17 +29,13 @@ func TestNew(t *testing.T) {
 			description: "A normal case with no options.",
 		}, {
 			description: "A normal case with options.",
-			opts:        []Option{KeyCaseLower(), AutoCompile()},
+			opts:        []Option{AlterKeyCase(strings.ToLower), AutoCompile()},
 		}, {
 			description: "A case with an empty option.",
 			opts:        []Option{zeroOpt},
 		}, {
-			description: "An error case where duplicate decoders are added.",
-			opts:        []Option{RegisterDecoder(&testDecoder{extensions: []string{"json", "json"}})},
-			expectedErr: ErrDuplicateFound,
-		}, {
-			description: "An error case where the 2nd time through the list there is a failure.",
-			opts:        []Option{errOption()},
+			description: "An error case.",
+			opts:        []Option{WithError(errOpt)},
 			expectedErr: errOpt,
 		},
 	}
@@ -132,6 +118,11 @@ func TestCompile(t *testing.T) {
 		Madd  string
 	}
 
+	type st2 struct {
+		Thing1 string
+		Thing2 st1
+	}
+
 	tests := []struct {
 		description   string
 		compileOption bool
@@ -144,17 +135,10 @@ func TestCompile(t *testing.T) {
 		{
 			description: "A normal case with options.",
 			opts: []Option{
-				AddFileGroup(Group{
-					FS:      fs1,
-					Paths:   []string{"."},
-					Recurse: true,
-				}),
-				AddFileGroup(Group{
-					FS:      fs2,
-					Paths:   []string{"."},
-					Recurse: true,
-				}),
-				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
+				AlterKeyCase(strings.ToLower),
+				AddTree(fs1, "."),
+				AddTree(fs2, "."),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 			},
 			want: st1{},
@@ -167,19 +151,12 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A normal case with options including expansion.",
 			opts: []Option{
-				AddFileGroup(Group{
-					FS:      fs1,
-					Paths:   []string{"."},
-					Recurse: true,
-				}),
-				AddFileGroup(Group{
-					FS:      fs2,
-					Paths:   []string{"."},
-					Recurse: true,
-				}),
-				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
-				AddExpansion(&Expand{Mapper: mapper1}),
-				AddExpansion(&Expand{Start: "|", End: "|", Mapper: mapper2}),
+				AlterKeyCase(strings.ToLower),
+				AddTree(fs1, "."),
+				AddTree(fs2, "."),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				Expand(mapper1),
+				Expand(mapper2, WithDelimiters("|", "|")),
 			},
 			want: st1{},
 			expect: st1{
@@ -189,26 +166,37 @@ func TestCompile(t *testing.T) {
 			},
 			files: []string{"1.json", "2.json", "3.json", "90.json"},
 		}, {
+			description: "A normal case with values.",
+			opts: []Option{
+				AlterKeyCase(strings.ToLower),
+				AddValue("record1", "", st1{
+					Hello: "Mr. Blue Sky",
+					Blue:  "jay",
+					Madd:  "cat",
+				}),
+			},
+			want: st1{},
+			expect: st1{
+				Hello: "Mr. Blue Sky",
+				Blue:  "jay",
+				Madd:  "cat",
+			},
+			files: []string{"record1"},
+		}, {
 			description: "An empty case.",
 			opts: []Option{
-				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
+				AlterKeyCase(strings.ToLower),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
 			want:   st1{},
 			expect: st1{},
 		}, {
 			description: "A merge failure case.",
 			opts: []Option{
-				AddFileGroup(Group{
-					FS:      fs1,
-					Paths:   []string{"."},
-					Recurse: true,
-				}),
-				AddFileGroup(Group{
-					FS:      fs3,
-					Paths:   []string{"."},
-					Recurse: true,
-				}),
-				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
+				AlterKeyCase(strings.ToLower),
+				AddTree(fs1, "."),
+				AddTree(fs3, "."),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
 			want:        st1{},
 			expect:      st1{},
@@ -216,17 +204,10 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A decode failure case.",
 			opts: []Option{
-				AddFileGroup(Group{
-					FS:      fs1,
-					Paths:   []string{"."},
-					Recurse: true,
-				}),
-				AddFileGroup(Group{
-					FS:      fs4,
-					Paths:   []string{"."},
-					Recurse: true,
-				}),
-				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
+				AlterKeyCase(strings.ToLower),
+				AddTree(fs1, "."),
+				AddTree(fs4, "."),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
 			want:        st1{},
 			expect:      st1{},
@@ -234,18 +215,11 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A recursion case where a failure results",
 			opts: []Option{
-				AddFileGroup(Group{
-					FS:      fs1,
-					Paths:   []string{"."},
-					Recurse: true,
-				}),
-				AddFileGroup(Group{
-					FS:      fs2,
-					Paths:   []string{"."},
-					Recurse: true,
-				}),
-				RegisterDecoder(&testDecoder{extensions: []string{"json"}}),
-				AddExpansion(&Expand{Mapper: mapper3}),
+				AlterKeyCase(strings.ToLower),
+				AddTree(fs1, "."),
+				AddTree(fs2, "."),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				Expand(mapper3),
 				AutoCompile(),
 			},
 			compileOption: true,
@@ -327,7 +301,7 @@ func TestOrderList(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			cfg, err := New(RegisterDecoder(&testDecoder{extensions: []string{"json"}}))
+			cfg, err := New(WithDecoder(&testDecoder{extensions: []string{"json"}}))
 			require.NotNil(cfg)
 			require.NoError(err)
 
@@ -348,7 +322,7 @@ func TestExtensions(t *testing.T) {
 			description: "An empty list",
 		}, {
 			description: "A simple list",
-			opts:        []Option{RegisterDecoder(&testDecoder{extensions: []string{"json"}})},
+			opts:        []Option{WithDecoder(&testDecoder{extensions: []string{"json"}})},
 			expect:      []string{"json"},
 		},
 	}

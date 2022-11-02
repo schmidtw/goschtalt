@@ -174,8 +174,14 @@ func (obj Object) ToRaw() any {
 }
 
 // ObjectFromRaw converts a native go tree into the equivalent Object tree structure.
-func ObjectFromRaw(in any) (obj Object) {
+func ObjectFromRaw(in any, at ...string) (obj Object) {
 	obj.Origins = []Origin{}
+
+	if len(at) > 0 && len(at[0]) > 0 {
+		obj.Map = make(map[string]Object)
+		obj.Map[at[0]] = ObjectFromRaw(in, at[1:]...)
+		return obj
+	}
 
 	switch in := in.(type) {
 	case []any:

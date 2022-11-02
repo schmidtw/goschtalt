@@ -31,11 +31,8 @@ func getFS() fs.FS {
 }
 
 func Example() {
-	g, err := goschtalt.New(goschtalt.AddFileGroup(
-		goschtalt.Group{
-			FS:    getFS(),       // Normally, you use something like os.DirFS("/etc/program")
-			Paths: []string{"."}, // Look in '.'
-		}))
+	// Normally, you use something like os.DirFS("/etc/program")
+	g, err := goschtalt.New(goschtalt.AddDir(getFS(), "."))
 	if err != nil {
 		panic(err)
 	}

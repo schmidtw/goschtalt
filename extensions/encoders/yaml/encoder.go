@@ -26,7 +26,7 @@ var _ encoder.Encoder = (*Encoder)(nil)
 // simply by including this package.
 func init() {
 	var e Encoder
-	goschtalt.DefaultOptions = append(goschtalt.DefaultOptions, goschtalt.RegisterEncoder(e))
+	goschtalt.DefaultOptions = append(goschtalt.DefaultOptions, goschtalt.WithEncoder(e))
 }
 
 // Encoder is a class for the yaml encoder.

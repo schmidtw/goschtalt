@@ -4,6 +4,7 @@
 package goschtalt
 
 import (
+	"fmt"
 	iofs "io/fs"
 	"sort"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/psanford/memfs"
+	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -19,22 +21,22 @@ import (
 func TestWalk(t *testing.T) {
 	tests := []struct {
 		description string
-		group       Group
+		grp         group
 		expected    []string
 		expectedErr error
 	}{
 		{
 			description: "Process one file.",
-			group: Group{
-				Paths: []string{"nested/conf/1.json"},
+			grp: group{
+				paths: []string{"nested/conf/1.json"},
 			},
 			expected: []string{
 				`1.json`, `{"hello":"world"}`,
 			},
 		}, {
 			description: "Process two files.",
-			group: Group{
-				Paths: []string{
+			grp: group{
+				paths: []string{
 					"nested/conf/1.json",
 					"nested/4.json",
 				},
@@ -46,9 +48,9 @@ func TestWalk(t *testing.T) {
 		},
 		{
 			description: "Process most files.",
-			group: Group{
-				Paths:   []string{"nested"},
-				Recurse: true,
+			grp: group{
+				paths:   []string{"nested"},
+				recurse: true,
 			},
 			expected: []string{
 				`1.json`, `{"hello":"world"}`,
@@ -58,8 +60,8 @@ func TestWalk(t *testing.T) {
 			},
 		}, {
 			description: "Process some files.",
-			group: Group{
-				Paths: []string{"nested"},
+			grp: group{
+				paths: []string{"nested"},
 			},
 			expected: []string{
 				`3.json`, `{"sky":"overcast"}`,
@@ -67,26 +69,26 @@ func TestWalk(t *testing.T) {
 			},
 		}, {
 			description: "Process all files and fail.",
-			group: Group{
-				Recurse: true,
+			grp: group{
+				recurse: true,
 			},
 			expectedErr: ErrDecoding,
 		}, {
 			description: "Trailing slashes are not allowed.",
-			group: Group{
-				Paths: []string{"nested/"},
+			grp: group{
+				paths: []string{"nested/"},
 			},
 			expectedErr: iofs.ErrInvalid,
 		}, {
 			description: "Absolute addressing is not allowed.",
-			group: Group{
-				Paths: []string{"/nested"},
+			grp: group{
+				paths: []string{"/nested"},
 			},
 			expectedErr: iofs.ErrInvalid,
 		}, {
 			description: "No file or directory with this patth.",
-			group: Group{
-				Paths: []string{"invalid"},
+			grp: group{
+				paths: []string{"invalid"},
 			},
 			expectedErr: iofs.ErrNotExist,
 		},
@@ -104,14 +106,13 @@ func TestWalk(t *testing.T) {
 			require.NoError(fs.WriteFile("nested/3.json", []byte(`{"sky":"overcast"}`), 0755))
 			require.NoError(fs.WriteFile("nested/4.json", []byte(`{"ground":"green"}`), 0755))
 			require.NoError(fs.WriteFile("invalid.json", []byte(`{ground:green}`), 0755))
-			tc.group.FS = fs
+			tc.grp.fs = fs
 
-			dr := newDecoderRegistry()
+			dr := newRegistry[decoder.Decoder]()
 			require.NotNil(dr)
-			err := dr.register(&testDecoder{extensions: []string{"json"}})
-			require.NoError(err)
+			dr.register(&testDecoder{extensions: []string{"json"}})
 
-			got, err := tc.group.walk(dr, ".")
+			got, err := tc.grp.walk(dr, ".")
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				require.NotNil(got)
@@ -166,4 +167,19 @@ func TestMatchExts(t *testing.T) {
 			assert.Empty(cmp.Diff(tc.expected, got))
 		})
 	}
+}
+
+func TestWes(t *testing.T) {
+	val := map[string]any{
+		"dogs":   []string{"pluto", "sam"},
+		"cats":   []string{"madd", "tom"},
+		"living": "together",
+	}
+
+	g, _ := New(AddValue("record1", "", val),
+		AutoCompile(),
+		ExpandEnv(),
+		Expand(nil))
+
+	fmt.Println(g.Explain())
 }
