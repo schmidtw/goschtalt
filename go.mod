@@ -12,6 +12,7 @@ require (
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/k0kubun/pp v3.0.1+incompatible // indirect
 	github.com/k0kubun/pp/v3 v3.2.0 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/kyoh86/richgo v0.3.10 // indirect

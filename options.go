@@ -16,10 +16,9 @@ import (
 // Option configures specific behavior of Config as well as the locations used
 // for the configurations compiled.  There are 3 basic groups of options:
 //
-//	- Configuration of locations where to collect configuration
-//	- Addition of encoders/decoders
-//	- Define default behaviors
-//
+//   - Configuration of locations where to collect configuration
+//   - Addition of encoders/decoders
+//   - Define default behaviors
 type Option interface {
 	fmt.Stringer
 
@@ -406,7 +405,7 @@ type disableDefaultPackageOption struct{}
 var _ Option = (*disableDefaultPackageOption)(nil)
 
 func (_ disableDefaultPackageOption) apply(opts *options) error { return nil }
-func (d disableDefaultPackageOption) ignoreDefaults() bool      { return true }
+func (_ disableDefaultPackageOption) ignoreDefaults() bool      { return true }
 func (_ disableDefaultPackageOption) String() string            { return "DisableDefaultPackageOptions()" }
 
 // DefaultMarshalOptions allows customization of the desired options for all
@@ -437,8 +436,8 @@ func (d defaultMarshalOption) String() string {
 	}
 
 	var s []string
-	for i := range d.opts {
-		s = append(s, d.opts[i].String())
+	for _, opt := range d.opts {
+		s = append(s, opt.String())
 	}
 	return "DefaultMarshalOptions( " + strings.Join(s, ", ") + " )"
 }
@@ -471,8 +470,8 @@ func (d defaultUnmarshalOption) String() string {
 	}
 
 	var s []string
-	for i := range d.opts {
-		s = append(s, d.opts[i].String())
+	for _, opt := range d.opts {
+		s = append(s, opt.String())
 	}
 	return "DefaultUnmarshalOptions( " + strings.Join(s, ", ") + " )"
 }

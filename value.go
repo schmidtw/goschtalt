@@ -40,16 +40,16 @@ type value struct {
 }
 
 func (v value) decode(delimiter string, opts ...DecoderConfigOption) (fileObject, error) {
-	var cfg mapstructure.DecoderConfig
+	tree := make(map[string]any)
+	cfg := mapstructure.DecoderConfig{
+		Result: &tree,
+	}
 
 	all := append(opts, v.opts...)
 	for _, opt := range all {
 		opt.decoderApply(&cfg)
 	}
 
-	tree := make(map[string]any)
-
-	cfg.Result = &tree
 	decoder, err := mapstructure.NewDecoder(&cfg)
 	if err == nil {
 		err = decoder.Decode(v.value)

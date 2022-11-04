@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/mitchellh/mapstructure"
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
@@ -107,3 +108,16 @@ func addOrigin(obj meta.Object, origin *meta.Origin) meta.Object {
 
 	return obj
 }
+
+// Test DecoderConfig that lets us easily inject errors.
+
+func testSetResult(v any) DecoderConfigOption {
+	return &testSetResultOption{val: v}
+}
+
+type testSetResultOption struct {
+	val any
+}
+
+func (t testSetResultOption) decoderApply(m *mapstructure.DecoderConfig) { m.Result = t.val }
+func (_ testSetResultOption) String() string                             { return "" }

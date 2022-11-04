@@ -174,6 +174,14 @@ func (u unmarshalWithOption) unmarshalApply(opts *unmarshalOptions) {
 	}
 }
 
-func (_ unmarshalWithOption) String() string {
-	return "UnmarshalWith"
+func (u unmarshalWithOption) String() string {
+	if len([]DecoderConfigOption(u)) == 0 {
+		return "UnmarshalWith()"
+	}
+
+	var s []string
+	for _, opt := range []DecoderConfigOption(u) {
+		s = append(s, opt.String())
+	}
+	return "UnmarshalWith(" + strings.Join(s, ", ") + ")"
 }
