@@ -12,19 +12,16 @@ import (
 // after the configuration has been compiled.
 func ExpandEnv(opts ...ExpandOption) Option {
 	exp := expand{
-		origin:  "environment",
-		mapper:  os.Getenv,
-		start:   "${",
-		end:     "}",
-		maximum: 10000,
+		name:   "ExpandEnv( ",
+		origin: "environment",
+		mapper: os.Getenv,
+		start:  "${",
+		end:    "}",
 	}
 
 	for _, opt := range opts {
 		opt.expandApply(&exp)
 	}
-
-	exp.name = fmt.Sprintf("ExpandEnv( start: '%s', end: '%s', origin: '%s', maximum: %d )",
-		exp.start, exp.end, exp.origin, exp.maximum)
 
 	return &exp
 }
@@ -41,23 +38,21 @@ func ExpandEnv(opts ...ExpandOption) Option {
 //
 // Expand directives are evaluated in the order specified.
 func Expand(mapper func(string) string, opts ...ExpandOption) Option {
+	fn := "Expand( custom,"
+	if mapper == nil {
+		fn = "Expand( none,"
+	}
+
 	exp := expand{
-		mapper:  mapper,
-		start:   "${",
-		end:     "}",
-		maximum: 10000,
+		name:   fn,
+		mapper: mapper,
+		start:  "${",
+		end:    "}",
 	}
 
 	for _, opt := range opts {
 		opt.expandApply(&exp)
 	}
-
-	fn := "none"
-	if exp.mapper != nil {
-		fn = "custom"
-	}
-	exp.name = fmt.Sprintf("Expand( mapper: %s, start: '%s', end: '%s', origin: '%s', maximum: %d )",
-		fn, exp.start, exp.end, exp.origin, exp.maximum)
 
 	return &exp
 }
@@ -88,12 +83,6 @@ type expand struct {
 }
 
 func (exp expand) apply(opts *options) error {
-	if len(exp.start) == 0 {
-		exp.start = "${"
-	}
-	if len(exp.end) == 0 {
-		exp.end = "}"
-	}
 	if exp.maximum < 1 {
 		exp.maximum = 10000
 	}
@@ -104,8 +93,14 @@ func (exp expand) apply(opts *options) error {
 	return nil
 }
 
-func (_ expand) ignoreDefaults() bool { return false }
-func (exp expand) String() string     { return exp.name }
+func (_ expand) ignoreDefaults() bool {
+	return false
+}
+
+func (exp expand) String() string {
+	return fmt.Sprintf("%s start: '%s', end: '%s', origin: '%s', maximum: %d )",
+		exp.name, exp.start, exp.end, exp.origin, exp.maximum)
+}
 
 // ---- ExpandOption follow --------------------------------------------------
 

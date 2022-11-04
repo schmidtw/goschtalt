@@ -4,6 +4,7 @@
 package goschtalt
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -15,25 +16,40 @@ func TestExpand(t *testing.T) {
 	}
 	tests := []struct {
 		description string
-		in          []Option
+		in          Option
+		want        expand
 		count       int
+		fnNil       bool
 	}{
 		{
 			description: "Simple success",
-			in:          []Option{Expand(fn)},
+			in:          Expand(fn),
 			count:       1,
+			want: expand{
+				start:   "${",
+				end:     "}",
+				maximum: 10000,
+			},
 		}, {
 			description: "Fully defined",
-			in:          []Option{Expand(fn, WithDelimiters("${{", "}}"), WithMaximum(10))},
+			in:          Expand(fn, WithOrigin("origin"), WithDelimiters("${{", "}}"), WithMaximum(10)),
 			count:       1,
+			want: expand{
+				origin:  "origin",
+				start:   "${{",
+				end:     "}}",
+				maximum: 10,
+			},
 		}, {
-			description: "2 of them",
-			in:          []Option{Expand(fn), Expand(fn)},
-			count:       2,
-		}, {
-			description: "1 of them because no mapper in one",
-			in:          []Option{Expand(fn), Expand(nil)},
+			description: "Fully defined",
+			in:          ExpandEnv(WithOrigin("origin"), WithDelimiters("${{", "}}"), WithMaximum(-1)),
 			count:       1,
+			want: expand{
+				origin:  "origin",
+				start:   "${{",
+				end:     "}}",
+				maximum: 10000,
+			},
 		},
 	}
 
@@ -42,11 +58,19 @@ func TestExpand(t *testing.T) {
 			assert := assert.New(t)
 
 			var c Config
-
-			err := c.With(tc.in...)
+			err := c.With(tc.in)
 			assert.NoError(err)
 
 			assert.Equal(tc.count, len(c.opts.expansions))
+			if tc.count == 1 {
+				if tc.fnNil {
+					assert.Nil(c.opts.expansions[0].mapper)
+				}
+				c.opts.expansions[0].mapper = nil
+				c.opts.expansions[0].name = ""
+
+				assert.True(reflect.DeepEqual(tc.want, c.opts.expansions[0]))
+			}
 		})
 	}
 }

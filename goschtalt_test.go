@@ -226,6 +226,34 @@ func TestCompile(t *testing.T) {
 			want:          st1{},
 			expect:        st1{},
 			expectedErr:   unknownErr,
+		}, {
+			description: "A case where the value decoder errors",
+			opts: []Option{
+				AlterKeyCase(strings.ToLower),
+				AddValue("record1", "", st1{
+					Hello: "Mr. Blue Sky",
+					Blue:  "jay",
+					Madd:  "cat",
+				}, testSetResult(5)), // the result must be a pointer
+			},
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: unknownErr,
+		}, {
+			description: "A case where the value doesn't have a record name.",
+			opts: []Option{
+				AlterKeyCase(strings.ToLower),
+				AutoCompile(),
+				AddValue("", "", st1{
+					Hello: "Mr. Blue Sky",
+					Blue:  "jay",
+					Madd:  "cat",
+				}),
+			},
+			compileOption: true,
+			want:          st1{},
+			expect:        st1{},
+			expectedErr:   ErrInvalidInput,
 		},
 	}
 

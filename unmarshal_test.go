@@ -158,6 +158,18 @@ func TestUnmarshal(t *testing.T) {
 			opts:        []UnmarshalOption{},
 			expectedErr: unknownErr,
 		}, {
+			description: "Make sure that indexing an array works",
+			key:         "foo.0",
+			input:       `{"foo":["one", "two"]}`,
+			opts:        []UnmarshalOption{Required()},
+			want:        "",
+			expected:    "one",
+		}, {
+			description: "Make sure that indexing an array is a number or error",
+			key:         "foo.bar",
+			input:       `{"foo":[{"foo":"one"}, "two"]}`,
+			expectedErr: unknownErr,
+		}, {
 			description: "Verify the AddDefaultUnmarshalOption() works.",
 			input:       `{"foo":"bar", "bool": "T"}`,
 			defOpts:     []Option{DefaultUnmarshalOptions(UnmarshalWith(WeaklyTypedInput(true)))},
