@@ -4,6 +4,7 @@
 package goschtalt
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -214,7 +215,7 @@ func TestUnmarshal(t *testing.T) {
 			}
 
 			assert.Error(err)
-			if tc.expectedErr != unknownErr {
+			if !errors.Is(unknownErr, tc.expectedErr) {
 				assert.ErrorIs(err, tc.expectedErr)
 			}
 		})

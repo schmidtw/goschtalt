@@ -153,7 +153,7 @@ func (val tagNameOption) String() string {
 }
 
 // IgnoreUntaggedFields ignores all struct fields without explicit
-// TagName, comparable to `mapstructure:"-"` as default behaviour.
+// TagName, comparable to `mapstructure:"-"` as default behavior.
 func IgnoreUntaggedFields(ignore ...bool) DecoderConfigOption {
 	ignore = append(ignore, true)
 	return ignoreUntaggedFieldsOption(ignore[0])

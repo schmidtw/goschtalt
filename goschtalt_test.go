@@ -118,11 +118,6 @@ func TestCompile(t *testing.T) {
 		Madd  string
 	}
 
-	type st2 struct {
-		Thing1 string
-		Thing2 st1
-	}
-
 	tests := []struct {
 		description   string
 		compileOption bool
@@ -286,7 +281,7 @@ func TestCompile(t *testing.T) {
 			}
 
 			assert.Error(err)
-			if tc.expectedErr != unknownErr {
+			if !errors.Is(unknownErr, tc.expectedErr) {
 				assert.ErrorIs(err, tc.expectedErr)
 			}
 

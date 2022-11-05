@@ -94,9 +94,9 @@ func (o Object) Kind() int {
 
 // OriginString provides the string for all origins for this Object.
 func (obj Object) OriginString() string {
-	var list []string
-	for _, v := range obj.Origins {
-		list = append(list, v.String())
+	list := make([]string, len(obj.Origins))
+	for i, v := range obj.Origins {
+		list[i] = v.String()
 	}
 
 	return strings.Join(list, ", ")
@@ -547,54 +547,66 @@ func (obj Object) Merge(next Object) (Object, error) {
 
 // merge does the actual merging of the trees.
 func (obj Object) merge(cmd command, next Object) (Object, error) {
-	kind := obj.Kind()
-	if kind == Value {
-		rv := obj
-		switch cmd.cmd {
-		case cmdReplace, "":
-			var err error
-			rv, err = next.resolveCommands(obj.secret)
-			if err != nil {
-				return Object{}, err
-			}
-		case cmdKeep:
-		case cmdFail:
-			return Object{}, ErrConflict
-		}
-
-		rv.secret = cmd.secret
-		return rv, nil
+	switch obj.Kind() {
+	case Value:
+		return obj.mergeValue(cmd, next)
+	case Array:
+		return obj.mergeArray(cmd, next)
 	}
+	return obj.mergeMap(cmd, next)
+}
 
-	if kind == Array {
-		rv := obj
-		next, err := next.resolveCommands(obj.secret)
+// mergeValue merges two values.  Don't directly call this, call merge() instead.
+func (obj Object) mergeValue(cmd command, next Object) (Object, error) {
+	rv := obj
+	switch cmd.cmd {
+	case cmdReplace, "":
+		var err error
+		rv, err = next.resolveCommands(obj.secret)
 		if err != nil {
 			return Object{}, err
 		}
-		switch cmd.cmd {
-		case cmdAppend, "":
-			if obj.secret || next.secret || cmd.secret {
-				rv.secret = true
-			}
-			rv.Origins = append(obj.Origins, next.Origins...)
-			rv.Array = append(obj.Array, next.Array...)
-		case cmdPrepend:
-			if obj.secret || next.secret || cmd.secret {
-				rv.secret = true
-			}
-			rv.Origins = append(next.Origins, obj.Origins...)
-			rv.Array = append(next.Array, obj.Array...)
-		case cmdReplace:
-			rv.secret = cmd.secret
-			rv = next
-		case cmdKeep:
-		case cmdFail:
-			return Object{}, ErrConflict
-		}
-		return rv, nil
+	case cmdKeep:
+	case cmdFail:
+		return Object{}, ErrConflict
 	}
 
+	rv.secret = cmd.secret
+	return rv, nil
+}
+
+// mergeArray merges two array.  Don't directly call this, call merge() instead.
+func (obj Object) mergeArray(cmd command, next Object) (Object, error) {
+	rv := obj
+	next, err := next.resolveCommands(obj.secret)
+	if err != nil {
+		return Object{}, err
+	}
+	switch cmd.cmd {
+	case cmdAppend, "":
+		if obj.secret || next.secret || cmd.secret {
+			rv.secret = true
+		}
+		rv.Origins = append(obj.Origins, next.Origins...)
+		rv.Array = append(obj.Array, next.Array...)
+	case cmdPrepend:
+		if obj.secret || next.secret || cmd.secret {
+			rv.secret = true
+		}
+		rv.Origins = append(next.Origins, obj.Origins...)
+		rv.Array = append(next.Array, obj.Array...)
+	case cmdReplace:
+		rv.secret = cmd.secret
+		rv = next
+	case cmdKeep:
+	case cmdFail:
+		return Object{}, ErrConflict
+	}
+	return rv, nil
+}
+
+// mergeMap merges two maps.  Don't directly call this, call merge() instead.
+func (obj Object) mergeMap(cmd command, next Object) (Object, error) {
 	rv := obj
 	switch cmd.cmd {
 	case cmdSplice, "":

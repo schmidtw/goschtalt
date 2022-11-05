@@ -538,11 +538,11 @@ func TestOptions(t *testing.T) {
 				return
 			}
 
-			if tc.expectErr == unknown {
+			if !errors.Is(unknown, tc.expectErr) {
+				assert.ErrorIs(err, tc.expectErr)
 				return
 			}
 
-			assert.ErrorIs(err, tc.expectErr)
 		})
 	}
 }

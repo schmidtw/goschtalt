@@ -77,9 +77,9 @@ func (_ value) ignoreDefaults() bool {
 }
 
 func (v value) String() string {
-	var s []string
-	for i := range v.opts {
-		s = append(s, v.opts[i].String())
+	s := make([]string, len(v.opts))
+	for i, opt := range v.opts {
+		s[i] = opt.String()
 	}
 
 	if len(s) == 0 {

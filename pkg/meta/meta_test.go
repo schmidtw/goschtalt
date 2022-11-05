@@ -5,6 +5,7 @@ package meta
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"testing"
@@ -131,7 +132,7 @@ func TestFetch(t *testing.T) {
 				return
 			}
 			assert.Error(err)
-			if tc.expectedErr != unknownErr {
+			if !errors.Is(unknownErr, tc.expectedErr) {
 				assert.ErrorIs(err, tc.expectedErr)
 			}
 		})

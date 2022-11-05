@@ -48,7 +48,7 @@ func getCmd(s string) (command, error) {
 		}
 	}
 
-	var cmds []string
+	cmds := make([]string, 0, len(list))
 	for _, val := range list {
 		if cmdSecret == val {
 			// 'secret' can only show up once.

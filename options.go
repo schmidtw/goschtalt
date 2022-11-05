@@ -435,9 +435,9 @@ func (d defaultMarshalOption) String() string {
 		return "DefaultMarshalOptions()"
 	}
 
-	var s []string
-	for _, opt := range d.opts {
-		s = append(s, opt.String())
+	s := make([]string, len(d.opts))
+	for i, opt := range d.opts {
+		s[i] = opt.String()
 	}
 	return "DefaultMarshalOptions( " + strings.Join(s, ", ") + " )"
 }
@@ -469,9 +469,9 @@ func (d defaultUnmarshalOption) String() string {
 		return "DefaultUnmarshalOptions()"
 	}
 
-	var s []string
-	for _, opt := range d.opts {
-		s = append(s, opt.String())
+	s := make([]string, len(d.opts))
+	for i, opt := range d.opts {
+		s[i] = opt.String()
 	}
 	return "DefaultUnmarshalOptions( " + strings.Join(s, ", ") + " )"
 }
@@ -503,9 +503,9 @@ func (d defaultValueOption) String() string {
 		return "DefaultValueOptions()"
 	}
 
-	var s []string
-	for i := range d.opts {
-		s = append(s, d.opts[i].String())
+	s := make([]string, len(d.opts))
+	for i, opt := range d.opts {
+		s[i] = opt.String()
 	}
 	return "DefaultValueOptions( " + strings.Join(s, ", ") + " )"
 }

@@ -127,7 +127,7 @@ func (c *Config) Compile() error {
 
 // compile is the internal compile function.
 func (c *Config) compile() error {
-	var cfgs []fileObject
+	cfgs := make([]fileObject, 0, len(c.opts.groups))
 
 	c.explainCompile.Reset()
 
@@ -161,13 +161,13 @@ func (c *Config) compile() error {
 	sorter := c.getSorter()
 	sorter(cfgs)
 
-	var files []string
-
 	fmt.Fprintln(&c.explainCompile, "Records processed in order.")
 	i := 1
 	if len(cfgs) == 0 {
 		fmt.Fprintln(&c.explainCompile, "  none")
 	}
+
+	files := make([]string, 0, len(cfgs))
 	for _, cfg := range cfgs {
 		fmt.Fprintf(&c.explainCompile, "  %d. %s\n", i, cfg.File)
 		i++
@@ -233,10 +233,9 @@ func (c *Config) OrderList(list []string) (files []string) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	var cfgs []fileObject
-
-	for _, item := range list {
-		cfgs = append(cfgs, fileObject{File: item})
+	cfgs := make([]fileObject, len(list))
+	for i, item := range list {
+		cfgs[i] = fileObject{File: item}
 	}
 
 	sorter := c.getSorter()

@@ -137,7 +137,7 @@ func (g group) walk(decoders *codecRegistry[decoder.Decoder], keyDelimiter strin
 		return nil, err
 	}
 
-	var list []fileObject
+	list := make([]fileObject, 0, len(files))
 	for _, file := range files {
 		obj, err := g.collectAndDecode(decoders, file, keyDelimiter)
 		if err != nil {
