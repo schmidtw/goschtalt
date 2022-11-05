@@ -5,20 +5,27 @@ linters-settings:
   funlen:
     lines: 80
     statements: 60
+  gocognit:
+    min-complexity: 26
 
 linters:
   enable:
+    - asciicheck
+    - bidichk
     - bodyclose
+    #- cyclop
     - dupl
+    - errcheck
+    - errname
     - errorlint
     - funlen
+    - gocognit
     - goconst
     - gosec
-    - misspell
-    - unconvert
-    - prealloc
-    - errcheck
     - ineffassign
+    - misspell
+    - prealloc
+    - unconvert
 
 issues:
   exclude-rules:
@@ -26,5 +33,6 @@ issues:
       linters:
         - dupl
         - funlen
+        - gocognit
   exclude:
     - "ExampleOrderList refers to unknown identifier: OrderList"

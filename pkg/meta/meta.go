@@ -607,61 +607,62 @@ func (obj Object) mergeArray(cmd command, next Object) (Object, error) {
 
 // mergeMap merges two maps.  Don't directly call this, call merge() instead.
 func (obj Object) mergeMap(cmd command, next Object) (Object, error) {
-	rv := obj
-	switch cmd.cmd {
-	case cmdSplice, "":
-		for key, val := range next.Map {
-			newCmd, err := getValidCmd(key, val)
-			if err != nil {
-				return Object{}, err
-			}
-
-			existing, found := obj.Map[newCmd.final]
-			if !found {
-				// Merging with no conflicts.
-				v, err := val.resolveCommands(newCmd.secret)
-				if err != nil {
-					return Object{}, err
-				}
-				obj.Map[newCmd.final] = v
-				continue
-			}
-
-			if existing.Kind() == val.Kind() {
-				v, err := existing.merge(newCmd, val)
-				if err != nil {
-					return Object{}, err
-				}
-				obj.Map[newCmd.final] = v
-				continue
-			}
-
-			switch newCmd.cmd {
-			case cmdSplice, cmdReplace, "":
-				v, err := val.resolveCommands(newCmd.secret)
-				if err != nil {
-					return Object{}, err
-				}
-				obj.Map[newCmd.final] = v
-			case cmdKeep:
-				obj.Map[newCmd.final] = existing
-			case cmdFail:
-				return Object{}, ErrConflict
-			}
-		}
-	case cmdReplace:
-		v, err := next.resolveCommands(false)
-		if err != nil {
-			return Object{}, err
-		}
-		rv = v
-	case cmdKeep:
-	case cmdFail:
+	if cmd.cmd == cmdKeep || cmd.cmd == cmdFail {
 		return Object{}, ErrConflict
 	}
 
-	rv.secret = cmd.secret
-	return rv, nil
+	if cmd.cmd == cmdReplace {
+		rv, err := next.resolveCommands(false)
+		if err != nil {
+			return Object{}, err
+		}
+		rv.secret = cmd.secret
+		return rv, nil
+	}
+
+	// cmd.cmd == cmdSplice || "":
+	for key, val := range next.Map {
+		newCmd, err := getValidCmd(key, val)
+		if err != nil {
+			return Object{}, err
+		}
+
+		existing, found := obj.Map[newCmd.final]
+		if !found {
+			// Merging with no conflicts.
+			v, err := val.resolveCommands(newCmd.secret)
+			if err != nil {
+				return Object{}, err
+			}
+			obj.Map[newCmd.final] = v
+			continue
+		}
+
+		if existing.Kind() == val.Kind() {
+			v, err := existing.merge(newCmd, val)
+			if err != nil {
+				return Object{}, err
+			}
+			obj.Map[newCmd.final] = v
+			continue
+		}
+
+		switch newCmd.cmd {
+		case cmdSplice, cmdReplace, "":
+			v, err := val.resolveCommands(newCmd.secret)
+			if err != nil {
+				return Object{}, err
+			}
+			obj.Map[newCmd.final] = v
+		case cmdKeep:
+			obj.Map[newCmd.final] = existing
+		case cmdFail:
+			return Object{}, ErrConflict
+		}
+	}
+
+	obj.secret = cmd.secret
+	return obj, nil
 }
 
 // getValidCmd gets the command from the key string and validates it is supported.

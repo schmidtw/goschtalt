@@ -31,6 +31,8 @@ type group struct {
 	recurse bool
 }
 
+// enumerate walks the specified paths and collects the files it finds that match
+// the specified extensions.
 func (g group) enumerate(exts []string) ([]string, error) {
 	var files []string
 
@@ -40,50 +42,60 @@ func (g group) enumerate(exts []string) ([]string, error) {
 	}
 
 	for _, path := range g.paths {
-		// Make sure the paths are consistent across FS implementations with
-		// go's documentation.  This prevents errors due to some FS accepting
-		// invalid paths while others correctly reject them.
-		if !fs.ValidPath(path) {
-			return nil, fmt.Errorf("path '%s' %w", path, fs.ErrInvalid)
-		}
-
-		file, err := g.fs.Open(path)
+		found, err := g.enumeratePath(path)
 		if err != nil {
-			// Fail if the path is not found, otherwise, continue
-			if errors.Is(err, fs.ErrInvalid) || errors.Is(err, fs.ErrNotExist) {
-				return nil, err
-			}
-			continue
+			return nil, err
 		}
-		stat, err := file.Stat()
-		if err != nil {
-			_ = file.Close()
-			continue
-		}
-
-		var found []string
-		if !stat.IsDir() {
-			found = []string{path}
-		} else {
-			if g.recurse {
-				_ = fs.WalkDir(g.fs, path, func(file string, d fs.DirEntry, err error) error {
-					if err != nil || d.IsDir() {
-						return err
-					}
-					found = append(found, file)
-					return nil
-				})
-			} else {
-				found, _ = fs.Glob(g.fs, path+"/*")
-			}
-		}
-		_ = file.Close()
-
 		files = append(files, matchExts(exts, found)...)
 	}
 	sort.Strings(files)
 
 	return files, nil
+}
+
+// enumeratePath examines a specific path and collects all the appropriate files.
+// If the path ends up being a specific file return exactly that file.
+func (g group) enumeratePath(path string) ([]string, error) {
+	// Make sure the paths are consistent across FS implementations with
+	// go's documentation.  This prevents errors due to some FS accepting
+	// invalid paths while others correctly reject them.
+	if !fs.ValidPath(path) {
+		return nil, fmt.Errorf("path '%s' %w", path, fs.ErrInvalid)
+	}
+
+	file, err := g.fs.Open(path)
+	if err != nil {
+		// Fail if the path is not found, otherwise, continue
+		if errors.Is(err, fs.ErrInvalid) || errors.Is(err, fs.ErrNotExist) {
+			return nil, err
+		}
+		return nil, nil
+	}
+	defer file.Close()
+
+	stat, err := file.Stat()
+	if err != nil {
+		return nil, nil
+	}
+
+	if !stat.IsDir() {
+		return []string{path}, nil
+	}
+
+	if !g.recurse {
+		return fs.Glob(g.fs, path+"/*")
+	}
+
+	var found []string
+	_ = fs.WalkDir(g.fs, path, func(file string, d fs.DirEntry, err error) error {
+		if err != nil || d.IsDir() {
+			return err
+		}
+		found = append(found, file)
+		return nil
+	})
+
+	return found, nil
 }
 
 func (g group) collectAndDecode(decoders *codecRegistry[decoder.Decoder], file, keyDelimiter string) (meta.Object, error) {
