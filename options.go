@@ -56,7 +56,7 @@ type options struct {
 	valueOptions     []DecoderConfigOption
 
 	// Defaults where there can be many.
-	defaults []value
+	//defaults []value
 
 	// General configurations; there can be many.
 	groups  []group

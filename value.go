@@ -67,7 +67,8 @@ func (v value) decode(delimiter string, opts ...DecoderConfigOption) (record, er
 
 	decoder, err := mapstructure.NewDecoder(&cfg)
 	if err == nil {
-		data, err := v.fn(v.recordName)
+		var data any
+		data, err = v.fn(v.recordName)
 		if err == nil {
 			err = decoder.Decode(data)
 		}
