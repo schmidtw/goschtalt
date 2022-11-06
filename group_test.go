@@ -4,16 +4,12 @@
 package goschtalt
 
 import (
-	"fmt"
 	iofs "io/fs"
 	"sort"
+	"strings"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/psanford/memfs"
-	"github.com/schmidtw/goschtalt/pkg/decoder"
-	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -31,7 +27,7 @@ func TestWalk(t *testing.T) {
 				paths: []string{"nested/conf/1.json"},
 			},
 			expected: []string{
-				`1.json`, `{"hello":"world"}`,
+				`1.json`,
 			},
 		}, {
 			description: "Process two files.",
@@ -42,8 +38,8 @@ func TestWalk(t *testing.T) {
 				},
 			},
 			expected: []string{
-				`1.json`, `{"hello":"world"}`,
-				`4.json`, `{"ground":"green"}`,
+				`1.json`,
+				`4.json`,
 			},
 		},
 		{
@@ -53,10 +49,11 @@ func TestWalk(t *testing.T) {
 				recurse: true,
 			},
 			expected: []string{
-				`1.json`, `{"hello":"world"}`,
-				`2.json`, `{"water":"blue"}`,
-				`3.json`, `{"sky":"overcast"}`,
-				`4.json`, `{"ground":"green"}`,
+				`1.json`,
+				`2.json`,
+				`3.json`,
+				`4.json`,
+				`ignore`,
 			},
 		}, {
 			description: "Process some files.",
@@ -64,15 +61,9 @@ func TestWalk(t *testing.T) {
 				paths: []string{"nested"},
 			},
 			expected: []string{
-				`3.json`, `{"sky":"overcast"}`,
-				`4.json`, `{"ground":"green"}`,
+				`3.json`,
+				`4.json`,
 			},
-		}, {
-			description: "Process all files and fail.",
-			grp: group{
-				recurse: true,
-			},
-			expectedErr: ErrDecoding,
 		}, {
 			description: "Trailing slashes are not allowed.",
 			grp: group{
@@ -108,78 +99,32 @@ func TestWalk(t *testing.T) {
 			require.NoError(fs.WriteFile("invalid.json", []byte(`{ground:green}`), 0755))
 			tc.grp.fs = fs
 
-			dr := newRegistry[decoder.Decoder]()
-			require.NotNil(dr)
-			dr.register(&testDecoder{extensions: []string{"json"}})
+			got, err := tc.grp.walk()
 
-			got, err := tc.grp.walk(dr, ".")
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				require.NotNil(got)
 				sort.SliceStable(got, func(i, j int) bool {
-					return got[i].File < got[j].File
+					return got[i].name < got[j].name
 				})
 
-				var expected []fileObject
-
-				for i := 0; i < len(tc.expected); i += 2 {
-					file := tc.expected[i]
-					data := tc.expected[i+1]
-					tree := decode(file, data)
-					expected = append(expected, fileObject{File: file, Obj: tree})
+				require.Equalf(len(tc.expected), len(got),
+					"wanted { %s }\n   got { %s }\n",
+					strings.Join(tc.expected, ", "),
+					func() string {
+						list := make([]string, 0, len(got))
+						for _, g := range got {
+							list = append(list, g.name)
+						}
+						return strings.Join(list, ", ")
+					}())
+				for i := range tc.expected {
+					assert.Equalf(tc.expected[i], got[i].name,
+						"wanted %s\n   got %s\n", tc.expected[i], got[i].name)
 				}
-				assert.Empty(cmp.Diff(expected, got, cmpopts.IgnoreUnexported(meta.Object{})))
 				return
 			}
 			assert.ErrorIs(err, tc.expectedErr)
 		})
 	}
-}
-
-func TestMatchExts(t *testing.T) {
-	tests := []struct {
-		description string
-		exts        []string
-		files       []string
-		expected    []string
-	}{
-		{
-			description: "Simple match",
-			exts:        []string{"json", "yaml", "yml"},
-			files: []string{
-				"dir/file.json",
-				"file.JSON",
-				"other.yml",
-				"a.tricky.file.json.that.really.isnt",
-			},
-			expected: []string{
-				"dir/file.json",
-				"file.JSON",
-				"other.yml",
-			},
-		},
-	}
-	for _, tc := range tests {
-		t.Run(tc.description, func(t *testing.T) {
-			assert := assert.New(t)
-
-			got := matchExts(tc.exts, tc.files)
-			assert.Empty(cmp.Diff(tc.expected, got))
-		})
-	}
-}
-
-func TestWes(t *testing.T) {
-	val := map[string]any{
-		"dogs":   []string{"pluto", "sam"},
-		"cats":   []string{"madd", "tom"},
-		"living": "together",
-	}
-
-	g, _ := New(AddValue("record1", "", val),
-		AutoCompile(),
-		ExpandEnv(),
-		Expand(nil))
-
-	fmt.Println(g.Explain())
 }

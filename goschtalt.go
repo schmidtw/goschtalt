@@ -127,18 +127,22 @@ func (c *Config) Compile() error {
 
 // compile is the internal compile function.
 func (c *Config) compile() error {
-	cfgs := make([]fileObject, 0, len(c.opts.groups))
-
 	c.explainCompile.Reset()
 
 	fmt.Fprintf(&c.explainCompile, "Start of compilation.\n\n")
 
-	for _, group := range c.opts.groups {
-		tmp, err := group.walk(c.opts.decoders, c.opts.keyDelimiter)
-		if err != nil {
+	cfgs, err := groupsToRecords(c.opts.groups)
+	if err != nil {
+		return err
+	}
+
+	cfgs = append(cfgs, c.opts.readers...)
+
+	cfgs = filterRecords(cfgs, c.opts.decoders)
+	for i := range cfgs {
+		if err = cfgs[i].decode(c.opts.decoders, c.opts.keyDelimiter); err != nil {
 			return err
 		}
-		cfgs = append(cfgs, tmp...)
 	}
 
 	for _, val := range c.opts.values {
@@ -169,16 +173,16 @@ func (c *Config) compile() error {
 
 	files := make([]string, 0, len(cfgs))
 	for _, cfg := range cfgs {
-		fmt.Fprintf(&c.explainCompile, "  %d. %s\n", i, cfg.File)
+		fmt.Fprintf(&c.explainCompile, "  %d. %s\n", i, cfg.name)
 		i++
 
 		var err error
-		subtree := cfg.Obj.AlterKeyCase(c.opts.keySwizzler)
+		subtree := cfg.tree.AlterKeyCase(c.opts.keySwizzler)
 		merged, err = merged.Merge(subtree)
 		if err != nil {
 			return err
 		}
-		files = append(files, cfg.File)
+		files = append(files, cfg.name)
 	}
 
 	fmt.Fprintf(&c.explainCompile, "\nVariable expansions processed in order.\n")
@@ -203,10 +207,10 @@ func (c *Config) compile() error {
 	return nil
 }
 
-func (c *Config) getSorter() func([]fileObject) {
-	return func(a []fileObject) {
+func (c *Config) getSorter() func([]record) {
+	return func(a []record) {
 		sort.SliceStable(a, func(i, j int) bool {
-			return c.opts.sorter(a[i].File, a[j].File)
+			return c.opts.sorter(a[i].name, a[j].name)
 		})
 	}
 }
@@ -233,16 +237,16 @@ func (c *Config) OrderList(list []string) (files []string) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	cfgs := make([]fileObject, len(list))
+	cfgs := make([]record, len(list))
 	for i, item := range list {
-		cfgs[i] = fileObject{File: item}
+		cfgs[i] = record{name: item}
 	}
 
 	sorter := c.getSorter()
 	sorter(cfgs)
 
 	for _, cfg := range cfgs {
-		file := cfg.File
+		file := cfg.name
 
 		// Only include the file if there is a decoder for it.
 		ext := strings.TrimPrefix(filepath.Ext(file), ".")

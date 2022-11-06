@@ -4,18 +4,11 @@
 package goschtalt
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
 	"io/fs"
-	"path"
-	"path/filepath"
 	"sort"
-	"strings"
-
-	"github.com/schmidtw/goschtalt/pkg/decoder"
-	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
 // group is a filesystem and paths to examine for configuration files.
@@ -31,9 +24,51 @@ type group struct {
 	recurse bool
 }
 
+func groupsToRecords(groups []group) ([]record, error) {
+	rv := make([]record, 0, len(groups))
+	for _, grp := range groups {
+		tmp, err := grp.walk()
+		if err != nil {
+			return nil, err
+		}
+		rv = append(rv, tmp...)
+	}
+
+	return rv, nil
+}
+
+func (g group) walk() ([]record, error) {
+	files, err := g.enumerate()
+	if err != nil {
+		return nil, err
+	}
+
+	list := make([]record, 0, len(files))
+	for _, file := range files {
+		f, err := g.fs.Open(file)
+		if err != nil {
+			return nil, err
+		}
+		stat, err := f.Stat()
+		if err != nil {
+			return nil, err
+		}
+
+		r := record{
+			name: stat.Name(),
+			fn: func(_ string) (io.ReadCloser, error) {
+				return f, nil
+			},
+		}
+
+		list = append(list, r)
+	}
+	return list, nil
+}
+
 // enumerate walks the specified paths and collects the files it finds that match
 // the specified extensions.
-func (g group) enumerate(exts []string) ([]string, error) {
+func (g group) enumerate() ([]string, error) {
 	var files []string
 
 	// By default include everything in the base directory if nothing is specified.
@@ -46,7 +81,7 @@ func (g group) enumerate(exts []string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		files = append(files, matchExts(exts, found)...)
+		files = append(files, found...)
 	}
 	sort.Strings(files)
 
@@ -71,104 +106,50 @@ func (g group) enumeratePath(path string) ([]string, error) {
 		}
 		return nil, nil
 	}
-	defer file.Close()
 
 	stat, err := file.Stat()
 	if err != nil {
+		_ = file.Close()
 		return nil, nil
 	}
+	isDir := stat.IsDir()
+	_ = file.Close()
 
-	if !stat.IsDir() {
+	if !isDir {
 		return []string{path}, nil
 	}
 
-	if !g.recurse {
-		return fs.Glob(g.fs, path+"/*")
-	}
-
-	var found []string
-	_ = fs.WalkDir(g.fs, path, func(file string, d fs.DirEntry, err error) error {
-		if err != nil || d.IsDir() {
+	var files []string
+	var walker fs.WalkDirFunc
+	if g.recurse {
+		walker = func(file string, d fs.DirEntry, err error) error {
+			if err != nil || d.IsDir() {
+				return err
+			}
+			files = append(files, file)
+			return nil
+		}
+	} else {
+		walker = func(file string, d fs.DirEntry, err error) error {
+			if err == nil {
+				// Don't proceed into any directories except the top directory
+				// specified.
+				if file != path {
+					if d.IsDir() {
+						return fs.SkipDir
+					}
+					files = append(files, file)
+				}
+			}
 			return err
 		}
-		found = append(found, file)
-		return nil
-	})
-
-	return found, nil
-}
-
-func (g group) collectAndDecode(decoders *codecRegistry[decoder.Decoder], file, keyDelimiter string) (meta.Object, error) {
-	var m meta.Object
-	var dec decoder.Decoder
-
-	buf := bytes.NewBuffer(nil)
-	ext := strings.TrimPrefix(filepath.Ext(file), ".")
-
-	f, err := g.fs.Open(file)
-	if err != nil {
-		return m, err
 	}
-	defer f.Close()
 
-	info, err := f.Stat()
-	if err == nil {
-		_, err = io.Copy(buf, f)
-		if err == nil {
-			dec, err = decoders.find(ext)
-		}
-	}
+	err = fs.WalkDir(g.fs, path, walker)
 
 	if err != nil {
-		return m, err
+		files = []string{}
 	}
 
-	ctx := decoder.Context{
-		Filename:  info.Name(),
-		Delimiter: keyDelimiter,
-	}
-	err = dec.Decode(ctx, buf.Bytes(), &m)
-	if err != nil {
-		err = fmt.Errorf("decoder error for extension '%s' processing file '%s' %w %v",
-			ext, info.Name(), ErrDecoding, err)
-	}
-
-	return m, err
-}
-
-type fileObject struct {
-	File string
-	Obj  meta.Object
-}
-
-func (g group) walk(decoders *codecRegistry[decoder.Decoder], keyDelimiter string) ([]fileObject, error) {
-	exts := decoders.extensions()
-
-	files, err := g.enumerate(exts)
-	if err != nil {
-		return nil, err
-	}
-
-	list := make([]fileObject, 0, len(files))
-	for _, file := range files {
-		obj, err := g.collectAndDecode(decoders, file, keyDelimiter)
-		if err != nil {
-			return nil, err
-		}
-		list = append(list, fileObject{File: path.Base(file), Obj: obj})
-	}
-	return list, nil
-}
-
-func matchExts(exts, files []string) (list []string) {
-	for _, file := range files {
-		lc := strings.ToLower(file)
-		for _, ext := range exts {
-			if strings.HasSuffix(lc, "."+ext) {
-				list = append(list, file)
-			}
-		}
-	}
-
-	return list
+	return files, err
 }

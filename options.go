@@ -4,7 +4,9 @@
 package goschtalt
 
 import (
+	"bytes"
 	"fmt"
+	"io"
 	"io/fs"
 	"strings"
 
@@ -38,18 +40,31 @@ type Option interface {
 }
 
 type options struct {
-	autoCompile      bool
-	keyDelimiter     string
-	keySwizzler      func(string) string
-	sorter           func(a, b string) bool
-	decoders         *codecRegistry[decoder.Decoder]
-	encoders         *codecRegistry[encoder.Encoder]
+	// Settings where there are one.
+	autoCompile  bool
+	keyDelimiter string
+	keySwizzler  func(string) string
+	sorter       func(a, b string) bool
+
+	// Codecs where there can be many.
+	decoders *codecRegistry[decoder.Decoder]
+	encoders *codecRegistry[encoder.Encoder]
+
+	// Behaviors where there can be many.
 	marshalOptions   []MarshalOption
 	unmarshalOptions []UnmarshalOption
 	valueOptions     []DecoderConfigOption
-	groups           []group
-	values           []value
-	expansions       []expand
+
+	// Defaults where there can be many.
+	defaults []value
+
+	// General configurations; there can be many.
+	groups  []group
+	readers []record
+	values  []value
+
+	// Expansions; there can be many.
+	expansions []expand
 }
 
 // ---- Options follow ---------------------------------------------------------
@@ -160,6 +175,111 @@ func (o groupOption) String() string {
 	return o.name + "( '" + strings.Join(o.grp.paths, "', '") + "' )"
 }
 
+func AddBuffer(recordName string, in []byte) Option {
+	return &addReaderFnOption{
+		text: fmt.Sprintf("AddBuffer( '%s', []byte )", recordName),
+		rec: record{
+			name: recordName,
+			fn: func(_ string) (io.ReadCloser, error) {
+				return io.NopCloser(bytes.NewReader(in)), nil
+			},
+		},
+	}
+}
+
+func AddBufferFn(recordName string, fn func(recordName string) ([]byte, error)) Option {
+	fnText := "custom"
+	if fn == nil {
+		fnText = "''"
+	}
+
+	return &addReaderFnOption{
+		text: fmt.Sprintf("AddBufferFn( '%s', %s )", recordName, fnText),
+		rec: record{
+			name: recordName,
+			fn: func(_ string) (io.ReadCloser, error) {
+				b, err := fn(recordName)
+				if err != nil {
+					return nil, err
+				}
+				return io.NopCloser(bytes.NewReader(b)), nil
+			},
+		},
+	}
+}
+
+// AddReadCloser adds a buffer based configuration for inclusion when compiling
+// the configuration.  The recordName is use both to determine the sort order of
+// this buffer, as well as the type of decoder to use.  The recordName is
+// expected to have a trailing extension that indicates the type of decoder to
+// use.
+func AddReadCloser(recordName string, in io.ReadCloser) Option {
+	defer in.Close()
+
+	inText := "io.ReadCloser"
+	if in == nil {
+		inText = "''"
+	}
+
+	buf := new(bytes.Buffer)
+	_, err := buf.ReadFrom(in)
+	if err != nil {
+		return &addReaderFnOption{
+			text: fmt.Sprintf("AddReadCloser( '%s', %s )", recordName, inText),
+			err:  err,
+		}
+	}
+	data := buf.Bytes()
+
+	return &addReaderFnOption{
+		text: fmt.Sprintf("AddReadCloser( '%s', %s )", recordName, inText),
+		rec: record{
+			name: recordName,
+			fn: func(_ string) (io.ReadCloser, error) {
+				return io.NopCloser(bytes.NewReader(data)), nil
+			},
+		},
+	}
+}
+
+func AddReadCloserFn(recordName string, fn func(recordName string) (io.ReadCloser, error)) Option {
+	fnText := "custom"
+	if fn == nil {
+		fnText = "''"
+	}
+
+	return &addReaderFnOption{
+		text: fmt.Sprintf("AddReadCloserFn( '%s', %s )", recordName, fnText),
+		rec: record{
+			name: recordName,
+			fn: func(_ string) (io.ReadCloser, error) {
+				return fn(recordName)
+			},
+		},
+	}
+}
+
+type addReaderFnOption struct {
+	text string
+	rec  record
+	err  error
+}
+
+func (a addReaderFnOption) apply(opts *options) error {
+	if len(a.rec.name) == 0 {
+		return fmt.Errorf("%w: a recordName with length > 0 must be specified.", ErrInvalidInput)
+	}
+
+	if a.rec.fn == nil {
+		return fmt.Errorf("%w: a non-nil func must be specified.", ErrInvalidInput)
+	}
+	opts.readers = append(opts.readers, a.rec)
+	return nil
+}
+
+func (_ addReaderFnOption) ignoreDefaults() bool { return false }
+func (a addReaderFnOption) String() string       { return a.text }
+
 // AutoCompile instructs New() and With() to also compile the configuration
 // after all the options are applied if enable is true or omitted.  Passing
 // an enable value of false disables the extra behavior.
@@ -169,8 +289,6 @@ func AutoCompile(enable ...bool) Option {
 }
 
 type autoCompileOption bool
-
-var _ Option = (*autoCompileOption)(nil)
 
 func (a autoCompileOption) apply(opts *options) error {
 	opts.autoCompile = bool(a)
@@ -205,8 +323,6 @@ func AlterKeyCase(alter func(string) string) Option {
 
 type alterKeyCaseOption func(string) string
 
-var _ Option = (*alterKeyCaseOption)(nil)
-
 func (alter alterKeyCaseOption) apply(opts *options) error {
 	if alter == nil {
 		alter = func(s string) string { return s }
@@ -234,8 +350,6 @@ func SetKeyDelimiter(delimiter string) Option {
 }
 
 type setKeyDelimiterOption string
-
-var _ Option = (*setKeyDelimiterOption)(nil)
 
 func (s setKeyDelimiterOption) apply(opts *options) error {
 	if len(s) == 0 {
@@ -314,8 +428,6 @@ type sortRecordsCustomFnOption struct {
 	fn   func(a, b string) bool
 }
 
-var _ Option = (*sortRecordsCustomFnOption)(nil)
-
 func (s sortRecordsCustomFnOption) apply(opts *options) error {
 	if s.fn == nil {
 		return fmt.Errorf("%w: a SortRecords function/option must be specified", ErrInvalidInput)
@@ -339,8 +451,6 @@ func WithDecoder(d decoder.Decoder) Option {
 type withDecoderOption struct {
 	decoder decoder.Decoder
 }
-
-var _ Option = (*withDecoderOption)(nil)
 
 func (w withDecoderOption) apply(opts *options) error {
 	if w.decoder != nil {
@@ -373,8 +483,6 @@ type withEncoderOption struct {
 	enc encoder.Encoder
 }
 
-var _ Option = (*withEncoderOption)(nil)
-
 func (w withEncoderOption) apply(opts *options) error {
 	if w.enc != nil {
 		opts.encoders.register(w.enc)
@@ -402,8 +510,6 @@ func DisableDefaultPackageOptions() Option {
 
 type disableDefaultPackageOption struct{}
 
-var _ Option = (*disableDefaultPackageOption)(nil)
-
 func (_ disableDefaultPackageOption) apply(opts *options) error { return nil }
 func (_ disableDefaultPackageOption) ignoreDefaults() bool      { return true }
 func (_ disableDefaultPackageOption) String() string            { return "DisableDefaultPackageOptions()" }
@@ -418,8 +524,6 @@ func DefaultMarshalOptions(opts ...MarshalOption) Option {
 type defaultMarshalOption struct {
 	opts []MarshalOption
 }
-
-var _ Option = (*defaultMarshalOption)(nil)
 
 func (d defaultMarshalOption) apply(opts *options) error {
 	opts.marshalOptions = append(opts.marshalOptions, d.opts...)
@@ -453,8 +557,6 @@ type defaultUnmarshalOption struct {
 	opts []UnmarshalOption
 }
 
-var _ Option = (*defaultUnmarshalOption)(nil)
-
 func (d defaultUnmarshalOption) apply(opts *options) error {
 	opts.unmarshalOptions = append(opts.unmarshalOptions, d.opts...)
 	return nil
@@ -486,8 +588,6 @@ func DefaultValueOptions(opts ...DecoderConfigOption) Option {
 type defaultValueOption struct {
 	opts []DecoderConfigOption
 }
-
-var _ Option = (*defaultValueOption)(nil)
 
 func (d defaultValueOption) apply(opts *options) error {
 	opts.valueOptions = append(opts.valueOptions, d.opts...)

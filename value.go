@@ -15,23 +15,38 @@ import (
 // runtime.
 func AddValue(recordName, key string, val any, opts ...DecoderConfigOption) Option {
 	return &value{
+		text:       "AddValue",
 		recordName: recordName,
 		key:        key,
-		value:      val,
+		fn: func(_ string) (any, error) {
+			return val, nil
+		},
+		opts: opts,
+	}
+}
+
+func AddValueFn(recordName, key string, fn func(recordName string) (any, error), opts ...DecoderConfigOption) Option {
+	return &value{
+		text:       "AddValueFn",
+		recordName: recordName,
+		key:        key,
+		fn:         fn,
 		opts:       opts,
 	}
 }
 
 // value defines a key and value that is injected into the configuration tree.
 type value struct {
+	text string
+
 	// The record to use for sorting this configuration.
 	recordName string
 
 	// The key to set the value at.
 	key string
 
-	// The value to set.  It may be a struct.
-	value any
+	// The fn to use to get the value.
+	fn func(string) (any, error)
 
 	// Optional options that configure how mapstructure will process the Value
 	// provided.  These options are in addition to any default settings set with
@@ -39,7 +54,7 @@ type value struct {
 	opts []DecoderConfigOption
 }
 
-func (v value) decode(delimiter string, opts ...DecoderConfigOption) (fileObject, error) {
+func (v value) decode(delimiter string, opts ...DecoderConfigOption) (record, error) {
 	tree := make(map[string]any)
 	cfg := mapstructure.DecoderConfig{
 		Result: &tree,
@@ -52,15 +67,18 @@ func (v value) decode(delimiter string, opts ...DecoderConfigOption) (fileObject
 
 	decoder, err := mapstructure.NewDecoder(&cfg)
 	if err == nil {
-		err = decoder.Decode(v.value)
+		data, err := v.fn(v.recordName)
+		if err == nil {
+			err = decoder.Decode(data)
+		}
 	}
 	if err != nil {
-		return fileObject{}, err
+		return record{}, err
 	}
 
-	return fileObject{
-		File: v.recordName,
-		Obj:  meta.ObjectFromRaw(tree, strings.Split(v.key, delimiter)...),
+	return record{
+		name: v.recordName,
+		tree: meta.ObjectFromRaw(tree, strings.Split(v.key, delimiter)...),
 	}, nil
 }
 
@@ -86,6 +104,6 @@ func (v value) String() string {
 		s = append(s, "none")
 	}
 
-	return fmt.Sprintf("AddValue( recordName: '%s', key: '%s', opts: %s )",
-		v.recordName, v.key, strings.Join(s, ", "))
+	return fmt.Sprintf("%s( recordName: '%s', key: '%s', opts: %s )",
+		v.text, v.recordName, v.key, strings.Join(s, ", "))
 }
