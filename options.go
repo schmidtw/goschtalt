@@ -53,10 +53,10 @@ type options struct {
 	// Behaviors where there can be many.
 	marshalOptions   []MarshalOption
 	unmarshalOptions []UnmarshalOption
-	valueOptions     []DecoderConfigOption
+	valueOptions     []ValueOption
 
 	// Defaults where there can be many.
-	//defaults []value
+	defaults []value
 
 	// General configurations; there can be many.
 	groups  []group
@@ -581,12 +581,12 @@ func (d defaultUnmarshalOption) String() string {
 // DefaultValueOptions allows customization of the desired options for all
 // invocations of the TODO:() function.  This should make consistent use
 // use of the TODO:() call easier.
-func DefaultValueOptions(opts ...DecoderConfigOption) Option {
+func DefaultValueOptions(opts ...ValueOption) Option {
 	return &defaultValueOption{opts: opts}
 }
 
 type defaultValueOption struct {
-	opts []DecoderConfigOption
+	opts []ValueOption
 }
 
 func (d defaultValueOption) apply(opts *options) error {

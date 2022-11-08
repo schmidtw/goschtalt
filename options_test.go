@@ -412,18 +412,18 @@ func TestOptions(t *testing.T) {
 				},
 			},
 		}, {
-			description: "DefaultUnmarshalOptions( UnmarshalWith(DecodeHook()) )",
+			description: "DefaultUnmarshalOptions( DecodeHook() )",
 			opts: []Option{
-				DefaultUnmarshalOptions(UnmarshalWith(DecodeHook(nil))),
+				DefaultUnmarshalOptions(DecodeHook(nil)),
 			},
 			goal: options{
 				unmarshalOptions: []UnmarshalOption{
-					unmarshalWithOption([]DecoderConfigOption{&decodeHookOption{}}),
+					&decodeHookOption{},
 				},
 			},
 		}, {
 			description: "DefaultUnmarshalOptions( most )",
-			opt: DefaultUnmarshalOptions(UnmarshalWith(
+			opt: DefaultUnmarshalOptions(
 				DecodeHook(nil),
 				ErrorUnused(),
 				ErrorUnset(),
@@ -431,57 +431,46 @@ func TestOptions(t *testing.T) {
 				TagName("tag"),
 				IgnoreUntaggedFields(),
 				MatchName(nil),
-			)),
+			),
 			goal: options{
 				unmarshalOptions: []UnmarshalOption{
-					unmarshalWithOption([]DecoderConfigOption{
-						&decodeHookOption{},
-						errorUnusedOption(true),
-						errorUnsetOption(true),
-						weaklyTypedInputOption(true),
-						tagNameOption("tag"),
-						ignoreUntaggedFieldsOption(true),
-						&matchNameOption{},
-					}),
+					&decodeHookOption{},
+					errorUnusedOption(true),
+					errorUnsetOption(true),
+					weaklyTypedInputOption(true),
+					tagNameOption("tag"),
+					ignoreUntaggedFieldsOption(true),
+					&matchNameOption{},
 				},
 			},
-			str: "DefaultUnmarshalOptions( UnmarshalWith(DecodeHook(''), ErrorUnused(), ErrorUnset(), WeaklyTypedInput(), TagName('tag'), IgnoreUntaggedFields(), MatchName('')) )",
+			str: "DefaultUnmarshalOptions( DecodeHook(''), ErrorUnused(), ErrorUnset(), WeaklyTypedInput(), TagName('tag'), IgnoreUntaggedFields(), MatchName('') )",
 		}, {
 			description: "DefaultUnmarshalOptions( most )",
-			opt: DefaultUnmarshalOptions(UnmarshalWith(
+			opt: DefaultUnmarshalOptions(
 				ErrorUnused(false),
 				ErrorUnset(false),
 				WeaklyTypedInput(false),
 				IgnoreUntaggedFields(false),
-			)),
+			),
 			goal: options{
 				unmarshalOptions: []UnmarshalOption{
-					unmarshalWithOption([]DecoderConfigOption{
-						errorUnusedOption(false),
-						errorUnsetOption(false),
-						weaklyTypedInputOption(false),
-						ignoreUntaggedFieldsOption(false),
-					}),
+					errorUnusedOption(false),
+					errorUnsetOption(false),
+					weaklyTypedInputOption(false),
+					ignoreUntaggedFieldsOption(false),
 				},
 			},
-			str: "DefaultUnmarshalOptions( UnmarshalWith(ErrorUnused(false), ErrorUnset(false), WeaklyTypedInput(false), IgnoreUntaggedFields(false)) )",
+			str: "DefaultUnmarshalOptions( ErrorUnused(false), ErrorUnset(false), WeaklyTypedInput(false), IgnoreUntaggedFields(false) )",
 		}, {
 			description: "DefaultUnmarshalOptions( most )",
-			opt: DefaultUnmarshalOptions(UnmarshalWith(
+			opt: DefaultUnmarshalOptions(
 				DecodeHook(func() {}),
 				MatchName(func(k, f string) bool { return true }),
-			)),
+			),
 			check: func(cfg *options) bool {
-				return len(cfg.unmarshalOptions) == 1
+				return len(cfg.unmarshalOptions) == 2
 			},
-			str: "DefaultUnmarshalOptions( UnmarshalWith(DecodeHook(custom), MatchName(custom)) )",
-		}, {
-			description: "DefaultUnmarshalOptions( UnmarshalWith)",
-			opt:         DefaultUnmarshalOptions(UnmarshalWith()),
-			str:         "DefaultUnmarshalOptions( UnmarshalWith() )",
-			check: func(cfg *options) bool {
-				return len(cfg.unmarshalOptions) == 1
-			},
+			str: "DefaultUnmarshalOptions( DecodeHook(custom), MatchName(custom) )",
 		}, {
 			description: "DefaultValueOptions()",
 			opt:         DefaultValueOptions(),
@@ -490,7 +479,7 @@ func TestOptions(t *testing.T) {
 			description: "DefaultValueOptions( DecodeHook() )",
 			opt:         DefaultValueOptions(DecodeHook(nil)),
 			goal: options{
-				valueOptions: []DecoderConfigOption{
+				valueOptions: []ValueOption{
 					&decodeHookOption{},
 				},
 			},

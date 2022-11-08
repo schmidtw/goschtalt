@@ -73,10 +73,10 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "A simple tree with the DecodeHook() behavior works with duration hook.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
-			opts: []UnmarshalOption{UnmarshalWith(
+			opts: []UnmarshalOption{
 				DecodeHook(
 					mapstructure.ComposeDecodeHookFunc(
-						mapstructure.StringToTimeDurationHookFunc())))},
+						mapstructure.StringToTimeDurationHookFunc()))},
 			want: withDuration{},
 			expected: withDuration{
 				Foo:   "bar",
@@ -85,7 +85,7 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "Verify the ErrorUnused() behavior succeeds.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
-			opts:        []UnmarshalOption{UnmarshalWith(ErrorUnused(true))},
+			opts:        []UnmarshalOption{ErrorUnused(true)},
 			want:        simple{},
 			expected: simple{
 				Foo:   "bar",
@@ -94,13 +94,13 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "Verify the ErrorUnused behavior fails.",
 			input:       `{"foo":"bar", "delta": "1s", "extra": "arg"}`,
-			opts:        []UnmarshalOption{UnmarshalWith(ErrorUnused(true))},
+			opts:        []UnmarshalOption{ErrorUnused(true)},
 			want:        simple{},
 			expectedErr: unknownErr,
 		}, {
 			description: "Verify the ErrorUnset() behavior succeeds.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
-			opts:        []UnmarshalOption{UnmarshalWith(ErrorUnset(true))},
+			opts:        []UnmarshalOption{ErrorUnset(true)},
 			want:        simple{},
 			expected: simple{
 				Foo:   "bar",
@@ -109,13 +109,13 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "Verify the ErrorUnset() behavior fails.",
 			input:       `{"foo":"bar", "extra": "arg"}`,
-			opts:        []UnmarshalOption{UnmarshalWith(ErrorUnset(true))},
+			opts:        []UnmarshalOption{ErrorUnset(true)},
 			want:        simple{},
 			expectedErr: unknownErr,
 		}, {
 			description: "Verify the WeaklyTypedInput() behavior succeeds.",
 			input:       `{"foo":"bar", "bool": "T"}`,
-			opts:        []UnmarshalOption{UnmarshalWith(WeaklyTypedInput(true))},
+			opts:        []UnmarshalOption{WeaklyTypedInput(true)},
 			want:        withBool{},
 			expected: withBool{
 				Foo:  "bar",
@@ -124,7 +124,7 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "Verify the TagName() behavior succeeds.",
 			input:       `{"flags":"bar"}`,
-			opts:        []UnmarshalOption{UnmarshalWith(TagName("goschtalt"))},
+			opts:        []UnmarshalOption{TagName("goschtalt")},
 			want:        withAltTags{},
 			expected: withAltTags{
 				Foo: "bar",
@@ -138,9 +138,9 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "Verify the MatchName() behavior succeeds.",
 			input:       `{"flags":"bar"}`,
-			opts: []UnmarshalOption{UnmarshalWith(MatchName(func(key, fieldName string) bool {
+			opts: []UnmarshalOption{MatchName(func(key, fieldName string) bool {
 				return key == "flags" && strings.ToLower(fieldName) == "foo"
-			}))},
+			})},
 			want: simple{},
 			expected: simple{
 				Foo: "bar",
@@ -173,7 +173,7 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "Verify the AddDefaultUnmarshalOption() works.",
 			input:       `{"foo":"bar", "bool": "T"}`,
-			defOpts:     []Option{DefaultUnmarshalOptions(UnmarshalWith(WeaklyTypedInput(true)))},
+			defOpts:     []Option{DefaultUnmarshalOptions(WeaklyTypedInput(true))},
 			want:        withBool{},
 			expected: withBool{
 				Foo:  "bar",

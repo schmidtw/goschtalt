@@ -13,19 +13,23 @@ import (
 
 // AddValues provides a simple way to set additional configuration values at
 // runtime.
-func AddValue(recordName, key string, val any, opts ...DecoderConfigOption) Option {
+func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 	return &value{
 		text:       "AddValue",
 		recordName: recordName,
 		key:        key,
-		fn: func(_ string) (any, error) {
+		fn: func(_ string, _ UnmarshalFunc) (any, error) {
 			return val, nil
 		},
 		opts: opts,
 	}
 }
 
-func AddValueFn(recordName, key string, fn func(recordName string) (any, error), opts ...DecoderConfigOption) Option {
+// AddValues provides a simple way to set additional configuration values at
+// runtime via a function call.  Note that the provided fn will be called each
+// time the configuration is compiled, allowing the value returned to change if
+// desired.
+func AddValueFn(recordName, key string, fn func(recordName string, unmarshal UnmarshalFunc) (any, error), opts ...ValueOption) Option {
 	return &value{
 		text:       "AddValueFn",
 		recordName: recordName,
@@ -46,21 +50,21 @@ type value struct {
 	key string
 
 	// The fn to use to get the value.
-	fn func(string) (any, error)
+	fn func(recordName string, unmarshal UnmarshalFunc) (any, error)
 
-	// Optional options that configure how mapstructure will process the Value
-	// provided.  These options are in addition to any default settings set with
+	// Options that configure how mapstructure will process the Value provided.
+	// These options are in addition to any default settings set with
 	// AddDefaultValueOptions().
-	opts []DecoderConfigOption
+	opts []ValueOption
 }
 
-func (v value) decode(delimiter string, opts ...DecoderConfigOption) (record, error) {
+func (v value) decode(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOption) (record, error) {
 	tree := make(map[string]any)
 	cfg := mapstructure.DecoderConfig{
 		Result: &tree,
 	}
 
-	all := append(opts, v.opts...)
+	all := append(defaultOpts, v.opts...)
 	for _, opt := range all {
 		opt.decoderApply(&cfg)
 	}
@@ -68,7 +72,7 @@ func (v value) decode(delimiter string, opts ...DecoderConfigOption) (record, er
 	decoder, err := mapstructure.NewDecoder(&cfg)
 	if err == nil {
 		var data any
-		data, err = v.fn(v.recordName)
+		data, err = v.fn(v.recordName, um)
 		if err == nil {
 			err = decoder.Decode(data)
 		}
@@ -87,6 +91,14 @@ func (v value) apply(opts *options) error {
 	if len(v.recordName) == 0 {
 		return fmt.Errorf("%w: no valid record name provided", ErrInvalidInput)
 	}
+
+	for _, opt := range v.opts {
+		if opt.isDefault() {
+			opts.defaults = append(opts.defaults, v)
+			return nil
+		}
+	}
+
 	opts.values = append(opts.values, v)
 	return nil
 }
@@ -107,4 +119,37 @@ func (v value) String() string {
 
 	return fmt.Sprintf("%s( recordName: '%s', key: '%s', opts: %s )",
 		v.text, v.recordName, v.key, strings.Join(s, ", "))
+}
+
+// -- ValueOption options follow -----------------------------------------------
+
+type ValueOption interface {
+	fmt.Stringer
+
+	isDefault() bool
+
+	// decoderApply applies the options to the DecoderConfig used by several
+	// parts of goschtalt.
+	decoderApply(*mapstructure.DecoderConfig)
+}
+
+func AsDefault(asDefault ...bool) ValueOption {
+	asDefault = append(asDefault, true)
+
+	return optionalAsDefault(asDefault[0])
+}
+
+type optionalAsDefault bool
+
+func (o optionalAsDefault) isDefault() bool {
+	return bool(o)
+}
+
+func (_ optionalAsDefault) decoderApply(_ *mapstructure.DecoderConfig) {}
+
+func (o optionalAsDefault) String() string {
+	if o {
+		return "AsDefault()"
+	}
+	return "AsDefault(false)"
 }

@@ -120,4 +120,6 @@ type testSetResultOption struct {
 }
 
 func (t testSetResultOption) decoderApply(m *mapstructure.DecoderConfig) { m.Result = t.val }
+func (t testSetResultOption) unmarshalApply(opts *unmarshalOptions)      { t.decoderApply(&opts.decoder) }
+func (_ testSetResultOption) isDefault() bool                            { return false }
 func (_ testSetResultOption) String() string                             { return "" }

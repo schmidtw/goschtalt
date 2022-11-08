@@ -16,11 +16,16 @@ import (
 // package.  For additional details please see: https://github.com/mitchellh/mapstructure
 type DecoderConfigOption interface {
 	fmt.Stringer
+	UnmarshalOption
+	ValueOption
 
 	// decoderApply applies the options to the DecoderConfig used by several
 	// parts of goschtalt.
 	decoderApply(*mapstructure.DecoderConfig)
 }
+
+// ValueOption
+// UnmarshalOption
 
 // DecodeHook, will be called before any decoding and any type conversion (if
 // WeaklyTypedInput is on). This lets you modify the values before they're set
@@ -42,6 +47,14 @@ type decodeHookOption struct {
 
 func (d decodeHookOption) decoderApply(m *mapstructure.DecoderConfig) {
 	m.DecodeHook = d.fn
+}
+
+func (d decodeHookOption) unmarshalApply(opts *unmarshalOptions) {
+	d.decoderApply(&opts.decoder)
+}
+
+func (_ decodeHookOption) isDefault() bool {
+	return false
 }
 
 func (d decodeHookOption) String() string {
@@ -68,6 +81,14 @@ func (val errorUnusedOption) decoderApply(m *mapstructure.DecoderConfig) {
 	m.ErrorUnused = bool(val)
 }
 
+func (val errorUnusedOption) unmarshalApply(opts *unmarshalOptions) {
+	val.decoderApply(&opts.decoder)
+}
+
+func (_ errorUnusedOption) isDefault() bool {
+	return false
+}
+
 func (val errorUnusedOption) String() string {
 	if val {
 		return "ErrorUnused()"
@@ -90,6 +111,14 @@ type errorUnsetOption bool
 
 func (val errorUnsetOption) decoderApply(m *mapstructure.DecoderConfig) {
 	m.ErrorUnset = bool(val)
+}
+
+func (val errorUnsetOption) unmarshalApply(opts *unmarshalOptions) {
+	val.decoderApply(&opts.decoder)
+}
+
+func (_ errorUnsetOption) isDefault() bool {
+	return false
 }
 
 func (val errorUnsetOption) String() string {
@@ -128,6 +157,14 @@ func (val weaklyTypedInputOption) decoderApply(m *mapstructure.DecoderConfig) {
 	m.WeaklyTypedInput = bool(val)
 }
 
+func (val weaklyTypedInputOption) unmarshalApply(opts *unmarshalOptions) {
+	val.decoderApply(&opts.decoder)
+}
+
+func (_ weaklyTypedInputOption) isDefault() bool {
+	return false
+}
+
 func (val weaklyTypedInputOption) String() string {
 	if val {
 		return "WeaklyTypedInput()"
@@ -148,6 +185,14 @@ func (val tagNameOption) decoderApply(m *mapstructure.DecoderConfig) {
 	m.TagName = string(val)
 }
 
+func (val tagNameOption) unmarshalApply(opts *unmarshalOptions) {
+	val.decoderApply(&opts.decoder)
+}
+
+func (_ tagNameOption) isDefault() bool {
+	return false
+}
+
 func (val tagNameOption) String() string {
 	return fmt.Sprintf("TagName('%s')", string(val))
 }
@@ -163,6 +208,14 @@ type ignoreUntaggedFieldsOption bool
 
 func (val ignoreUntaggedFieldsOption) decoderApply(m *mapstructure.DecoderConfig) {
 	m.IgnoreUntaggedFields = bool(val)
+}
+
+func (val ignoreUntaggedFieldsOption) unmarshalApply(opts *unmarshalOptions) {
+	val.decoderApply(&opts.decoder)
+}
+
+func (_ ignoreUntaggedFieldsOption) isDefault() bool {
+	return false
 }
 
 func (val ignoreUntaggedFieldsOption) String() string {
@@ -189,9 +242,99 @@ func (match matchNameOption) decoderApply(m *mapstructure.DecoderConfig) {
 	m.MatchName = match.fn
 }
 
+func (match matchNameOption) unmarshalApply(opts *unmarshalOptions) {
+	match.decoderApply(&opts.decoder)
+}
+
+func (_ matchNameOption) isDefault() bool {
+	return false
+}
+
 func (match matchNameOption) String() string {
 	if match.fn == nil {
 		return "MatchName('')"
 	}
 	return "MatchName(custom)"
+}
+
+// ZeroFields
+//
+// Defaults to false.
+func ZeroFields(zero ...bool) DecoderConfigOption {
+	zero = append(zero, true)
+	return zeroFieldsOption(zero[0])
+}
+
+type zeroFieldsOption bool
+
+func (z zeroFieldsOption) decoderApply(m *mapstructure.DecoderConfig) {
+	m.ZeroFields = bool(z)
+}
+
+func (z zeroFieldsOption) unmarshalApply(opts *unmarshalOptions) {
+	z.decoderApply(&opts.decoder)
+}
+
+func (_ zeroFieldsOption) isDefault() bool {
+	return false
+}
+
+func (z zeroFieldsOption) String() string {
+	if bool(z) {
+		return "ZeroFields()"
+	}
+	return "ZeroFields(false)"
+}
+
+// Exactly allows setting nearly all the mapstructure.DecoderConfig values to
+// whatever value is desired.  A few fields aren't available (Metadata, Squash,
+// Result) but the rest are honored.
+//
+// This option will mainly be useful in a scope where the code has no idea what
+// options have been set & needs something very specific.
+func Exactly(this mapstructure.DecoderConfig) DecoderConfigOption {
+	return &exactlyOption{dc: this}
+}
+
+type exactlyOption struct {
+	dc mapstructure.DecoderConfig
+}
+
+func (exact exactlyOption) decoderApply(m *mapstructure.DecoderConfig) {
+	m.DecodeHook = exact.dc.DecodeHook
+	m.ErrorUnused = exact.dc.ErrorUnused
+	m.ErrorUnset = exact.dc.ErrorUnset
+	m.ZeroFields = exact.dc.ZeroFields
+	m.WeaklyTypedInput = exact.dc.WeaklyTypedInput
+	// Squash ... I don't think we can use it
+	// Metadata isn't supported
+	// Result is needed by goschtalt
+	m.TagName = exact.dc.TagName
+	m.IgnoreUntaggedFields = exact.dc.IgnoreUntaggedFields
+	m.MatchName = exact.dc.MatchName
+}
+
+func (exact exactlyOption) unmarshalApply(opts *unmarshalOptions) {
+	exact.decoderApply(&opts.decoder)
+}
+
+func (_ exactlyOption) isDefault() bool {
+	return false
+}
+
+func (exact exactlyOption) String() string {
+	decodeHook := "''"
+	matchName := "''"
+	if exact.dc.DecodeHook != nil {
+		decodeHook = "custom"
+	}
+	if exact.dc.MatchName != nil {
+		matchName = "custom"
+	}
+	return fmt.Sprintf("Exactly(DecodeHook: %s, ErrorUnused: %t, "+
+		"ErrorUnset: %t, ZeroFields: %t, WeaklyTypedInput: %t, TagName: '%s', "+
+		"IgnoreUntaggedFields: %t, MatchName: %s)",
+		decodeHook, exact.dc.ErrorUnused, exact.dc.ErrorUnset, exact.dc.ZeroFields,
+		exact.dc.WeaklyTypedInput, exact.dc.TagName, exact.dc.IgnoreUntaggedFields,
+		matchName)
 }

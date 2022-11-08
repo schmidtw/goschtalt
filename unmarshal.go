@@ -12,6 +12,8 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
+type UnmarshalFunc func(key string, result any, opts ...UnmarshalOption) error
+
 // Unmarshal provides a generics based strict typed approach to fetching parts
 // of the configuration tree.
 func Unmarshal[T any](c *Config, key string, opts ...UnmarshalOption) (T, error) {
@@ -53,10 +55,6 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	if !c.compiled {
-		return ErrNotCompiled
-	}
-
 	var options unmarshalOptions
 	options.decoder.Result = result
 
@@ -65,6 +63,10 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 		if opt != nil {
 			opt.unmarshalApply(&options)
 		}
+	}
+
+	if !c.compiled && !options.ignoreCompileCheck {
+		return ErrNotCompiled
 	}
 
 	obj := c.tree
@@ -101,8 +103,9 @@ type UnmarshalOption interface {
 }
 
 type unmarshalOptions struct {
-	optional bool
-	decoder  mapstructure.DecoderConfig
+	optional           bool
+	ignoreCompileCheck bool
+	decoder            mapstructure.DecoderConfig
 }
 
 // Optional provides a way to allow the requested configuration to not be present
@@ -160,29 +163,21 @@ func (o optionalOption) String() string {
 	return o.text
 }
 
-// UnmarshalWith provides a way to configure the [mapstructure.DecoderConfig]
-// structure that controls the unmarshalling process.
-func UnmarshalWith(opts ...DecoderConfigOption) UnmarshalOption {
-	return unmarshalWithOption(opts)
+// ignoreCompileCheck provides a way to internally ignore the compile check
+// that normally makes sense.  The use case for this is when compilation is
+// happening, goschtalt provides access to the data as it stands to provider
+// functions.  This allows later configuration to depend on and use earlier
+// configuration.
+func ignoreCompileCheck() UnmarshalOption {
+	return ignoreCompileCheckOption(true)
 }
 
-type unmarshalWithOption []DecoderConfigOption
+type ignoreCompileCheckOption bool
 
-func (u unmarshalWithOption) unmarshalApply(opts *unmarshalOptions) {
-	for _, opt := range []DecoderConfigOption(u) {
-		opt.decoderApply(&opts.decoder)
-	}
+func (i ignoreCompileCheckOption) unmarshalApply(opts *unmarshalOptions) {
+	opts.ignoreCompileCheck = bool(i)
 }
 
-func (u unmarshalWithOption) String() string {
-	opts := []DecoderConfigOption(u)
-	if len(opts) == 0 {
-		return "UnmarshalWith()"
-	}
-
-	s := make([]string, len(opts))
-	for i, opt := range opts {
-		s[i] = opt.String()
-	}
-	return "UnmarshalWith(" + strings.Join(s, ", ") + ")"
+func (_ ignoreCompileCheckOption) String() string {
+	return ""
 }
