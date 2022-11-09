@@ -10,6 +10,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/k0kubun/pp"
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
@@ -131,31 +132,26 @@ func (c *Config) compile() error {
 
 	fmt.Fprintf(&c.explainCompile, "Start of compilation.\n\n")
 
+	fmt.Println("WTS 1")
 	cfgs, err := groupsToRecords(c.opts.groups)
 	if err != nil {
+		fmt.Println("WTS 2")
 		return err
 	}
+	fmt.Println("WTS 3")
 
 	cfgs = append(cfgs, c.opts.readers...)
 
-	cfgs = filterRecords(cfgs, c.opts.decoders)
-	for i := range cfgs {
-		if err = cfgs[i].decode(c.opts.decoders, c.opts.keyDelimiter); err != nil {
-			return err
-		}
-	}
+	pp.Printf("WTS:\n%s\n", c.opts.groups)
+	pp.Printf("WTS:\n%s\n", c.opts.readers)
+	pp.Printf("WTS:\n%s\n", cfgs)
 
-	for _, val := range c.opts.values {
-		tmp, err := val.decode(c.opts.keyDelimiter, c.opts.valueOptions...)
-		if err != nil {
-			return err
-		}
-		cfgs = append(cfgs, tmp)
-	}
+	cfgs = filterRecords(cfgs, c.opts.decoders)
 
 	merged := meta.Object{
 		Map: make(map[string]meta.Object),
 	}
+
 	if len(cfgs) == 0 {
 		c.tree = merged
 		c.compiled = true
@@ -164,6 +160,8 @@ func (c *Config) compile() error {
 
 	sorter := c.getSorter()
 	sorter(cfgs)
+
+	pp.Printf("WTS:\n%s\n", cfgs)
 
 	fmt.Fprintln(&c.explainCompile, "Records processed in order.")
 	i := 1
@@ -176,6 +174,13 @@ func (c *Config) compile() error {
 		fmt.Fprintf(&c.explainCompile, "  %d. %s\n", i, cfg.name)
 		i++
 
+		unmarshalFn := func(key string, result any, opts ...UnmarshalOption) error {
+			return c.unmarshal(key, result, merged, opts...)
+		}
+
+		if err = cfg.decode(c.opts.keyDelimiter, unmarshalFn, c.opts.decoders, c.opts.valueOptions); err != nil {
+			return err
+		}
 		var err error
 		subtree := cfg.tree.AlterKeyCase(c.opts.keySwizzler)
 		merged, err = merged.Merge(subtree)

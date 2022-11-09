@@ -56,7 +56,7 @@ func (g group) walk() ([]record, error) {
 
 		r := record{
 			name: stat.Name(),
-			fn: func(_ string) (io.ReadCloser, error) {
+			bufFetcher: func(_ string, _ UnmarshalFunc) (io.ReadCloser, error) {
 				return f, nil
 			},
 		}

@@ -180,14 +180,14 @@ func AddBuffer(recordName string, in []byte) Option {
 		text: fmt.Sprintf("AddBuffer( '%s', []byte )", recordName),
 		rec: record{
 			name: recordName,
-			fn: func(_ string) (io.ReadCloser, error) {
+			bufFetcher: func(_ string, _ UnmarshalFunc) (io.ReadCloser, error) {
 				return io.NopCloser(bytes.NewReader(in)), nil
 			},
 		},
 	}
 }
 
-func AddBufferFn(recordName string, fn func(recordName string) ([]byte, error)) Option {
+func AddBufferFn(recordName string, fn func(recordName string, un UnmarshalFunc) ([]byte, error)) Option {
 	fnText := "custom"
 	if fn == nil {
 		fnText = "''"
@@ -197,8 +197,8 @@ func AddBufferFn(recordName string, fn func(recordName string) ([]byte, error)) 
 		text: fmt.Sprintf("AddBufferFn( '%s', %s )", recordName, fnText),
 		rec: record{
 			name: recordName,
-			fn: func(_ string) (io.ReadCloser, error) {
-				b, err := fn(recordName)
+			bufFetcher: func(name string, un UnmarshalFunc) (io.ReadCloser, error) {
+				b, err := fn(name, un)
 				if err != nil {
 					return nil, err
 				}
@@ -235,14 +235,14 @@ func AddReadCloser(recordName string, in io.ReadCloser) Option {
 		text: fmt.Sprintf("AddReadCloser( '%s', %s )", recordName, inText),
 		rec: record{
 			name: recordName,
-			fn: func(_ string) (io.ReadCloser, error) {
+			bufFetcher: func(_ string, _ UnmarshalFunc) (io.ReadCloser, error) {
 				return io.NopCloser(bytes.NewReader(data)), nil
 			},
 		},
 	}
 }
 
-func AddReadCloserFn(recordName string, fn func(recordName string) (io.ReadCloser, error)) Option {
+func AddReadCloserFn(recordName string, fn func(recordName string, un UnmarshalFunc) (io.ReadCloser, error)) Option {
 	fnText := "custom"
 	if fn == nil {
 		fnText = "''"
@@ -252,8 +252,8 @@ func AddReadCloserFn(recordName string, fn func(recordName string) (io.ReadClose
 		text: fmt.Sprintf("AddReadCloserFn( '%s', %s )", recordName, fnText),
 		rec: record{
 			name: recordName,
-			fn: func(_ string) (io.ReadCloser, error) {
-				return fn(recordName)
+			bufFetcher: func(name string, un UnmarshalFunc) (io.ReadCloser, error) {
+				return fn(name, un)
 			},
 		},
 	}
@@ -270,7 +270,7 @@ func (a addReaderFnOption) apply(opts *options) error {
 		return fmt.Errorf("%w: a recordName with length > 0 must be specified.", ErrInvalidInput)
 	}
 
-	if a.rec.fn == nil {
+	if a.rec.bufFetcher == nil && a.rec.structFetcher == nil {
 		return fmt.Errorf("%w: a non-nil func must be specified.", ErrInvalidInput)
 	}
 	opts.readers = append(opts.readers, a.rec)

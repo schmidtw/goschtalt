@@ -23,6 +23,10 @@ type record struct {
 	tree          meta.Object
 }
 
+func (rec record) ext() string {
+	return strings.TrimPrefix(filepath.Ext(rec.name), ".")
+}
+
 func (rec record) keep(decoders *codecRegistry[decoder.Decoder]) bool {
 	if rec.structFetcher != nil {
 		// Keep because no decoder is needed.
@@ -30,7 +34,7 @@ func (rec record) keep(decoders *codecRegistry[decoder.Decoder]) bool {
 	}
 
 	// Keep if we have a decoder.
-	_, err := decoders.find(strings.TrimPrefix(filepath.Ext(rec.name), "."))
+	_, err := decoders.find(rec.ext())
 	if err == nil {
 		return true
 	}
@@ -38,12 +42,12 @@ func (rec record) keep(decoders *codecRegistry[decoder.Decoder]) bool {
 	return false
 }
 
-func (rec record) getData() ([]byte, error) {
+func (rec record) getData(um UnmarshalFunc) ([]byte, error) {
 	if rec.bufFetcher == nil {
 		return nil, fmt.Errorf("%w no function to acquire data provided", ErrInvalidInput)
 	}
 
-	stream, err := rec.bufFetcher(rec.name)
+	stream, err := rec.bufFetcher(rec.name, um)
 	if err != nil {
 		return nil, err
 	}
@@ -61,7 +65,7 @@ func (rec record) getData() ([]byte, error) {
 func (rec *record) decode(delimiter string, um UnmarshalFunc, decoders *codecRegistry[decoder.Decoder], valOpts []ValueOption) error {
 	rec.tree = meta.Object{}
 
-	data, err := rec.getData()
+	data, err := rec.getData(um)
 	if err != nil {
 		return err
 	}

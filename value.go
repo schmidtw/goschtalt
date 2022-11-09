@@ -97,9 +97,9 @@ func (v value) apply(opts *options) error {
 			opts.defaults = append(opts.defaults, v)
 			return nil
 		}
+		opts.values = append(opts.values, v)
 	}
 
-	opts.values = append(opts.values, v)
 	return nil
 }
 

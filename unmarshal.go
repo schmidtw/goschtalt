@@ -55,6 +55,14 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
+	if !c.compiled {
+		return ErrNotCompiled
+	}
+
+	return c.unmarshal(key, result, c.tree, opts...)
+}
+
+func (c *Config) unmarshal(key string, result any, tree meta.Object, opts ...UnmarshalOption) error {
 	var options unmarshalOptions
 	options.decoder.Result = result
 
@@ -65,30 +73,26 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 		}
 	}
 
-	if !c.compiled && !options.ignoreCompileCheck {
-		return ErrNotCompiled
-	}
-
-	obj := c.tree
+	obj := tree
 	if len(key) > 0 {
 		key = c.opts.keySwizzler(key)
 		path := strings.Split(key, c.opts.keyDelimiter)
 
 		var err error
-		obj, err = c.tree.Fetch(path, c.opts.keyDelimiter)
+		obj, err = tree.Fetch(path, c.opts.keyDelimiter)
 		if err != nil {
 			if !errors.Is(err, meta.ErrNotFound) && !options.optional {
 				return err
 			}
 		}
 	}
-	tree := obj.ToRaw()
+	raw := obj.ToRaw()
 
 	decoder, err := mapstructure.NewDecoder(&options.decoder)
 	if err != nil {
 		return err
 	}
-	return decoder.Decode(tree)
+	return decoder.Decode(raw)
 }
 
 // -- UnmarshalOption options follow -------------------------------------------
@@ -103,9 +107,8 @@ type UnmarshalOption interface {
 }
 
 type unmarshalOptions struct {
-	optional           bool
-	ignoreCompileCheck bool
-	decoder            mapstructure.DecoderConfig
+	optional bool
+	decoder  mapstructure.DecoderConfig
 }
 
 // Optional provides a way to allow the requested configuration to not be present
@@ -161,23 +164,4 @@ func (o optionalOption) unmarshalApply(opts *unmarshalOptions) {
 
 func (o optionalOption) String() string {
 	return o.text
-}
-
-// ignoreCompileCheck provides a way to internally ignore the compile check
-// that normally makes sense.  The use case for this is when compilation is
-// happening, goschtalt provides access to the data as it stands to provider
-// functions.  This allows later configuration to depend on and use earlier
-// configuration.
-func ignoreCompileCheck() UnmarshalOption {
-	return ignoreCompileCheckOption(true)
-}
-
-type ignoreCompileCheckOption bool
-
-func (i ignoreCompileCheckOption) unmarshalApply(opts *unmarshalOptions) {
-	opts.ignoreCompileCheck = bool(i)
-}
-
-func (_ ignoreCompileCheckOption) String() string {
-	return ""
 }
