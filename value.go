@@ -58,7 +58,7 @@ type value struct {
 	opts []ValueOption
 }
 
-func (v value) decode(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOption) (record, error) {
+func (v value) toRecord(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOption) (record, error) {
 	tree := make(map[string]any)
 	cfg := mapstructure.DecoderConfig{
 		Result: &tree,

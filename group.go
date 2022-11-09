@@ -8,7 +8,12 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"path/filepath"
 	"sort"
+	"strings"
+
+	"github.com/schmidtw/goschtalt/pkg/decoder"
+	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
 // group is a filesystem and paths to examine for configuration files.
@@ -24,20 +29,7 @@ type group struct {
 	recurse bool
 }
 
-func groupsToRecords(groups []group) ([]record, error) {
-	rv := make([]record, 0, len(groups))
-	for _, grp := range groups {
-		tmp, err := grp.walk()
-		if err != nil {
-			return nil, err
-		}
-		rv = append(rv, tmp...)
-	}
-
-	return rv, nil
-}
-
-func (g group) walk() ([]record, error) {
+func (g group) toRecords(delimiter string, decoders *codecRegistry[decoder.Decoder]) ([]record, error) {
 	files, err := g.enumerate()
 	if err != nil {
 		return nil, err
@@ -45,25 +37,57 @@ func (g group) walk() ([]record, error) {
 
 	list := make([]record, 0, len(files))
 	for _, file := range files {
-		f, err := g.fs.Open(file)
-		if err != nil {
-			return nil, err
-		}
-		stat, err := f.Stat()
+		r, err := g.toRecord(file, delimiter, decoders)
 		if err != nil {
 			return nil, err
 		}
 
-		r := record{
-			name: stat.Name(),
-			bufFetcher: func(_ string, _ UnmarshalFunc) (io.ReadCloser, error) {
-				return f, nil
-			},
-		}
-
-		list = append(list, r)
+		list = append(list, r...)
 	}
 	return list, nil
+}
+
+func (g group) toRecord(file, delimiter string, decoders *codecRegistry[decoder.Decoder]) ([]record, error) {
+	f, err := g.fs.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer f.Close()
+
+	stat, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	name := stat.Name()
+
+	data, err := io.ReadAll(f)
+
+	ext := strings.TrimPrefix(filepath.Ext(name), ".")
+
+	dec, _ := decoders.find(ext)
+	if dec == nil {
+		return nil, nil
+	}
+
+	ctx := decoder.Context{
+		Filename:  name,
+		Delimiter: delimiter,
+	}
+
+	var tree meta.Object
+	err = dec.Decode(ctx, data, &tree)
+	if err != nil {
+		err = fmt.Errorf("decoder error for extension '%s' processing file '%s' %w %v",
+			ext, name, ErrDecoding, err)
+
+		return nil, err
+	}
+
+	return []record{record{
+		name: name,
+		tree: tree,
+	}}, nil
 }
 
 // enumerate walks the specified paths and collects the files it finds that match
@@ -152,4 +176,17 @@ func (g group) enumeratePath(path string) ([]string, error) {
 	}
 
 	return files, err
+}
+
+func groupsToRecords(delimiter string, groups []group, decoders *codecRegistry[decoder.Decoder]) ([]record, error) {
+	rv := make([]record, 0, len(groups))
+	for _, grp := range groups {
+		tmp, err := grp.toRecords(delimiter, decoders)
+		if err != nil {
+			return nil, err
+		}
+		rv = append(rv, tmp...)
+	}
+
+	return rv, nil
 }

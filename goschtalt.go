@@ -133,7 +133,7 @@ func (c *Config) compile() error {
 	fmt.Fprintf(&c.explainCompile, "Start of compilation.\n\n")
 
 	fmt.Println("WTS 1")
-	cfgs, err := groupsToRecords(c.opts.groups)
+	cfgs, err := groupsToRecords(c.opts.keyDelimiter, c.opts.groups, c.opts.decoders)
 	if err != nil {
 		fmt.Println("WTS 2")
 		return err

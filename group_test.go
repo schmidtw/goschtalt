@@ -10,6 +10,7 @@ import (
 	"testing"
 
 	"github.com/psanford/memfs"
+	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -99,7 +100,11 @@ func TestWalk(t *testing.T) {
 			require.NoError(fs.WriteFile("invalid.json", []byte(`{ground:green}`), 0755))
 			tc.grp.fs = fs
 
-			got, err := tc.grp.walk()
+			dr := newRegistry[decoder.Decoder]()
+			require.NotNil(dr)
+			dr.register(&testDecoder{extensions: []string{"json"}})
+
+			got, err := tc.grp.toRecords(".", dr)
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
