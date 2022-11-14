@@ -58,7 +58,7 @@ type value struct {
 	opts []ValueOption
 }
 
-func (v value) toRecord(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOption) (record, error) {
+func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOption) (meta.Object, error) {
 	tree := make(map[string]any)
 	cfg := mapstructure.DecoderConfig{
 		Result: &tree,
@@ -78,13 +78,10 @@ func (v value) toRecord(delimiter string, um UnmarshalFunc, defaultOpts ...Value
 		}
 	}
 	if err != nil {
-		return record{}, err
+		return meta.Object{}, err
 	}
 
-	return record{
-		name: v.recordName,
-		tree: meta.ObjectFromRaw(tree, strings.Split(v.key, delimiter)...),
-	}, nil
+	return meta.ObjectFromRaw(tree, strings.Split(v.key, delimiter)...), nil
 }
 
 func (v value) apply(opts *options) error {
@@ -92,13 +89,19 @@ func (v value) apply(opts *options) error {
 		return fmt.Errorf("%w: no valid record name provided", ErrInvalidInput)
 	}
 
+	r := record{
+		name: v.recordName,
+		val:  &v,
+	}
+
 	for _, opt := range v.opts {
 		if opt.isDefault() {
-			opts.defaults = append(opts.defaults, v)
+			opts.defaults = append(opts.defaults, r)
 			return nil
 		}
-		opts.values = append(opts.values, v)
 	}
+
+	opts.values = append(opts.values, r)
 
 	return nil
 }
@@ -117,12 +120,24 @@ func (v value) String() string {
 		s = append(s, "none")
 	}
 
-	return fmt.Sprintf("%s( recordName: '%s', key: '%s', opts: %s )",
-		v.text, v.recordName, v.key, strings.Join(s, ", "))
+	fn := ""
+	if v.text == "AddValueFn" {
+		fn = "'', "
+		if v.fn != nil {
+			fn = "custom, "
+		}
+	}
+	return fmt.Sprintf("%s( '%s', '%s', %s%s )",
+		v.text, v.recordName, v.key, fn, strings.Join(s, ", "))
 }
 
 // -- ValueOption options follow -----------------------------------------------
 
+// ValueOption provides the means to configure options around variable mapping
+// as well as if the specific value being added should be a default or a normal
+// configuration value.
+//
+// See also DecoderConfigOption which can be used as ValueOption options.
 type ValueOption interface {
 	fmt.Stringer
 
@@ -133,6 +148,9 @@ type ValueOption interface {
 	decoderApply(*mapstructure.DecoderConfig)
 }
 
+// AsDefault specifies that this value is a default value & is applied prior to
+// any other configuration values.  Default values are applied in the order the
+// options are specified.
 func AsDefault(asDefault ...bool) ValueOption {
 	asDefault = append(asDefault, true)
 

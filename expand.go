@@ -12,7 +12,7 @@ import (
 // after the configuration has been compiled.
 func ExpandEnv(opts ...ExpandOption) Option {
 	exp := expand{
-		name:   "ExpandEnv( ",
+		name:   "ExpandEnv(",
 		origin: "environment",
 		mapper: os.Getenv,
 		start:  "${",
@@ -40,7 +40,7 @@ func ExpandEnv(opts ...ExpandOption) Option {
 func Expand(mapper func(string) string, opts ...ExpandOption) Option {
 	fn := "Expand( custom,"
 	if mapper == nil {
-		fn = "Expand( none,"
+		fn = "Expand( '',"
 	}
 
 	exp := expand{
@@ -104,6 +104,8 @@ func (exp expand) String() string {
 
 // ---- ExpandOption follow --------------------------------------------------
 
+// ExpandOption provides the means to configurate options around variable
+// expansion.
 type ExpandOption interface {
 	expandApply(*expand)
 }

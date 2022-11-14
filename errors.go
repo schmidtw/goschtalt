@@ -11,4 +11,5 @@ var (
 	ErrNotCompiled   = errors.New("the Compile() function must be called first")
 	ErrCodecNotFound = errors.New("encoder/decoder not found")
 	ErrInvalidInput  = errors.New("input is invalid")
+	ErrFileMissing   = errors.New("required file is missing")
 )

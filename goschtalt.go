@@ -10,7 +10,6 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/k0kubun/pp"
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
@@ -23,6 +22,12 @@ var alwaysOptions = []Option{
 	SetKeyDelimiter("."),
 }
 
+// DefaultOptions allows a simple place where decoders can automatically register
+// themselves, as well as a simple way to find what is configured by default.
+// Most extensions will register themselves using init().  It is safe to change
+// this value at pretty much any time & compile afterwards; just know this value
+// is not mutex protected so if you are changing it after init() the synchronization
+// is up to the caller.
 var DefaultOptions = []Option{}
 
 // Config is a configurable, prioritized, merging configuration registry.
@@ -38,7 +43,7 @@ type Config struct {
 	opts    options
 }
 
-// New creates a new goschtalt configuration instance.
+// New creates a new goschtalt configuration instance with any number of options.
 func New(opts ...Option) (*Config, error) {
 	c := Config{
 		tree: meta.Object{},
@@ -55,7 +60,10 @@ func New(opts ...Option) (*Config, error) {
 	return &c, nil
 }
 
-// With takes a list of options and applies them.
+// With takes a list of options and applies them.  Use of With() is optional as
+// New() can take all the same options as well.  If AutoCompile() is not specified
+// Compile() will need to be called to see changes in the configuration based on
+// the new options.
 func (c *Config) With(opts ...Option) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -132,53 +140,48 @@ func (c *Config) compile() error {
 
 	fmt.Fprintf(&c.explainCompile, "Start of compilation.\n\n")
 
-	fmt.Println("WTS 1")
-	cfgs, err := groupsToRecords(c.opts.keyDelimiter, c.opts.groups, c.opts.decoders)
+	cfgs, err := filegroupsToRecords(c.opts.keyDelimiter, c.opts.filegroups, c.opts.decoders)
 	if err != nil {
-		fmt.Println("WTS 2")
 		return err
 	}
-	fmt.Println("WTS 3")
 
-	cfgs = append(cfgs, c.opts.readers...)
+	cfgs = append(cfgs, c.opts.values...)
 
-	pp.Printf("WTS:\n%s\n", c.opts.groups)
-	pp.Printf("WTS:\n%s\n", c.opts.readers)
-	pp.Printf("WTS:\n%s\n", cfgs)
+	sorter := c.getSorter()
+	sorter(cfgs)
 
-	cfgs = filterRecords(cfgs, c.opts.decoders)
+	full := append(c.opts.defaults, cfgs...)
 
 	merged := meta.Object{
 		Map: make(map[string]meta.Object),
 	}
 
-	if len(cfgs) == 0 {
+	fmt.Fprintln(&c.explainCompile, "Records processed in order.")
+	if len(full) == 0 {
+		fmt.Fprintln(&c.explainCompile, "  none")
 		c.tree = merged
 		c.compiled = true
 		return nil
 	}
 
-	sorter := c.getSorter()
-	sorter(cfgs)
+	files := make([]string, 0, len(full))
+	for i, cfg := range full {
+		fmt.Fprintf(&c.explainCompile, "  %d. %s\n", i+1, cfg.name)
 
-	pp.Printf("WTS:\n%s\n", cfgs)
-
-	fmt.Fprintln(&c.explainCompile, "Records processed in order.")
-	i := 1
-	if len(cfgs) == 0 {
-		fmt.Fprintln(&c.explainCompile, "  none")
-	}
-
-	files := make([]string, 0, len(cfgs))
-	for _, cfg := range cfgs {
-		fmt.Fprintf(&c.explainCompile, "  %d. %s\n", i, cfg.name)
-		i++
-
+		incremental := merged
+		for _, exp := range c.opts.expansions {
+			var err error
+			incremental, err = incremental.ToExpanded(exp.maximum, exp.origin, exp.start, exp.end, exp.mapper)
+			if err != nil {
+				return err
+			}
+		}
 		unmarshalFn := func(key string, result any, opts ...UnmarshalOption) error {
-			return c.unmarshal(key, result, merged, opts...)
+			// Pass in the merged value from this context and stage of processing.
+			return c.unmarshal(key, result, incremental, opts...)
 		}
 
-		if err = cfg.decode(c.opts.keyDelimiter, unmarshalFn, c.opts.decoders, c.opts.valueOptions); err != nil {
+		if err = cfg.fetch(c.opts.keyDelimiter, unmarshalFn, c.opts.decoders, c.opts.valueOptions); err != nil {
 			return err
 		}
 		var err error
@@ -191,13 +194,11 @@ func (c *Config) compile() error {
 	}
 
 	fmt.Fprintf(&c.explainCompile, "\nVariable expansions processed in order.\n")
-	i = 1
 	if len(c.opts.expansions) == 0 {
 		fmt.Fprintln(&c.explainCompile, "  none")
 	}
-	for _, exp := range c.opts.expansions {
-		fmt.Fprintf(&c.explainCompile, "  %d. %s\n", i, exp.String())
-		i++
+	for i, exp := range c.opts.expansions {
+		fmt.Fprintf(&c.explainCompile, "  %d. %s\n", i+1, exp.String())
 
 		var err error
 		merged, err = merged.ToExpanded(exp.maximum, exp.origin, exp.start, exp.end, exp.mapper)
@@ -212,6 +213,7 @@ func (c *Config) compile() error {
 	return nil
 }
 
+// getSorter does the work of making a sorter for the objects we need to sort.
 func (c *Config) getSorter() func([]record) {
 	return func(a []record) {
 		sort.SliceStable(a, func(i, j int) bool {
@@ -272,6 +274,12 @@ func (c *Config) Extensions() []string {
 	return c.opts.decoders.extensions()
 }
 
+// Explain returns a human focused explanation of how the configuration was
+// arrived at.  Each time the options change or the configuration is compiled
+// the explanation will be updated.
 func (c *Config) Explain() string {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
 	return c.explainOptions.String() + "\n" + c.explainCompile.String()
 }

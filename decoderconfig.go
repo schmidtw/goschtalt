@@ -24,9 +24,6 @@ type DecoderConfigOption interface {
 	decoderApply(*mapstructure.DecoderConfig)
 }
 
-// ValueOption
-// UnmarshalOption
-
 // DecodeHook, will be called before any decoding and any type conversion (if
 // WeaklyTypedInput is on). This lets you modify the values before they're set
 // down onto the resulting struct. The DecodeHook is called for every map and
@@ -257,7 +254,9 @@ func (match matchNameOption) String() string {
 	return "MatchName(custom)"
 }
 
-// ZeroFields
+// ZeroFields, if set to true, will zero fields before writing them.
+// For example, a map will be emptied before decoded values are put in
+// it. If this is false, a map will be merged.
 //
 // Defaults to false.
 func ZeroFields(zero ...bool) DecoderConfigOption {

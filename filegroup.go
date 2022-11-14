@@ -16,8 +16,8 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
-// group is a filesystem and paths to examine for configuration files.
-type group struct {
+// filegroup is a filesystem and paths to examine for configuration files.
+type filegroup struct {
 	// fs is the filesystem to examine.
 	fs fs.FS
 
@@ -27,9 +27,16 @@ type group struct {
 	// recurse specifies if directories encoutered in the paths should be examined
 	// recursively or not.
 	recurse bool
+
+	// exactFile means that there should be exactly the same number of records as
+	// files found or it is considered a failure.  This is mainly to support the
+	// AddFile() use case where the file must be present or it is an error.
+	exactFile bool
 }
 
-func (g group) toRecords(delimiter string, decoders *codecRegistry[decoder.Decoder]) ([]record, error) {
+// toRecords walks the filegroup and finds all the records that are present and
+// can be processed using the present configuration.
+func (g filegroup) toRecords(delimiter string, decoders *codecRegistry[decoder.Decoder]) ([]record, error) {
 	files, err := g.enumerate()
 	if err != nil {
 		return nil, err
@@ -44,10 +51,13 @@ func (g group) toRecords(delimiter string, decoders *codecRegistry[decoder.Decod
 
 		list = append(list, r...)
 	}
+
 	return list, nil
 }
 
-func (g group) toRecord(file, delimiter string, decoders *codecRegistry[decoder.Decoder]) ([]record, error) {
+// toRecord handles examining a single file and returning it as part of an array
+// of records.  This allows for returning 0 or 1 record easily.
+func (g filegroup) toRecord(file, delimiter string, decoders *codecRegistry[decoder.Decoder]) ([]record, error) {
 	f, err := g.fs.Open(file)
 	if err != nil {
 		return nil, err
@@ -59,19 +69,28 @@ func (g group) toRecord(file, delimiter string, decoders *codecRegistry[decoder.
 		return nil, err
 	}
 
-	name := stat.Name()
+	basename := stat.Name()
+	ext := strings.TrimPrefix(filepath.Ext(basename), ".")
 
-	data, err := io.ReadAll(f)
-
-	ext := strings.TrimPrefix(filepath.Ext(name), ".")
-
-	dec, _ := decoders.find(ext)
+	dec, err := decoders.find(ext)
 	if dec == nil {
+		if g.exactFile {
+			// No failures allowed.
+			return nil, err
+		}
+
+		// The file isn't supported by a decoder, skip it.
 		return nil, nil
 	}
 
+	// Only read the file after we're pretty sure it can be decoded.
+	data, err := io.ReadAll(f)
+	if err != nil {
+		return nil, err
+	}
+
 	ctx := decoder.Context{
-		Filename:  name,
+		Filename:  basename,
 		Delimiter: delimiter,
 	}
 
@@ -79,26 +98,21 @@ func (g group) toRecord(file, delimiter string, decoders *codecRegistry[decoder.
 	err = dec.Decode(ctx, data, &tree)
 	if err != nil {
 		err = fmt.Errorf("decoder error for extension '%s' processing file '%s' %w %v",
-			ext, name, ErrDecoding, err)
+			ext, basename, ErrDecoding, err)
 
 		return nil, err
 	}
 
-	return []record{record{
-		name: name,
+	return []record{{
+		name: basename,
 		tree: tree,
 	}}, nil
 }
 
 // enumerate walks the specified paths and collects the files it finds that match
 // the specified extensions.
-func (g group) enumerate() ([]string, error) {
+func (g filegroup) enumerate() ([]string, error) {
 	var files []string
-
-	// By default include everything in the base directory if nothing is specified.
-	if len(g.paths) == 0 {
-		g.paths = []string{"."}
-	}
 
 	for _, path := range g.paths {
 		found, err := g.enumeratePath(path)
@@ -114,15 +128,8 @@ func (g group) enumerate() ([]string, error) {
 
 // enumeratePath examines a specific path and collects all the appropriate files.
 // If the path ends up being a specific file return exactly that file.
-func (g group) enumeratePath(path string) ([]string, error) {
-	// Make sure the paths are consistent across FS implementations with
-	// go's documentation.  This prevents errors due to some FS accepting
-	// invalid paths while others correctly reject them.
-	if !fs.ValidPath(path) {
-		return nil, fmt.Errorf("path '%s' %w", path, fs.ErrInvalid)
-	}
-
-	file, err := g.fs.Open(path)
+func (g filegroup) enumeratePath(path string) ([]string, error) {
+	isDir, err := g.isDir(path)
 	if err != nil {
 		// Fail if the path is not found, otherwise, continue
 		if errors.Is(err, fs.ErrInvalid) || errors.Is(err, fs.ErrNotExist) {
@@ -131,16 +138,12 @@ func (g group) enumeratePath(path string) ([]string, error) {
 		return nil, nil
 	}
 
-	stat, err := file.Stat()
-	if err != nil {
-		_ = file.Close()
-		return nil, nil
-	}
-	isDir := stat.IsDir()
-	_ = file.Close()
-
 	if !isDir {
 		return []string{path}, nil
+	}
+
+	if g.exactFile {
+		return nil, fs.ErrInvalid
 	}
 
 	var files []string
@@ -171,16 +174,38 @@ func (g group) enumeratePath(path string) ([]string, error) {
 
 	err = fs.WalkDir(g.fs, path, walker)
 
-	if err != nil {
-		files = []string{}
-	}
-
 	return files, err
 }
 
-func groupsToRecords(delimiter string, groups []group, decoders *codecRegistry[decoder.Decoder]) ([]record, error) {
-	rv := make([]record, 0, len(groups))
-	for _, grp := range groups {
+// isDir examines a structure to see if it is a directory or something else.
+func (g filegroup) isDir(path string) (dir bool, err error) {
+	// Make sure the paths are consistent across FS implementations with
+	// go's documentation.  This prevents errors due to some FS accepting
+	// invalid paths while others correctly reject them.
+	if !fs.ValidPath(path) {
+		return false, fmt.Errorf("path '%s' %w", path, fs.ErrInvalid)
+	}
+
+	var file fs.File
+
+	file, err = g.fs.Open(path)
+	if err == nil {
+		var stat fs.FileInfo
+		stat, err = file.Stat()
+		if err == nil {
+			dir = stat.IsDir()
+		}
+
+		_ = file.Close()
+	}
+
+	return dir, err
+}
+
+// filegroupsToRecords converts a list of filegroups into a list of records.
+func filegroupsToRecords(delimiter string, filegroups []filegroup, decoders *codecRegistry[decoder.Decoder]) ([]record, error) {
+	rv := make([]record, 0, len(filegroups))
+	for _, grp := range filegroups {
 		tmp, err := grp.toRecords(delimiter, decoders)
 		if err != nil {
 			return nil, err

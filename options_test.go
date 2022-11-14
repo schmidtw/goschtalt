@@ -25,6 +25,10 @@ func TestOptions(t *testing.T) {
 	list := []string{"zeta", "alpha", "19beta", "19alpha", "4tango",
 		"1alpha", "7alpha", "bravo", "7alpha10", "7alpha2", "7alpha0"}
 
+	retBuf := func(name string, un UnmarshalFunc) ([]byte, error) {
+		return []byte(name), nil
+	}
+
 	sortCheck := func(cfg *options, want []string) bool {
 		if cfg.sorter == nil {
 			return false
@@ -68,10 +72,11 @@ func TestOptions(t *testing.T) {
 			opt:         AddFile(fs, "filename"),
 			str:         "AddFile( 'filename' )",
 			goal: options{
-				groups: []group{
+				filegroups: []filegroup{
 					{
-						fs:    fs,
-						paths: []string{"filename"},
+						fs:        fs,
+						paths:     []string{"filename"},
+						exactFile: true,
 					},
 				},
 			},
@@ -79,13 +84,15 @@ func TestOptions(t *testing.T) {
 			description: "AddFile( /, a ), AddFile( /, b )",
 			opts:        []Option{AddFile(fs, "a"), AddFile(fs, "b")},
 			goal: options{
-				groups: []group{
+				filegroups: []filegroup{
 					{
-						fs:    fs,
-						paths: []string{"a"},
+						fs:        fs,
+						paths:     []string{"a"},
+						exactFile: true,
 					}, {
-						fs:    fs,
-						paths: []string{"b"},
+						fs:        fs,
+						paths:     []string{"b"},
+						exactFile: true,
 					},
 				},
 			},
@@ -94,14 +101,14 @@ func TestOptions(t *testing.T) {
 			opt:         AddFiles(fs),
 			str:         "AddFiles( '' )",
 			goal: options{
-				groups: []group{{fs: fs}},
+				filegroups: []filegroup{{fs: fs}},
 			},
 		}, {
 			description: "AddFiles( /, filename )",
 			opt:         AddFiles(fs, "filename"),
 			str:         "AddFiles( 'filename' )",
 			goal: options{
-				groups: []group{
+				filegroups: []filegroup{
 					{
 						fs:    fs,
 						paths: []string{"filename"},
@@ -113,7 +120,7 @@ func TestOptions(t *testing.T) {
 			opt:         AddFiles(fs, "a", "b"),
 			str:         "AddFiles( 'a', 'b' )",
 			goal: options{
-				groups: []group{
+				filegroups: []filegroup{
 					{
 						fs:    fs,
 						paths: []string{"a", "b"},
@@ -125,7 +132,7 @@ func TestOptions(t *testing.T) {
 			opt:         AddTree(fs, "./path"),
 			str:         "AddTree( './path' )",
 			goal: options{
-				groups: []group{
+				filegroups: []filegroup{
 					{
 						fs:      fs,
 						paths:   []string{"./path"},
@@ -138,7 +145,7 @@ func TestOptions(t *testing.T) {
 			opt:         AddDir(fs, "./path"),
 			str:         "AddDir( './path' )",
 			goal: options{
-				groups: []group{
+				filegroups: []filegroup{
 					{
 						fs:    fs,
 						paths: []string{"./path"},
@@ -484,6 +491,128 @@ func TestOptions(t *testing.T) {
 				},
 			},
 			str: "DefaultValueOptions( DecodeHook('') )",
+		}, {
+			description: "AddBuffer( filename.ext, bytes )",
+			opt:         AddBuffer("filename.ext", []byte("bytes")),
+			str:         "AddBuffer( 'filename.ext', []byte )",
+			check: func(cfg *options) bool {
+				if len(cfg.values) == 1 {
+					if cfg.values[0].name == "filename.ext" {
+						if cfg.values[0].encoded.fn != nil {
+							return true
+						}
+					}
+				}
+				return false
+			},
+		}, {
+			description: "AddBuffer( filename.ext, nil )",
+			opt:         AddBuffer("filename.ext", nil),
+			str:         "AddBuffer( 'filename.ext', nil )",
+			check: func(cfg *options) bool {
+				if len(cfg.values) == 1 {
+					if cfg.values[0].name == "filename.ext" {
+						if cfg.values[0].encoded.fn != nil {
+							return true
+						}
+					}
+				}
+				return false
+			},
+		}, {
+			description: "AddBuffer( '', bytes )",
+			opt:         AddBuffer("", []byte("bytes")),
+			str:         "AddBuffer( '', []byte )",
+			expectErr:   unknown,
+		}, {
+			description: "AddBufferFn( filename.ext, nil )",
+			opt:         AddBufferFn("filename.ext", nil),
+			str:         "AddBufferFn( 'filename.ext', '' )",
+			expectErr:   unknown,
+		}, {
+			description: "AddBufferFn( filename.ext, bytes )",
+			opt:         AddBufferFn("filename.ext", retBuf),
+			str:         "AddBufferFn( 'filename.ext', custom )",
+			check: func(cfg *options) bool {
+				if len(cfg.values) == 1 {
+					if cfg.values[0].name == "filename.ext" {
+						if cfg.values[0].encoded.fn != nil {
+							return true
+						}
+					}
+				}
+				return false
+			},
+		}, {
+			description: "AddValueFn( record1, '', func )",
+			opt:         AddValueFn("record1", "", func(_ string, un UnmarshalFunc) (any, error) { return nil, nil }),
+			str:         "AddValueFn( 'record1', '', custom, none )",
+			check: func(cfg *options) bool {
+				if len(cfg.values) == 1 {
+					if cfg.values[0].name == "record1" {
+						if cfg.values[0].val.fn != nil {
+							return true
+						}
+					}
+				}
+				return false
+			},
+		}, {
+			description: "AddValueFn( record1, 'key', nil )",
+			opt:         AddValueFn("record1", "key", nil),
+			str:         "AddValueFn( 'record1', 'key', '', none )",
+			check: func(cfg *options) bool {
+				if len(cfg.values) == 1 {
+					if cfg.values[0].name == "record1" {
+						if cfg.values[0].val.fn == nil {
+							return true
+						}
+					}
+				}
+				return false
+			},
+		}, {
+			description: "AddValue( record1, 'key', nil )",
+			opt:         AddValue("record1", "key", nil),
+			str:         "AddValue( 'record1', 'key', none )",
+			check: func(cfg *options) bool {
+				if len(cfg.values) == 1 {
+					if cfg.values[0].name == "record1" {
+						if cfg.values[0].val.fn != nil {
+							return true
+						}
+					}
+				}
+				return false
+			},
+		}, {
+			description: "AddValue( record1, key, nil, AsDefault )",
+			opt:         AddValue("record1", "key", nil, AsDefault()),
+			str:         "AddValue( 'record1', 'key', AsDefault() )",
+			check: func(cfg *options) bool {
+				if len(cfg.defaults) == 1 {
+					if cfg.defaults[0].name == "record1" {
+						if cfg.defaults[0].val.fn != nil {
+							return true
+						}
+					}
+				}
+				return false
+			},
+		}, {
+			description: "AddValue( record1, key, nil, AsDefault(false) )",
+			opt:         AddValue("record1", "key", nil, AsDefault(false)),
+			str:         "AddValue( 'record1', 'key', AsDefault(false) )",
+			check: func(cfg *options) bool {
+				if len(cfg.values) == 1 {
+					if cfg.values[0].name == "record1" {
+						if cfg.values[0].val.fn != nil {
+							return true
+						}
+					}
+				}
+				return false
+			},
 		},
 	}
 

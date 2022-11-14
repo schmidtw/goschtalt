@@ -33,5 +33,6 @@ issues:
         - dupl
         - funlen
         - gocognit
+        - goconst
   exclude:
     - "ExampleOrderList refers to unknown identifier: OrderList"

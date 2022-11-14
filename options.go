@@ -4,9 +4,7 @@
 package goschtalt
 
 import (
-	"bytes"
 	"fmt"
-	"io"
 	"io/fs"
 	"strings"
 
@@ -56,12 +54,11 @@ type options struct {
 	valueOptions     []ValueOption
 
 	// Defaults where there can be many.
-	defaults []value
+	defaults []record
 
 	// General configurations; there can be many.
-	groups  []group
-	readers []record
-	values  []value
+	filegroups []filegroup
+	values     []record
 
 	// Expansions; there can be many.
 	expansions []expand
@@ -70,7 +67,8 @@ type options struct {
 // ---- Options follow ---------------------------------------------------------
 
 // WithError provides a way for plugins to return an error during option
-// processing.
+// processing.  This option will always produce the specified error; including
+// if the err value is nil.
 func WithError(err error) Option {
 	return errorOption{err: err}
 }
@@ -98,26 +96,32 @@ func (o errorOption) String() string {
 }
 
 // AddFile adds exactly one file to the list of files to be compiled into a
-// configuration.  The filename must be relative to the fs.
+// configuration.  The filename must be relative to the fs.  If the file
+// specified cannot be processed it is considered an error.
 func AddFile(fs fs.FS, filename string) Option {
 	return &groupOption{
 		name: "AddFile",
-		grp: group{
-			fs:    fs,
-			paths: []string{filename},
+		grp: filegroup{
+			fs:        fs,
+			paths:     []string{filename},
+			exactFile: true,
 		},
 	}
 }
 
 // AddFiles adds any number of files to the list of files to be compiled into a
-// configuration.  The filenames must be relative to the fs.
+// configuration.  The filenames must be relative to the fs.  Any files that
+// cannot be processed will be ignored.  It is not an error if any files are
+// missing, or if all the files cannot be processed.
+//
+// Use AddFile() if you need to require a file to be present.
 //
 // All the files that can be processed with a decoder will be compiled into the
 // configuration.
 func AddFiles(fs fs.FS, filenames ...string) Option {
 	return &groupOption{
 		name: "AddFiles",
-		grp: group{
+		grp: filegroup{
 			fs:    fs,
 			paths: filenames,
 		},
@@ -125,14 +129,18 @@ func AddFiles(fs fs.FS, filenames ...string) Option {
 }
 
 // AddTree adds a directory tree (including all subdirectories) for inclusion
-// when compiling the configuration.
+// when compiling the configuration.  Any files that cannot be processed will be
+// ignored.  It is not an error if any files are missing, or if all the files
+// cannot be processed.
+//
+// Use AddFile() if you need to require a file to be present.
 //
 // All the files that can be processed with a decoder will be compiled into the
 // configuration.
 func AddTree(fs fs.FS, path string) Option {
 	return &groupOption{
 		name: "AddTree",
-		grp: group{
+		grp: filegroup{
 			fs:      fs,
 			paths:   []string{path},
 			recurse: true,
@@ -141,14 +149,18 @@ func AddTree(fs fs.FS, path string) Option {
 }
 
 // AddDir adds a directory (excluding all subdirectories) for inclusion
-// when compiling the configuration.
+// when compiling the configuration.  Any files that cannot be processed will be
+// ignored.  It is not an error if any files are missing, or if all the files
+// cannot be processed.
+//
+// Use AddFile() if you need to require a file to be present.
 //
 // All the files that can be processed with a decoder will be compiled into the
 // configuration.
 func AddDir(fs fs.FS, path string) Option {
 	return &groupOption{
 		name: "AddDir",
-		grp: group{
+		grp: filegroup{
 			fs:    fs,
 			paths: []string{path},
 		},
@@ -157,13 +169,13 @@ func AddDir(fs fs.FS, path string) Option {
 
 type groupOption struct {
 	name string
-	grp  group
+	grp  filegroup
 }
 
 var _ Option = (*groupOption)(nil)
 
 func (g groupOption) apply(opts *options) error {
-	opts.groups = append(opts.groups, g.grp)
+	opts.filegroups = append(opts.filegroups, g.grp)
 	return nil
 }
 
@@ -174,111 +186,6 @@ func (_ groupOption) ignoreDefaults() bool {
 func (o groupOption) String() string {
 	return o.name + "( '" + strings.Join(o.grp.paths, "', '") + "' )"
 }
-
-func AddBuffer(recordName string, in []byte) Option {
-	return &addReaderFnOption{
-		text: fmt.Sprintf("AddBuffer( '%s', []byte )", recordName),
-		rec: record{
-			name: recordName,
-			bufFetcher: func(_ string, _ UnmarshalFunc) (io.ReadCloser, error) {
-				return io.NopCloser(bytes.NewReader(in)), nil
-			},
-		},
-	}
-}
-
-func AddBufferFn(recordName string, fn func(recordName string, un UnmarshalFunc) ([]byte, error)) Option {
-	fnText := "custom"
-	if fn == nil {
-		fnText = "''"
-	}
-
-	return &addReaderFnOption{
-		text: fmt.Sprintf("AddBufferFn( '%s', %s )", recordName, fnText),
-		rec: record{
-			name: recordName,
-			bufFetcher: func(name string, un UnmarshalFunc) (io.ReadCloser, error) {
-				b, err := fn(name, un)
-				if err != nil {
-					return nil, err
-				}
-				return io.NopCloser(bytes.NewReader(b)), nil
-			},
-		},
-	}
-}
-
-// AddReadCloser adds a buffer based configuration for inclusion when compiling
-// the configuration.  The recordName is use both to determine the sort order of
-// this buffer, as well as the type of decoder to use.  The recordName is
-// expected to have a trailing extension that indicates the type of decoder to
-// use.
-func AddReadCloser(recordName string, in io.ReadCloser) Option {
-	defer in.Close()
-
-	inText := "io.ReadCloser"
-	if in == nil {
-		inText = "''"
-	}
-
-	buf := new(bytes.Buffer)
-	_, err := buf.ReadFrom(in)
-	if err != nil {
-		return &addReaderFnOption{
-			text: fmt.Sprintf("AddReadCloser( '%s', %s )", recordName, inText),
-			err:  err,
-		}
-	}
-	data := buf.Bytes()
-
-	return &addReaderFnOption{
-		text: fmt.Sprintf("AddReadCloser( '%s', %s )", recordName, inText),
-		rec: record{
-			name: recordName,
-			bufFetcher: func(_ string, _ UnmarshalFunc) (io.ReadCloser, error) {
-				return io.NopCloser(bytes.NewReader(data)), nil
-			},
-		},
-	}
-}
-
-func AddReadCloserFn(recordName string, fn func(recordName string, un UnmarshalFunc) (io.ReadCloser, error)) Option {
-	fnText := "custom"
-	if fn == nil {
-		fnText = "''"
-	}
-
-	return &addReaderFnOption{
-		text: fmt.Sprintf("AddReadCloserFn( '%s', %s )", recordName, fnText),
-		rec: record{
-			name: recordName,
-			bufFetcher: func(name string, un UnmarshalFunc) (io.ReadCloser, error) {
-				return fn(name, un)
-			},
-		},
-	}
-}
-
-type addReaderFnOption struct {
-	text string
-	rec  record
-	err  error
-}
-
-func (a addReaderFnOption) apply(opts *options) error {
-	if len(a.rec.name) == 0 {
-		return fmt.Errorf("%w: a recordName with length > 0 must be specified.", ErrInvalidInput)
-	}
-
-	if a.rec.bufFetcher == nil && a.rec.structFetcher == nil {
-		return fmt.Errorf("%w: a non-nil func must be specified.", ErrInvalidInput)
-	}
-	opts.readers = append(opts.readers, a.rec)
-	return nil
-}
-
-func (_ addReaderFnOption) ignoreDefaults() bool { return false }
-func (a addReaderFnOption) String() string       { return a.text }
 
 // AutoCompile instructs New() and With() to also compile the configuration
 // after all the options are applied if enable is true or omitted.  Passing

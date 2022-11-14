@@ -4,12 +4,13 @@
 package goschtalt
 
 import (
+	"errors"
 	iofs "io/fs"
 	"sort"
 	"strings"
 	"testing"
+	"testing/fstest"
 
-	"github.com/psanford/memfs"
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,13 +19,13 @@ import (
 func TestWalk(t *testing.T) {
 	tests := []struct {
 		description string
-		grp         group
+		grp         filegroup
 		expected    []string
 		expectedErr error
 	}{
 		{
 			description: "Process one file.",
-			grp: group{
+			grp: filegroup{
 				paths: []string{"nested/conf/1.json"},
 			},
 			expected: []string{
@@ -32,7 +33,7 @@ func TestWalk(t *testing.T) {
 			},
 		}, {
 			description: "Process two files.",
-			grp: group{
+			grp: filegroup{
 				paths: []string{
 					"nested/conf/1.json",
 					"nested/4.json",
@@ -45,7 +46,7 @@ func TestWalk(t *testing.T) {
 		},
 		{
 			description: "Process most files.",
-			grp: group{
+			grp: filegroup{
 				paths:   []string{"nested"},
 				recurse: true,
 			},
@@ -54,11 +55,10 @@ func TestWalk(t *testing.T) {
 				`2.json`,
 				`3.json`,
 				`4.json`,
-				`ignore`,
 			},
 		}, {
 			description: "Process some files.",
-			grp: group{
+			grp: filegroup{
 				paths: []string{"nested"},
 			},
 			expected: []string{
@@ -67,22 +67,36 @@ func TestWalk(t *testing.T) {
 			},
 		}, {
 			description: "Trailing slashes are not allowed.",
-			grp: group{
+			grp: filegroup{
 				paths: []string{"nested/"},
 			},
 			expectedErr: iofs.ErrInvalid,
 		}, {
 			description: "Absolute addressing is not allowed.",
-			grp: group{
+			grp: filegroup{
 				paths: []string{"/nested"},
 			},
 			expectedErr: iofs.ErrInvalid,
 		}, {
 			description: "No file or directory with this patth.",
-			grp: group{
+			grp: filegroup{
 				paths: []string{"invalid"},
 			},
 			expectedErr: iofs.ErrNotExist,
+		}, {
+			description: "Ensure file is decoded.",
+			grp: filegroup{
+				paths:     []string{"ignore.txt"},
+				exactFile: true,
+			},
+			expectedErr: ErrCodecNotFound,
+		}, {
+			description: "Ensure file is present.",
+			grp: filegroup{
+				paths:     []string{"fake.json"},
+				exactFile: true,
+			},
+			expectedErr: iofs.ErrInvalid,
 		},
 	}
 	for _, tc := range tests {
@@ -90,14 +104,40 @@ func TestWalk(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			fs := memfs.New()
-			require.NoError(fs.MkdirAll("nested/conf", 0777))
-			require.NoError(fs.WriteFile("nested/conf/1.json", []byte(`{"hello":"world"}`), 0755))
-			require.NoError(fs.WriteFile("nested/conf/2.json", []byte(`{"water":"blue"}`), 0755))
-			require.NoError(fs.WriteFile("nested/conf/ignore", []byte(`ignore this file`), 0755))
-			require.NoError(fs.WriteFile("nested/3.json", []byte(`{"sky":"overcast"}`), 0755))
-			require.NoError(fs.WriteFile("nested/4.json", []byte(`{"ground":"green"}`), 0755))
-			require.NoError(fs.WriteFile("invalid.json", []byte(`{ground:green}`), 0755))
+			fs := fstest.MapFS{
+				"nested/conf/1.json": &fstest.MapFile{
+					Data: []byte(`{"hello":"world"}`),
+					Mode: 0755,
+				},
+				"nested/conf/2.json": &fstest.MapFile{
+					Data: []byte(`{"water":"blue"}`),
+					Mode: 0755,
+				},
+				"nested/conf/ignore": &fstest.MapFile{
+					Data: []byte(`ignore this file`),
+					Mode: 0755,
+				},
+				"nested/3.json": &fstest.MapFile{
+					Data: []byte(`{"sky":"overcast"}`),
+					Mode: 0755,
+				},
+				"nested/4.json": &fstest.MapFile{
+					Data: []byte(`{"ground":"green"}`),
+					Mode: 0755,
+				},
+				"fake.json/ignored": &fstest.MapFile{
+					Data: []byte(`ignore this file`),
+					Mode: 0755,
+				},
+				"invalid.json": &fstest.MapFile{
+					Data: []byte(`{ground:green}`),
+					Mode: 0755,
+				},
+				"ignore.txt": &fstest.MapFile{
+					Data: []byte(`ignore this file`),
+					Mode: 0755,
+				},
+			}
 			tc.grp.fs = fs
 
 			dr := newRegistry[decoder.Decoder]()
@@ -129,6 +169,62 @@ func TestWalk(t *testing.T) {
 				}
 				return
 			}
+			assert.ErrorIs(err, tc.expectedErr)
+		})
+	}
+}
+
+// TODO: It would be nice to test random file system failures.
+func TestToRecord(t *testing.T) {
+	unknown := errors.New("unknown")
+	tests := []struct {
+		description string
+		file        string
+		expectedNil bool
+		expectedErr error
+	}{
+		{
+			description: "Test with an invalid file.",
+			file:        "missing",
+			expectedErr: unknown,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			g := filegroup{
+				fs: fstest.MapFS{
+					"1.json": &fstest.MapFile{
+						Data: []byte(`{"hello":"world"}`),
+						Mode: 0755,
+					},
+				},
+			}
+
+			dr := newRegistry[decoder.Decoder]()
+			require.NotNil(dr)
+			dr.register(&testDecoder{extensions: []string{"json"}})
+
+			got, err := g.toRecord(tc.file, ".", dr)
+
+			if tc.expectedErr == nil {
+				if tc.expectedNil {
+					assert.Nil(got)
+				} else {
+					assert.NotNil(got)
+				}
+				return
+			}
+
+			assert.Nil(got)
+			if errors.Is(unknown, tc.expectedErr) {
+				assert.Error(err)
+				return
+			}
+
 			assert.ErrorIs(err, tc.expectedErr)
 		})
 	}

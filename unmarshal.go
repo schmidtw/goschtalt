@@ -12,6 +12,11 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
+// UnmarshalFunc provides a special use Unmarshal() function during AddBufferFn()
+// and AddValueFn() option provided callbacks.  This pattern allows the specified
+// function access to the configuration values up to this point.  Expansion of
+// any Expand() or ExpandEnv() options is also applied to the configuration tree
+// provided.
 type UnmarshalFunc func(key string, result any, opts ...UnmarshalOption) error
 
 // Unmarshal provides a generics based strict typed approach to fetching parts
