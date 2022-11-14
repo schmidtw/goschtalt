@@ -104,7 +104,7 @@ func (exp expand) String() string {
 
 // ---- ExpandOption follow --------------------------------------------------
 
-// ExpandOption provides the means to configurate options around variable
+// ExpandOption provides the means to configure options around variable
 // expansion.
 type ExpandOption interface {
 	expandApply(*expand)
