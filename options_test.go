@@ -11,7 +11,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/k0kubun/pp"
+	"github.com/k0kubun/pp/v3"
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 	"github.com/stretchr/testify/assert"
