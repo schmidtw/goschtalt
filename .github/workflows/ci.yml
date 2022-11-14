@@ -56,22 +56,6 @@ jobs:
 
       # Duplicated for each extension package.
 
-      # --- extensions/decoders/cli
-
-      - name: extensions/decoders/cli -- Build & Test
-        working-directory: ./extensions/decoders/cli
-        run: |
-          go build ./...
-          go test ./...
-
-      - name: extensions/decoders/cli -- Coverage
-        working-directory: ./extensions/decoders/cli
-        if: |
-          matrix.os == 'ubuntu-latest' &&
-          matrix.go == env.go_version
-        run: |
-          go test -race -covermode=atomic -coverprofile=coverage.out ./...
-
       # --- extensions/decoders/env
 
       - name: extensions/decoders/env -- Build & Test
@@ -162,7 +146,7 @@ jobs:
         with:
           flags: unittests
           files: >-
-            ./coverage.out,./extensions/cli/simple/coverage.out,./extensions/decoders/cli/coverage.out,./extensions/decoders/env/coverage.out,./extensions/decoders/json/coverage.out,./extensions/decoders/properties/coverage.out,./extensions/decoders/yaml/coverage.out,./extensions/encoders/yaml/coverage.out
+            ./coverage.out,./extensions/decoders/env/coverage.out,./extensions/decoders/json/coverage.out,./extensions/decoders/properties/coverage.out,./extensions/decoders/yaml/coverage.out,./extensions/encoders/yaml/coverage.out
 
 
   style:
