@@ -1452,7 +1452,7 @@ func TestMerge(t *testing.T) {
 				return
 			}
 
-			assert.ErrorIs(tc.expectedErr, err)
+			assert.ErrorIs(err, tc.expectedErr)
 		})
 	}
 }
