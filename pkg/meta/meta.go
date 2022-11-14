@@ -566,9 +566,9 @@ func (obj Object) mergeValue(cmd command, next Object) (Object, error) {
 		if err != nil {
 			return Object{}, err
 		}
-	case cmdKeep:
 	case cmdFail:
-		return Object{}, ErrConflict
+		return Object{}, fmt.Errorf("%w: merging a value with command 'fail'", ErrConflict)
+	case cmdKeep:
 	}
 
 	rv.secret = cmd.secret
@@ -600,24 +600,26 @@ func (obj Object) mergeArray(cmd command, next Object) (Object, error) {
 		rv = next
 	case cmdKeep:
 	case cmdFail:
-		return Object{}, ErrConflict
+		return Object{}, fmt.Errorf("%w: merging an array with command 'fail'", ErrConflict)
 	}
 	return rv, nil
 }
 
 // mergeMap merges two maps.  Don't directly call this, call merge() instead.
 func (obj Object) mergeMap(cmd command, next Object) (Object, error) {
-	if cmd.cmd == cmdKeep || cmd.cmd == cmdFail {
-		return Object{}, ErrConflict
-	}
-
-	if cmd.cmd == cmdReplace {
+	switch cmd.cmd {
+	case cmdFail:
+		return Object{}, fmt.Errorf("%w: merging a map with command 'fail'", ErrConflict)
+	case cmdKeep:
+		return obj, nil
+	case cmdReplace:
 		rv, err := next.resolveCommands(false)
 		if err != nil {
 			return Object{}, err
 		}
 		rv.secret = cmd.secret
 		return rv, nil
+	default:
 	}
 
 	// cmd.cmd == cmdSplice || "":
@@ -657,7 +659,7 @@ func (obj Object) mergeMap(cmd command, next Object) (Object, error) {
 		case cmdKeep:
 			obj.Map[newCmd.final] = existing
 		case cmdFail:
-			return Object{}, ErrConflict
+			return Object{}, fmt.Errorf("%w: merging map", ErrConflict)
 		}
 	}
 
