@@ -16,13 +16,6 @@ import (
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
-// These options must always be present to prevent panics, etc.
-var alwaysOptions = []Option{
-	SortRecordsNaturally(),
-	AlterKeyCase(nil),
-	SetKeyDelimiter("."),
-}
-
 // DefaultOptions allows a simple place where decoders can automatically register
 // themselves, as well as a simple way to find what is configured by default.
 // Most extensions will register themselves using init().  It is safe to change
@@ -81,7 +74,12 @@ func (c *Config) With(opts ...Option) error {
 
 	raw := append(c.rawOpts, opts...)
 
-	full := alwaysOptions
+	// These options must always be present to prevent panics, etc.
+	full := []Option{
+		SortRecordsNaturally(),
+		AlterKeyCase(nil),
+		SetKeyDelimiter("."),
+	}
 
 	if !ignoreDefaultOpts(raw) {
 		full = append(full, DefaultOptions...)
