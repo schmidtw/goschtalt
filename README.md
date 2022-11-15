@@ -20,7 +20,8 @@ A simple configuration library that supports multiple files and formats.
 
 ## API Stability
 
-This package has not yet released, so APIs are subject to change for a bit longer.
+This package has not yet released to 1.x yet, so APIs are subject to change for
+a bit longer.
 
 ## Extensions
 
@@ -53,6 +54,16 @@ from.
 |--------|-------|-----------|-------------|
 | [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt/extensions/encoders/yaml)](https://goreportcard.com/report/github.com/schmidtw/goschtalt/extensions/encoders/yaml) | [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt/extensions/encoders/yaml)](https://pkg.go.dev/github.com/schmidtw/goschtalt/extensions/encoders/yaml) | `encoders/yaml` | A YAML/YML configuration encoder. |
 
+
+## Dependencies
+
+There are only two production dependencies in the core goschtalt code beyond the
+go standard library.  The rest are testing dependencies.
+
+Production dependencies:
+
+* github.com/mitchellh/hashstructure
+* github.com/mitchellh/mapstructure
 
 ## Examples
 

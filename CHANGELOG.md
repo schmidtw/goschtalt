@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [v0.0.1]
+
 - Initial release.
 
-[Unreleased]: https://github.com/schmidtw/goschtalt/compare/6695413a578fab239f45356dc2628a9b3df825a9..HEAD
+[Unreleased]: https://github.com/schmidtw/goschtalt/compare/v0.0.1..HEAD
+[v0.0.1]: https://github.com/schmidtw/goschtalt/compare/6695413a578fab239f45356dc2628a9b3df825a9..v0.0.1
