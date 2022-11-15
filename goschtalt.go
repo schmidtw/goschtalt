@@ -139,7 +139,7 @@ func (c *Config) Compile() error {
 }
 
 // compile is the internal compile function.
-func (c *Config) compile() error {
+func (c *Config) compile() error { //nolint:funlen
 	c.explainCompile.Reset()
 
 	now := time.Now()
@@ -164,7 +164,7 @@ func (c *Config) compile() error {
 		Map: make(map[string]meta.Object),
 	}
 
-	var records []string
+	var records []string //nolint:prealloc
 
 	fmt.Fprintln(&c.explainCompile, "## Records processed in order.")
 	if len(full) == 0 {
