@@ -4,110 +4,125 @@
 package goschtalt
 
 import (
+	"fmt"
 	"path/filepath"
+	"sort"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/mitchellh/hashstructure"
+	"github.com/schmidtw/goschtalt/pkg/decoder"
+	"github.com/schmidtw/goschtalt/pkg/encoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
-var DefaultOptions = []Option{
-	FileSortOrderNatural(),
-	KeyCaseLower(),
-	KeyDelimiter("."),
-}
-
-// Add options to validate things so the code is a cleaner.
-var validatorOptions = []Option{
-	validateSorter(),
-	validateKeyDelimiter(),
-	validateKeySwizzler(),
-}
+// DefaultOptions allows a simple place where decoders can automatically register
+// themselves, as well as a simple way to find what is configured by default.
+// Most extensions will register themselves using init().  It is safe to change
+// this value at pretty much any time & compile afterwards; just know this value
+// is not mutex protected so if you are changing it after init() the synchronization
+// is up to the caller.
+var DefaultOptions = []Option{}
 
 // Config is a configurable, prioritized, merging configuration registry.
 type Config struct {
-	mutex           sync.Mutex
-	files           []string
-	tree            meta.Object
-	hasBeenCompiled bool
+	mutex          sync.Mutex
+	records        []string
+	tree           meta.Object
+	compiledAt     time.Time
+	hash           uint64
+	explainOptions strings.Builder
+	explainCompile strings.Builder
 
-	// options based things
-	autoCompile      bool
-	ignoreDefaults   bool
-	decoders         *decoderRegistry
-	encoders         *encoderRegistry
-	groups           []Group
-	sorter           func([]fileObject)
-	keyDelimiter     string
-	keySwizzler      func(string) string
-	unmarshalOptions []MapstructureOption
-	expansions       []Expand
+	rawOpts []Option
+	opts    options
 }
 
-// Option is the type used for options.
-type Option func(c *Config) error
-
-func newConfig() *Config {
-	return &Config{
-		tree:     meta.Object{},
-		decoders: newDecoderRegistry(),
-		encoders: newEncoderRegistry(),
-	}
-}
-
-// New creates a new goschtalt configuration instance.
+// New creates a new goschtalt configuration instance with any number of options.
 func New(opts ...Option) (*Config, error) {
-	// Check to see if an option indicates to not apply defaults on a
-	// throw-away object.
-	tmp := newConfig()
-	err := tmp.with(opts...)
-	if err != nil {
+	c := Config{
+		tree: meta.Object{},
+		opts: options{
+			decoders: newRegistry[decoder.Decoder](),
+			encoders: newRegistry[encoder.Encoder](),
+		},
+	}
+
+	hash, _ := hashstructure.Hash(c.tree, nil)
+	c.hash = hash
+
+	if err := c.With(opts...); err != nil {
 		return nil, err
 	}
 
-	var allOpts []Option
-	if !tmp.ignoreDefaults {
-		allOpts = append(allOpts, DefaultOptions...)
-	}
-	allOpts = append(allOpts, opts...)
-	allOpts = append(allOpts, validatorOptions...)
-
-	c := newConfig()
-
-	err = c.With(allOpts...)
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
+	return &c, nil
 }
 
-// With takes a list of options and applies them.
+// With takes a list of options and applies them.  Use of With() is optional as
+// New() can take all the same options as well.  If AutoCompile() is not specified
+// Compile() will need to be called to see changes in the configuration based on
+// the new options.
 func (c *Config) With(opts ...Option) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	err := c.with(opts...)
-	if err != nil {
-		return err
+	cfg := options{
+		decoders: newRegistry[decoder.Decoder](),
+		encoders: newRegistry[encoder.Encoder](),
 	}
 
-	if c.autoCompile {
-		if err := c.compile(); err != nil {
-			return err
+	c.explainOptions.Reset()
+	c.explainCompile.Reset()
+
+	fmt.Fprintf(&c.explainOptions, "# Start of options processing\n\n")
+
+	raw := append(c.rawOpts, opts...)
+
+	// These options must always be present to prevent panics, etc.
+	full := []Option{
+		SortRecordsNaturally(),
+		AlterKeyCase(nil),
+		SetKeyDelimiter("."),
+	}
+
+	if !ignoreDefaultOpts(raw) {
+		full = append(full, DefaultOptions...)
+	}
+
+	full = append(full, c.rawOpts...)
+
+	full = append(full, opts...)
+
+	fmt.Fprintln(&c.explainOptions, "## Options in effect")
+	i := 1
+	for _, opt := range full {
+		if opt != nil {
+			fmt.Fprintf(&c.explainOptions, "  %d. %s\n", i, opt.String())
+			i++
+			if err := opt.apply(&cfg); err != nil {
+				return err
+			}
 		}
 	}
 
-	return nil
-}
+	// The options are valid, record them.
+	c.opts = cfg
+	c.rawOpts = raw
 
-// with is the internal looper for applying options.
-func (c *Config) with(opts ...Option) error {
-	for _, opt := range opts {
-		if opt != nil {
-			if err := opt(c); err != nil {
-				return err
-			}
+	fmt.Fprintf(&c.explainOptions, "\n## File extensions supported:\n")
+	exts := c.opts.decoders.extensions()
+	if len(exts) == 0 {
+		fmt.Fprintln(&c.explainOptions, "  none")
+	} else {
+		for _, ext := range exts {
+			fmt.Fprintf(&c.explainOptions, "  - %s\n", ext)
+		}
+	}
+
+	if c.opts.autoCompile {
+		if err := c.compile(); err != nil {
+			return err
 		}
 	}
 
@@ -124,95 +139,163 @@ func (c *Config) Compile() error {
 }
 
 // compile is the internal compile function.
-func (c *Config) compile() error {
-	var cfgs []fileObject
+func (c *Config) compile() error { //nolint:funlen
+	c.explainCompile.Reset()
 
-	for _, group := range c.groups {
-		tmp, err := group.walk(c.decoders, c.keyDelimiter)
-		if err != nil {
-			return err
-		}
-		cfgs = append(cfgs, tmp...)
+	now := time.Now()
+
+	fmt.Fprintf(&c.explainCompile, "# Start of compilation at %s\n\n", now.Format(time.RFC3339))
+
+	cfgs, err := filegroupsToRecords(c.opts.keyDelimiter, c.opts.filegroups, c.opts.decoders)
+	if err != nil {
+		fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
+		return err
 	}
+
+	cfgs = append(cfgs, c.opts.values...)
+
+	sorter := c.getSorter()
+	sorter(cfgs)
+
+	defaultCount := len(c.opts.defaults)
+	full := append(c.opts.defaults, cfgs...)
 
 	merged := meta.Object{
 		Map: make(map[string]meta.Object),
 	}
-	if len(cfgs) == 0 {
-		c.tree = merged
-		c.hasBeenCompiled = true
-		return nil
+
+	var records []string //nolint:prealloc
+
+	fmt.Fprintln(&c.explainCompile, "## Records processed in order.")
+	if len(full) == 0 {
+		fmt.Fprintln(&c.explainCompile, "  none")
+		goto done
 	}
 
-	c.sorter(cfgs)
-	var files []string
+	records = make([]string, 0, len(full))
+	for i, cfg := range full {
+		def := ""
+		if i < defaultCount {
+			def = " <default>"
+		}
 
-	for _, cfg := range cfgs {
+		fmt.Fprintf(&c.explainCompile, "  %d. %s%s\n", i+1, cfg.name, def)
+
+		// Build an incremental snapshot of the configuration at this step so
+		// user provided functions can use the cfg values to acquire more if
+		// needed.
+		incremental := merged
+		for _, exp := range c.opts.expansions {
+			var err error
+			incremental, err = incremental.ToExpanded(exp.maximum, exp.origin, exp.start, exp.end, exp.mapper)
+			if err != nil {
+				fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
+				return err
+			}
+		}
+		unmarshalFn := func(key string, result any, opts ...UnmarshalOption) error {
+			// Pass in the merged value from this context and stage of processing.
+			return c.unmarshal(key, result, incremental, opts...)
+		}
+
+		if err = cfg.fetch(c.opts.keyDelimiter, unmarshalFn, c.opts.decoders, c.opts.valueOptions); err != nil {
+			fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
+			return err
+		}
 		var err error
-		subtree := cfg.Obj.AlterKeyCase(c.keySwizzler)
+		subtree := cfg.tree.AlterKeyCase(c.opts.keySwizzler)
 		merged, err = merged.Merge(subtree)
 		if err != nil {
+			fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 			return err
 		}
-		files = append(files, cfg.File)
+		records = append(records, cfg.name)
 	}
 
-	for _, e := range c.expansions {
+	fmt.Fprintf(&c.explainCompile, "\n## Variable expansions processed in order.\n")
+	if len(c.opts.expansions) == 0 {
+		fmt.Fprintln(&c.explainCompile, "  none")
+	}
+	for i, exp := range c.opts.expansions {
+		fmt.Fprintf(&c.explainCompile, "  %d. %s\n", i+1, exp.String())
+
 		var err error
-		merged, err = merged.ToExpanded(e.Maximum, e.Name, e.Start, e.End, e.Mapper)
+		merged, err = merged.ToExpanded(exp.maximum, exp.origin, exp.start, exp.end, exp.mapper)
 		if err != nil {
+			fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 			return err
 		}
 	}
 
-	c.files = files
+done:
+
+	fmt.Fprintf(&c.explainCompile, "\n## Calculate the hash.\n")
+	hash, err := hashstructure.Hash(merged, nil)
+	if err != nil {
+		fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
+		return err
+	}
+	fmt.Fprintf(&c.explainCompile, "  %d\n", hash)
+
+	c.records = records
 	c.tree = merged
-	c.hasBeenCompiled = true
+	c.compiledAt = now
+	c.hash = hash
 	return nil
 }
 
+// getSorter does the work of making a sorter for the objects we need to sort.
+func (c *Config) getSorter() func([]record) {
+	return func(a []record) {
+		sort.SliceStable(a, func(i, j int) bool {
+			return c.opts.sorter(a[i].name, a[j].name)
+		})
+	}
+}
+
 // ShowOrder is a helper function that provides the order the configuration
-// files were combined based on the present configuration.  This can only
+// records were combined based on the present configuration.  This can only
 // be called after the Compile() has been called.
 func (c *Config) ShowOrder() ([]string, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	if !c.hasBeenCompiled {
+	if c.compiledAt.Equal(time.Time{}) {
 		return []string{}, ErrNotCompiled
 	}
 
-	return c.files, nil
+	return c.records, nil
 }
 
 // OrderList is a helper function that sorts a caller provided list of filenames
 // exectly the same way the Config object would sort them when reading and
-// merging the files when the configuration is being compiled.  It also filters
+// merging the records when the configuration is being compiled.  It also filters
 // the list based on the decoders present.
-func (c *Config) OrderList(list []string) (files []string) {
+func (c *Config) OrderList(list []string) []string {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	var cfgs []fileObject
-
-	for _, item := range list {
-		cfgs = append(cfgs, fileObject{File: item})
+	cfgs := make([]record, len(list))
+	for i, item := range list {
+		cfgs[i] = record{name: item}
 	}
 
-	c.sorter(cfgs)
+	sorter := c.getSorter()
+	sorter(cfgs)
 
+	var out []string
 	for _, cfg := range cfgs {
-		file := cfg.File
+		file := cfg.name
 
 		// Only include the file if there is a decoder for it.
 		ext := strings.TrimPrefix(filepath.Ext(file), ".")
-		_, err := c.decoders.find(ext)
+		_, err := c.opts.decoders.find(ext)
 		if err == nil {
-			files = append(files, file)
+			out = append(out, file)
 		}
 	}
 
-	return files
+	return out
 }
 
 // Extensions returns the extensions this config object supports.
@@ -220,5 +303,32 @@ func (c *Config) Extensions() []string {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	return c.decoders.extensions()
+	return c.opts.decoders.extensions()
+}
+
+// CompiledAt returns when the configuration was compiled.
+func (c *Config) CompiledAt() time.Time {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	return c.compiledAt
+}
+
+// Hash returns the hash of the configuration; even if the configuration is
+// empty.
+func (c *Config) Hash() uint64 {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	return c.hash
+}
+
+// Explain returns a human focused explanation of how the configuration was
+// arrived at.  Each time the options change or the configuration is compiled
+// the explanation will be updated.
+func (c *Config) Explain() string {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	return c.explainOptions.String() + "\n" + c.explainCompile.String()
 }

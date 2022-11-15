@@ -6,12 +6,10 @@ package goschtalt
 import "errors"
 
 var (
-	ErrDecoding       = errors.New("decoding error")
-	ErrDuplicateFound = errors.New("duplicate found")
-	ErrEncoding       = errors.New("encoding error")
-	ErrNotCompiled    = errors.New("the Compile() function must be called first")
-	ErrCodecNotFound  = errors.New("encoder/decoder not found")
-	ErrTypeMismatch   = errors.New("type mismatch")
-	ErrConfigMissing  = errors.New("Config is missing a required configuration")
-	ErrInvalidInput   = errors.New("input is invalid")
+	ErrDecoding      = errors.New("decoding error")
+	ErrEncoding      = errors.New("encoding error")
+	ErrNotCompiled   = errors.New("the Compile() function must be called first")
+	ErrCodecNotFound = errors.New("encoder/decoder not found")
+	ErrInvalidInput  = errors.New("input is invalid")
+	ErrFileMissing   = errors.New("required file is missing")
 )

@@ -13,10 +13,12 @@
 //
 // # What problems is Goschtalt trying to solve?
 //
-//   - Multiple configuration files allow for better flexibility for deployment.
-//   - Low dependency count.
+//   - Merging of multiple configuration files and configuration sources allow
+//     for better flexibility for deployment.
+//   - Configuration is incrementally compiled allowing later configuration to
+//     use earlier configuration.
+//   - Clear explanation how the configuration was derived.
 //   - User customizable via Options.
-//   - Able to collect configuration files from anywhere via the io.fs interface.
 //
 // # Features
 //
@@ -28,11 +30,13 @@
 //     'append', 'prepend', 'clear')
 //   - Configuration file groups include a reference to the specific io.fs, so
 //     configuration may come from anything that implements that interface.
-//   - Defaults are set via goschtalt.DefaultOptions, but can be replace when
-//     invoking a new goschtalt object.
+//   - Package defaults are set via goschtalt.DefaultOptions, but can be replaced
+//     when invoking a new goschtalt.Config object.
+//   - Default values are supported at runtime.
+//   - Variable expansion in the configuration tree is supported for both
+//     environment variables as well as custom values.
 //   - No singleton objects.
-//   - Only 1 non-standard library dependency on `mitchellh/mapstructure`, which
-//     has no dependencies outside the standard library.
+//   - Low dependency count.
 //
 // # Where do I find configuration file encoders/decoders?
 //
@@ -41,7 +45,6 @@
 //
 // https://github.com/schmidtw/goschtalt/tree/main/extensions/
 //
-//	decoders/cli        - decoder for command line arguments
 //	decoders/env        - decoder for environment variables
 //	decoders/json       - decoder for json files
 //	decoders/properties - decoder for properties files
@@ -86,7 +89,7 @@
 //   - secret  - this special command marks the field as secret
 //
 // Maps support the following instructions:
-//   - splice  - merge the leaf nodes if possible vs. replacing the map entirely
+//   - splice  - merge the leaf nodes if possible instead of replacing the map entirely
 //
 // Arrays support the following instructions:
 //   - append  - append this array to the existing array
@@ -104,7 +107,7 @@
 //	    - 3
 //	    - 4
 //
-// The order of the instructions doesn't matter, nor does extra whitespece around
+// The order of the instructions doesn't matter, nor does extra spaces around
 // the instructions.  You may comma separate them, or you may just use a space.
 // But you can only have one or two instructions (one MUST be secret if there are
 // two.

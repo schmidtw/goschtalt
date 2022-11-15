@@ -6,8 +6,10 @@ package goschtalt
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/schmidtw/goschtalt/pkg/encoder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -27,44 +29,44 @@ func TestMarshal(t *testing.T) {
 		{
 			description: "Import and export a normal tree.",
 			input:       `{"foo":"bar"}`,
-			opts:        []MarshalOption{UseFormat("json")},
+			opts:        []MarshalOption{FormatAs("json")},
 			expected:    `{"foo":"bar"}`,
 		}, {
 			description: "Import and export a normal tree, with an empty option.",
 			input:       `{"foo":"bar"}`,
-			opts:        []MarshalOption{UseFormat("json"), zeroOpt},
+			opts:        []MarshalOption{FormatAs("json"), zeroOpt},
 			expected:    `{"foo":"bar"}`,
 		}, {
 			description: "Import and export a tree with a secret.",
 			input:       `{"foo((secret))":"bar"}`,
-			opts:        []MarshalOption{UseFormat("json")},
+			opts:        []MarshalOption{FormatAs("json")},
 			expected:    `{"foo":"bar"}`,
 		}, {
 			description: "Import and export a tree with a redacted secret.",
 			input:       `{"foo((secret))":"bar"}`,
-			opts:        []MarshalOption{UseFormat("json"), RedactSecrets(true)},
+			opts:        []MarshalOption{FormatAs("json"), RedactSecrets(true)},
 			expected:    `{"foo":"REDACTED"}`,
 		}, {
 			description: "Import and export a tree with orgins.",
 			input:       `{"foo":"bar"}`,
-			opts:        []MarshalOption{UseFormat("json"), IncludeOrigins(true)},
+			opts:        []MarshalOption{FormatAs("json"), IncludeOrigins(true)},
 			expected:    `{"Origins":[{"File":"file","Line":1,"Col":123}],"Array":null,"Map":{"foo":{"Origins":[{"File":"file","Line":2,"Col":123}],"Array":null,"Map":null,"Value":"bar"}},"Value":null}`,
 		}, {
 			description: "Not compiled.",
 			input:       `{"foo":"bar"}`,
 			notCompiled: true,
-			opts:        []MarshalOption{UseFormat("json")},
+			opts:        []MarshalOption{FormatAs("json")},
 			expectedErr: ErrNotCompiled,
 		}, {
 			description: "No format exporter found.",
 			input:       `{"foo":"bar"}`,
-			opts:        []MarshalOption{UseFormat("unsupported")},
+			opts:        []MarshalOption{FormatAs("unsupported")},
 			expectedErr: ErrCodecNotFound,
 		}, {
 			description: "No format exporter found.",
 			input:       `{"foo":"bar"}`,
 			noEncoders:  true,
-			opts:        []MarshalOption{UseFormat("json")},
+			opts:        []MarshalOption{FormatAs("json")},
 			expectedErr: ErrCodecNotFound,
 		},
 	}
@@ -76,16 +78,23 @@ func TestMarshal(t *testing.T) {
 			tree, err := decode("file", tc.input).ResolveCommands()
 			require.NoError(err)
 
+			now := time.Time{}
+			if !tc.notCompiled {
+				now = time.Now()
+			}
+
 			c := Config{
-				encoders:        newEncoderRegistry(),
-				tree:            tree,
-				hasBeenCompiled: !tc.notCompiled,
-				keySwizzler:     strings.ToLower,
-				keyDelimiter:    ".",
+				tree:       tree,
+				compiledAt: now,
+				opts: options{
+					encoders:     newRegistry[encoder.Encoder](),
+					keySwizzler:  strings.ToLower,
+					keyDelimiter: ".",
+				},
 			}
 
 			if !tc.noEncoders {
-				require.NoError(c.encoders.register(&testEncoder{extensions: []string{"json"}}))
+				c.opts.encoders.register(&testEncoder{extensions: []string{"json"}})
 			}
 
 			got, err := c.Marshal(tc.opts...)

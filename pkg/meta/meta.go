@@ -94,9 +94,9 @@ func (o Object) Kind() int {
 
 // OriginString provides the string for all origins for this Object.
 func (obj Object) OriginString() string {
-	var list []string
-	for _, v := range obj.Origins {
-		list = append(list, v.String())
+	list := make([]string, len(obj.Origins))
+	for i, v := range obj.Origins {
+		list[i] = v.String()
 	}
 
 	return strings.Join(list, ", ")
@@ -174,8 +174,14 @@ func (obj Object) ToRaw() any {
 }
 
 // ObjectFromRaw converts a native go tree into the equivalent Object tree structure.
-func ObjectFromRaw(in any) (obj Object) {
+func ObjectFromRaw(in any, at ...string) (obj Object) {
 	obj.Origins = []Origin{}
+
+	if len(at) > 0 && len(at[0]) > 0 {
+		obj.Map = make(map[string]Object)
+		obj.Map[at[0]] = ObjectFromRaw(in, at[1:]...)
+		return obj
+	}
 
 	switch in := in.(type) {
 	case []any:
@@ -541,109 +547,124 @@ func (obj Object) Merge(next Object) (Object, error) {
 
 // merge does the actual merging of the trees.
 func (obj Object) merge(cmd command, next Object) (Object, error) {
-	kind := obj.Kind()
-	if kind == Value {
-		rv := obj
-		switch cmd.cmd {
-		case cmdReplace, "":
-			var err error
-			rv, err = next.resolveCommands(obj.secret)
-			if err != nil {
-				return Object{}, err
-			}
-		case cmdKeep:
-		case cmdFail:
-			return Object{}, ErrConflict
-		}
-
-		rv.secret = cmd.secret
-		return rv, nil
+	switch obj.Kind() {
+	case Value:
+		return obj.mergeValue(cmd, next)
+	case Array:
+		return obj.mergeArray(cmd, next)
 	}
+	return obj.mergeMap(cmd, next)
+}
 
-	if kind == Array {
-		rv := obj
-		next, err := next.resolveCommands(obj.secret)
-		if err != nil {
-			return Object{}, err
-		}
-		switch cmd.cmd {
-		case cmdAppend, "":
-			if obj.secret || next.secret || cmd.secret {
-				rv.secret = true
-			}
-			rv.Origins = append(obj.Origins, next.Origins...)
-			rv.Array = append(obj.Array, next.Array...)
-		case cmdPrepend:
-			if obj.secret || next.secret || cmd.secret {
-				rv.secret = true
-			}
-			rv.Origins = append(next.Origins, obj.Origins...)
-			rv.Array = append(next.Array, obj.Array...)
-		case cmdReplace:
-			rv.secret = cmd.secret
-			rv = next
-		case cmdKeep:
-		case cmdFail:
-			return Object{}, ErrConflict
-		}
-		return rv, nil
-	}
-
+// mergeValue merges two values.  Don't directly call this, call merge() instead.
+func (obj Object) mergeValue(cmd command, next Object) (Object, error) {
 	rv := obj
 	switch cmd.cmd {
-	case cmdSplice, "":
-		for key, val := range next.Map {
-			newCmd, err := getValidCmd(key, val)
-			if err != nil {
-				return Object{}, err
-			}
-
-			existing, found := obj.Map[newCmd.final]
-			if !found {
-				// Merging with no conflicts.
-				v, err := val.resolveCommands(newCmd.secret)
-				if err != nil {
-					return Object{}, err
-				}
-				obj.Map[newCmd.final] = v
-				continue
-			}
-
-			if existing.Kind() == val.Kind() {
-				v, err := existing.merge(newCmd, val)
-				if err != nil {
-					return Object{}, err
-				}
-				obj.Map[newCmd.final] = v
-				continue
-			}
-
-			switch newCmd.cmd {
-			case cmdSplice, cmdReplace, "":
-				v, err := val.resolveCommands(newCmd.secret)
-				if err != nil {
-					return Object{}, err
-				}
-				obj.Map[newCmd.final] = v
-			case cmdKeep:
-				obj.Map[newCmd.final] = existing
-			case cmdFail:
-				return Object{}, ErrConflict
-			}
-		}
-	case cmdReplace:
-		v, err := next.resolveCommands(false)
+	case cmdReplace, "":
+		var err error
+		rv, err = next.resolveCommands(obj.secret)
 		if err != nil {
 			return Object{}, err
 		}
-		rv = v
-	case cmdKeep:
 	case cmdFail:
-		return Object{}, ErrConflict
+		return Object{}, fmt.Errorf("%w: merging a value with command 'fail'", ErrConflict)
+	case cmdKeep:
 	}
 
 	rv.secret = cmd.secret
 	return rv, nil
+}
+
+// mergeArray merges two array.  Don't directly call this, call merge() instead.
+func (obj Object) mergeArray(cmd command, next Object) (Object, error) {
+	rv := obj
+	next, err := next.resolveCommands(obj.secret)
+	if err != nil {
+		return Object{}, err
+	}
+	switch cmd.cmd {
+	case cmdAppend, "":
+		if obj.secret || next.secret || cmd.secret {
+			rv.secret = true
+		}
+		rv.Origins = append(obj.Origins, next.Origins...)
+		rv.Array = append(obj.Array, next.Array...)
+	case cmdPrepend:
+		if obj.secret || next.secret || cmd.secret {
+			rv.secret = true
+		}
+		rv.Origins = append(next.Origins, obj.Origins...)
+		rv.Array = append(next.Array, obj.Array...)
+	case cmdReplace:
+		rv.secret = cmd.secret
+		rv = next
+	case cmdKeep:
+	case cmdFail:
+		return Object{}, fmt.Errorf("%w: merging an array with command 'fail'", ErrConflict)
+	}
+	return rv, nil
+}
+
+// mergeMap merges two maps.  Don't directly call this, call merge() instead.
+func (obj Object) mergeMap(cmd command, next Object) (Object, error) {
+	switch cmd.cmd {
+	case cmdFail:
+		return Object{}, fmt.Errorf("%w: merging a map with command 'fail'", ErrConflict)
+	case cmdKeep:
+		return obj, nil
+	case cmdReplace:
+		rv, err := next.resolveCommands(false)
+		if err != nil {
+			return Object{}, err
+		}
+		rv.secret = cmd.secret
+		return rv, nil
+	default:
+	}
+
+	// cmd.cmd == cmdSplice || "":
+	for key, val := range next.Map {
+		newCmd, err := getValidCmd(key, val)
+		if err != nil {
+			return Object{}, err
+		}
+
+		existing, found := obj.Map[newCmd.final]
+		if !found {
+			// Merging with no conflicts.
+			v, err := val.resolveCommands(newCmd.secret)
+			if err != nil {
+				return Object{}, err
+			}
+			obj.Map[newCmd.final] = v
+			continue
+		}
+
+		if existing.Kind() == val.Kind() {
+			v, err := existing.merge(newCmd, val)
+			if err != nil {
+				return Object{}, err
+			}
+			obj.Map[newCmd.final] = v
+			continue
+		}
+
+		switch newCmd.cmd {
+		case cmdSplice, cmdReplace, "":
+			v, err := val.resolveCommands(newCmd.secret)
+			if err != nil {
+				return Object{}, err
+			}
+			obj.Map[newCmd.final] = v
+		case cmdKeep:
+			obj.Map[newCmd.final] = existing
+		case cmdFail:
+			return Object{}, fmt.Errorf("%w: merging map", ErrConflict)
+		}
+	}
+
+	obj.secret = cmd.secret
+	return obj, nil
 }
 
 // getValidCmd gets the command from the key string and validates it is supported.

@@ -90,31 +90,17 @@ func EnvVarConfig(filename, prefix, delimiter string) []goschtalt.Option {
 	}
 	b, err := json.Marshal(inst)
 	if err != nil {
-		return []goschtalt.Option{
-			func(_ *goschtalt.Config) error {
-				return err
-			},
-		}
+		return []goschtalt.Option{goschtalt.WithError(err)}
 	}
 
 	envfs := memfs.New()
 	err = envfs.WriteFile(fn, b, 0755)
 	if err != nil {
-		return []goschtalt.Option{
-			func(_ *goschtalt.Config) error {
-				return err
-			},
-		}
-	}
-
-	group := goschtalt.Group{
-		FS:    envfs,
-		Paths: []string{"."},
+		return []goschtalt.Option{goschtalt.WithError(err)}
 	}
 
 	return []goschtalt.Option{
-		goschtalt.RemoveDecoder(Extension),
-		goschtalt.RegisterDecoder(envDecoder{}),
-		goschtalt.AddFileGroup(group),
+		goschtalt.WithDecoder(envDecoder{}),
+		goschtalt.AddDir(envfs, "."),
 	}
 }
