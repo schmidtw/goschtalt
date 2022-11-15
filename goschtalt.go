@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mitchellh/hashstructure"
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
@@ -27,9 +28,10 @@ var DefaultOptions = []Option{}
 // Config is a configurable, prioritized, merging configuration registry.
 type Config struct {
 	mutex          sync.Mutex
-	files          []string
+	records        []string
 	tree           meta.Object
 	compiledAt     time.Time
+	hash           uint64
 	explainOptions strings.Builder
 	explainCompile strings.Builder
 
@@ -46,6 +48,9 @@ func New(opts ...Option) (*Config, error) {
 			encoders: newRegistry[encoder.Encoder](),
 		},
 	}
+
+	hash, _ := hashstructure.Hash(c.tree, nil)
+	c.hash = hash
 
 	if err := c.With(opts...); err != nil {
 		return nil, err
@@ -159,15 +164,15 @@ func (c *Config) compile() error {
 		Map: make(map[string]meta.Object),
 	}
 
+	var records []string
+
 	fmt.Fprintln(&c.explainCompile, "## Records processed in order.")
 	if len(full) == 0 {
 		fmt.Fprintln(&c.explainCompile, "  none")
-		c.tree = merged
-		c.compiledAt = now
-		return nil
+		goto done
 	}
 
-	files := make([]string, 0, len(full))
+	records = make([]string, 0, len(full))
 	for i, cfg := range full {
 		def := ""
 		if i < defaultCount {
@@ -204,7 +209,7 @@ func (c *Config) compile() error {
 			fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 			return err
 		}
-		files = append(files, cfg.name)
+		records = append(records, cfg.name)
 	}
 
 	fmt.Fprintf(&c.explainCompile, "\n## Variable expansions processed in order.\n")
@@ -222,9 +227,20 @@ func (c *Config) compile() error {
 		}
 	}
 
-	c.files = files
+done:
+
+	fmt.Fprintf(&c.explainCompile, "\n## Calculate the hash.\n")
+	hash, err := hashstructure.Hash(merged, nil)
+	if err != nil {
+		fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
+		return err
+	}
+	fmt.Fprintf(&c.explainCompile, "  %d\n", hash)
+
+	c.records = records
 	c.tree = merged
 	c.compiledAt = now
+	c.hash = hash
 	return nil
 }
 
@@ -238,7 +254,7 @@ func (c *Config) getSorter() func([]record) {
 }
 
 // ShowOrder is a helper function that provides the order the configuration
-// files were combined based on the present configuration.  This can only
+// records were combined based on the present configuration.  This can only
 // be called after the Compile() has been called.
 func (c *Config) ShowOrder() ([]string, error) {
 	c.mutex.Lock()
@@ -248,14 +264,14 @@ func (c *Config) ShowOrder() ([]string, error) {
 		return []string{}, ErrNotCompiled
 	}
 
-	return c.files, nil
+	return c.records, nil
 }
 
 // OrderList is a helper function that sorts a caller provided list of filenames
 // exectly the same way the Config object would sort them when reading and
-// merging the files when the configuration is being compiled.  It also filters
+// merging the records when the configuration is being compiled.  It also filters
 // the list based on the decoders present.
-func (c *Config) OrderList(list []string) (files []string) {
+func (c *Config) OrderList(list []string) []string {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
@@ -267,6 +283,7 @@ func (c *Config) OrderList(list []string) (files []string) {
 	sorter := c.getSorter()
 	sorter(cfgs)
 
+	var out []string
 	for _, cfg := range cfgs {
 		file := cfg.name
 
@@ -274,11 +291,11 @@ func (c *Config) OrderList(list []string) (files []string) {
 		ext := strings.TrimPrefix(filepath.Ext(file), ".")
 		_, err := c.opts.decoders.find(ext)
 		if err == nil {
-			files = append(files, file)
+			out = append(out, file)
 		}
 	}
 
-	return files
+	return out
 }
 
 // Extensions returns the extensions this config object supports.
@@ -287,6 +304,23 @@ func (c *Config) Extensions() []string {
 	defer c.mutex.Unlock()
 
 	return c.opts.decoders.extensions()
+}
+
+// CompiledAt returns when the configuration was compiled.
+func (c *Config) CompiledAt() time.Time {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	return c.compiledAt
+}
+
+// Hash returns the hash of the configuration; even if the configuration is
+// empty.
+func (c *Config) Hash() uint64 {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	return c.hash
 }
 
 // Explain returns a human focused explanation of how the configuration was

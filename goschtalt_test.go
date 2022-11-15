@@ -9,6 +9,7 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/schmidtw/goschtalt/pkg/meta"
@@ -496,6 +497,79 @@ func TestExtensions(t *testing.T) {
 			got := cfg.Extensions()
 
 			assert.Empty(cmp.Diff(tc.expect, got))
+		})
+	}
+}
+
+func TestHash(t *testing.T) {
+	tests := []struct {
+		description string
+		opts        []Option
+		expect      uint64
+	}{
+		{
+			description: "An empty list",
+			expect:      0xd199e2449a8d3676,
+		}, {
+			description: "A simple list",
+			opts: []Option{
+				AddValue("rec", "", map[string]string{"hello": "world"}),
+				AutoCompile(),
+			},
+			expect: 0x98d4eff95a6db2d3,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			cfg, err := New(tc.opts...)
+			require.NotNil(cfg)
+			require.NoError(err)
+
+			got := cfg.Hash()
+
+			assert.Equal(tc.expect, got)
+		})
+	}
+}
+
+func TestCompiledAt(t *testing.T) {
+	tests := []struct {
+		description string
+		opts        []Option
+		timeZero    bool
+	}{
+		{
+			description: "An empty list",
+			timeZero:    true,
+		}, {
+			description: "A simple list",
+			opts: []Option{
+				AutoCompile(),
+			},
+			timeZero: false,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			cfg, err := New(tc.opts...)
+			require.NotNil(cfg)
+			require.NoError(err)
+
+			got := cfg.CompiledAt()
+
+			if tc.timeZero {
+				assert.Equal(time.Time{}, got)
+			} else {
+				assert.NotEqual(time.Time{}, got)
+			}
 		})
 	}
 }
