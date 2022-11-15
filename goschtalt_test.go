@@ -394,6 +394,10 @@ func TestCompile(t *testing.T) {
 				err = cfg.Compile()
 			}
 
+			if cfg != nil {
+				fmt.Println(cfg.Explain())
+			}
+
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				require.NotNil(cfg)

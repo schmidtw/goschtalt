@@ -3,7 +3,10 @@
 
 package goschtalt
 
-import "fmt"
+import (
+	"fmt"
+	"time"
+)
 
 // Marshal renders the into the format specified ('json', 'yaml' or other extensions
 // the Codecs provide and if adding comments should be attempted.  If a format
@@ -12,7 +15,7 @@ import "fmt"
 func (c *Config) Marshal(opts ...MarshalOption) ([]byte, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
-	if !c.compiled {
+	if c.compiledAt.Equal(time.Time{}) {
 		return nil, ErrNotCompiled
 	}
 

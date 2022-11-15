@@ -6,6 +6,7 @@ package goschtalt
 import (
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/schmidtw/goschtalt/pkg/encoder"
@@ -77,9 +78,14 @@ func TestMarshal(t *testing.T) {
 			tree, err := decode("file", tc.input).ResolveCommands()
 			require.NoError(err)
 
+			now := time.Time{}
+			if !tc.notCompiled {
+				now = time.Now()
+			}
+
 			c := Config{
-				tree:     tree,
-				compiled: !tc.notCompiled,
+				tree:       tree,
+				compiledAt: now,
 				opts: options{
 					encoders:     newRegistry[encoder.Encoder](),
 					keySwizzler:  strings.ToLower,

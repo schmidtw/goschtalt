@@ -9,6 +9,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/encoder"
@@ -35,7 +36,7 @@ type Config struct {
 	mutex          sync.Mutex
 	files          []string
 	tree           meta.Object
-	compiled       bool
+	compiledAt     time.Time
 	explainOptions strings.Builder
 	explainCompile strings.Builder
 
@@ -76,7 +77,7 @@ func (c *Config) With(opts ...Option) error {
 	c.explainOptions.Reset()
 	c.explainCompile.Reset()
 
-	fmt.Fprintf(&c.explainOptions, "Start of options processing.\n\n")
+	fmt.Fprintf(&c.explainOptions, "# Start of options processing\n\n")
 
 	raw := append(c.rawOpts, opts...)
 
@@ -90,7 +91,7 @@ func (c *Config) With(opts ...Option) error {
 
 	full = append(full, opts...)
 
-	fmt.Fprintln(&c.explainOptions, "Options in effect:")
+	fmt.Fprintln(&c.explainOptions, "## Options in effect")
 	i := 1
 	for _, opt := range full {
 		if opt != nil {
@@ -106,7 +107,7 @@ func (c *Config) With(opts ...Option) error {
 	c.opts = cfg
 	c.rawOpts = raw
 
-	fmt.Fprintf(&c.explainOptions, "\nFile extensions supported:\n")
+	fmt.Fprintf(&c.explainOptions, "\n## File extensions supported:\n")
 	exts := c.opts.decoders.extensions()
 	if len(exts) == 0 {
 		fmt.Fprintln(&c.explainOptions, "  none")
@@ -138,10 +139,13 @@ func (c *Config) Compile() error {
 func (c *Config) compile() error {
 	c.explainCompile.Reset()
 
-	fmt.Fprintf(&c.explainCompile, "Start of compilation.\n\n")
+	now := time.Now()
+
+	fmt.Fprintf(&c.explainCompile, "# Start of compilation at %s\n\n", now.Format(time.RFC3339))
 
 	cfgs, err := filegroupsToRecords(c.opts.keyDelimiter, c.opts.filegroups, c.opts.decoders)
 	if err != nil {
+		fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 		return err
 	}
 
@@ -150,29 +154,39 @@ func (c *Config) compile() error {
 	sorter := c.getSorter()
 	sorter(cfgs)
 
+	defaultCount := len(c.opts.defaults)
 	full := append(c.opts.defaults, cfgs...)
 
 	merged := meta.Object{
 		Map: make(map[string]meta.Object),
 	}
 
-	fmt.Fprintln(&c.explainCompile, "Records processed in order.")
+	fmt.Fprintln(&c.explainCompile, "## Records processed in order.")
 	if len(full) == 0 {
 		fmt.Fprintln(&c.explainCompile, "  none")
 		c.tree = merged
-		c.compiled = true
+		c.compiledAt = now
 		return nil
 	}
 
 	files := make([]string, 0, len(full))
 	for i, cfg := range full {
-		fmt.Fprintf(&c.explainCompile, "  %d. %s\n", i+1, cfg.name)
+		def := ""
+		if i < defaultCount {
+			def = " <default>"
+		}
 
+		fmt.Fprintf(&c.explainCompile, "  %d. %s%s\n", i+1, cfg.name, def)
+
+		// Build an incremental snapshot of the configuration at this step so
+		// user provided functions can use the cfg values to acquire more if
+		// needed.
 		incremental := merged
 		for _, exp := range c.opts.expansions {
 			var err error
 			incremental, err = incremental.ToExpanded(exp.maximum, exp.origin, exp.start, exp.end, exp.mapper)
 			if err != nil {
+				fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 				return err
 			}
 		}
@@ -182,18 +196,20 @@ func (c *Config) compile() error {
 		}
 
 		if err = cfg.fetch(c.opts.keyDelimiter, unmarshalFn, c.opts.decoders, c.opts.valueOptions); err != nil {
+			fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 			return err
 		}
 		var err error
 		subtree := cfg.tree.AlterKeyCase(c.opts.keySwizzler)
 		merged, err = merged.Merge(subtree)
 		if err != nil {
+			fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 			return err
 		}
 		files = append(files, cfg.name)
 	}
 
-	fmt.Fprintf(&c.explainCompile, "\nVariable expansions processed in order.\n")
+	fmt.Fprintf(&c.explainCompile, "\n## Variable expansions processed in order.\n")
 	if len(c.opts.expansions) == 0 {
 		fmt.Fprintln(&c.explainCompile, "  none")
 	}
@@ -203,13 +219,14 @@ func (c *Config) compile() error {
 		var err error
 		merged, err = merged.ToExpanded(exp.maximum, exp.origin, exp.start, exp.end, exp.mapper)
 		if err != nil {
+			fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 			return err
 		}
 	}
 
 	c.files = files
 	c.tree = merged
-	c.compiled = true
+	c.compiledAt = now
 	return nil
 }
 
@@ -229,7 +246,7 @@ func (c *Config) ShowOrder() ([]string, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	if !c.compiled {
+	if c.compiledAt.Equal(time.Time{}) {
 		return []string{}, ErrNotCompiled
 	}
 

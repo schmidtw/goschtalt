@@ -189,9 +189,14 @@ func TestUnmarshal(t *testing.T) {
 			tree, err := decode("file", tc.input).ResolveCommands()
 			require.NoError(err)
 
+			now := time.Time{}
+			if !tc.notCompiled {
+				now = time.Now()
+			}
+
 			c := Config{
-				tree:     tree,
-				compiled: !tc.notCompiled,
+				tree:       tree,
+				compiledAt: now,
 				opts: options{
 					keySwizzler:  strings.ToLower,
 					keyDelimiter: ".",

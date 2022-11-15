@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/mapstructure"
 	"github.com/schmidtw/goschtalt/pkg/meta"
@@ -60,7 +61,7 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
-	if !c.compiled {
+	if c.compiledAt.Equal(time.Time{}) {
 		return ErrNotCompiled
 	}
 
