@@ -8,7 +8,7 @@ A simple configuration library that supports multiple files and formats.
 [![Build Status](https://github.com/schmidtw/goschtalt/actions/workflows/ci.yml/badge.svg)](https://github.com/schmidtw/goschtalt/actions/workflows/ci.yml)
 [![codecov.io](http://codecov.io/github/schmidtw/goschtalt/coverage.svg?branch=main)](http://codecov.io/github/schmidtw/goschtalt?branch=main)
 [![Go Report Card](https://goreportcard.com/badge/github.com/schmidtw/goschtalt)](https://goreportcard.com/report/github.com/schmidtw/goschtalt)
-[![GitHub Release](https://img.shields.io/github/release/schmidtw/goschtalt.svg)](CHANGELOG.md)
+[![GitHub Release](https://img.shields.io/github/release/schmidtw/goschtalt.svg)](https://github.com/schmidtw/goschtalt/releases)
 [![GoDoc](https://pkg.go.dev/badge/github.com/schmidtw/goschtalt)](https://pkg.go.dev/github.com/schmidtw/goschtalt)
 
 ## Goals & Themes
