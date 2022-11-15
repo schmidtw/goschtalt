@@ -39,6 +39,6 @@ Files: extensions/encoders/yaml/go.mod extensions/encoders/yaml/go.sum
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: Apache-2.0
 
-Files: .golangci.yml .github/* .github/workflow/* go.mod go.sum .gitignore .licensed.yml MAINTAINERS.md
+Files: .goreleaser.yml .golangci.yml .github/* .github/workflow/* go.mod go.sum .gitignore .licensed.yml MAINTAINERS.md
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: Apache-2.0
