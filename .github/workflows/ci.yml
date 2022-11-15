@@ -1,5 +1,5 @@
 ---
-name: ci
+name: CI
 
 on:
   push:
@@ -8,14 +8,21 @@ on:
     paths-ignore:
       - 'tools/**'
       - '**.md'
-      - '.gitignore'
+      - .gitignore
+    tags:
+      - 'v*'
+
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 env:
-  go_version:     '1.19'
-  linter_version: 'latest'
-  linter_timeout: '5m'
+  go_version:        1.19
+  go_version_latest: true
+  linter_version:    latest
+  linter_timeout:    5m
 
 jobs:
   test:
@@ -284,35 +291,30 @@ jobs:
   release:
     name: Release
     needs: [ test, style, lint, reuse, license ]
-    if: |
-      contains( 'main', github.ref_name )
-    runs-on: [ 'ubuntu-latest' ]
+    runs-on: [ ubuntu-latest ]
     steps:
       - name: Checkout the code
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Generate Release Version
-        uses: xmidt-org/release-builder-action@v3
-        id: prebundle
-        with:
-          gh-token: ${{ github.token }}
-          dry-run: true
+      - name: Fetch tags for TagBody, TagSubject and TagContents
+        if: success() && startsWith(github.ref, 'refs/tags/')
+        run: git fetch --force --tags
 
-      - name: Generate Release Bundle and Release
-        uses: xmidt-org/release-builder-action@v3
-        id: bundle
+      - name: Setup go version
+        if: success() && startsWith(github.ref, 'refs/tags/')
+        uses: actions/setup-go@c4a742cab115ed795e34d4513e2cf7d472deb55f
         with:
-          gh-token: ${{ github.token }}
+          go-version: ${{ env.go_version }}
+          check-latest: ${{ env.go_version_latest }}
+          cache: true
 
-      - name: Upload Release
-        if:  steps.bundle.outputs.release-tag != ''
-        uses: ncipollo/release-action@v1
+      - uses: goreleaser/goreleaser-action@v2
+        if: success() && startsWith(github.ref, 'refs/tags/')
         with:
-          name: ${{ steps.bundle.outputs.release-name }}
-          tag: ${{ steps.bundle.outputs.release-tag }}
-          draft: false
-          prerelease: false
-          bodyFile: ${{ steps.bundle.outputs.release-body-file }}
-          token: ${{ github.token }}
+          distribution: goreleaser
+          version: latest
+          args: release --rm-dist
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
