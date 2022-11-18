@@ -11,6 +11,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/mitchellh/hashstructure"
 	"github.com/schmidtw/goschtalt/pkg/decoder"
 	"github.com/schmidtw/goschtalt/pkg/encoder"
 	"github.com/schmidtw/goschtalt/pkg/meta"
@@ -30,6 +31,7 @@ type Config struct {
 	records        []string
 	tree           meta.Object
 	compiledAt     time.Time
+	hash           uint64
 	explainOptions strings.Builder
 	explainCompile strings.Builder
 
@@ -46,6 +48,9 @@ func New(opts ...Option) (*Config, error) {
 			encoders: newRegistry[encoder.Encoder](),
 		},
 	}
+
+	hash, _ := hashstructure.Hash(c.tree, nil)
+	c.hash = hash
 
 	if err := c.With(opts...); err != nil {
 		return nil, err
@@ -224,9 +229,18 @@ func (c *Config) compile() error { //nolint:funlen
 
 done:
 
+	fmt.Fprintf(&c.explainCompile, "\n## Calculate the hash.\n")
+	hash, err := hashstructure.Hash(merged, nil)
+	if err != nil {
+		fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
+		return err
+	}
+	fmt.Fprintf(&c.explainCompile, "  %d\n", hash)
+
 	c.records = records
 	c.tree = merged
 	c.compiledAt = now
+	c.hash = hash
 	return nil
 }
 
@@ -298,6 +312,15 @@ func (c *Config) CompiledAt() time.Time {
 	defer c.mutex.Unlock()
 
 	return c.compiledAt
+}
+
+// Hash returns the hash of the configuration; even if the configuration is
+// empty.
+func (c *Config) Hash() uint64 {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	return c.hash
 }
 
 // Explain returns a human focused explanation of how the configuration was
