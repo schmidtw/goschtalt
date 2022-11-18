@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/goschtalt/goschtalt/pkg/meta"
 	"github.com/mitchellh/mapstructure"
-	"github.com/schmidtw/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

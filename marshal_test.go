@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/schmidtw/goschtalt/pkg/encoder"
+	"github.com/goschtalt/goschtalt/pkg/encoder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

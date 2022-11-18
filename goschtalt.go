@@ -11,10 +11,10 @@ import (
 	"sync"
 	"time"
 
+	"github.com/goschtalt/goschtalt/pkg/decoder"
+	"github.com/goschtalt/goschtalt/pkg/encoder"
+	"github.com/goschtalt/goschtalt/pkg/meta"
 	"github.com/mitchellh/hashstructure"
-	"github.com/schmidtw/goschtalt/pkg/decoder"
-	"github.com/schmidtw/goschtalt/pkg/encoder"
-	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
 // DefaultOptions allows a simple place where decoders can automatically register

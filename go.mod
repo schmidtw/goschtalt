@@ -1,4 +1,4 @@
-module github.com/schmidtw/goschtalt
+module github.com/goschtalt/goschtalt
 
 go 1.18
 

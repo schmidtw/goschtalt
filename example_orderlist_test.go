@@ -6,9 +6,9 @@ package goschtalt_test
 import (
 	"fmt"
 
-	"github.com/schmidtw/goschtalt"
-	"github.com/schmidtw/goschtalt/pkg/decoder"
-	"github.com/schmidtw/goschtalt/pkg/meta"
+	"github.com/goschtalt/goschtalt"
+	"github.com/goschtalt/goschtalt/pkg/decoder"
+	"github.com/goschtalt/goschtalt/pkg/meta"
 )
 
 // This is a fake decoder that allows the OrderList() to correctly work without

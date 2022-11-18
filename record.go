@@ -4,8 +4,8 @@
 package goschtalt
 
 import (
-	"github.com/schmidtw/goschtalt/pkg/decoder"
-	"github.com/schmidtw/goschtalt/pkg/meta"
+	"github.com/goschtalt/goschtalt/pkg/decoder"
+	"github.com/goschtalt/goschtalt/pkg/meta"
 )
 
 // record is the basic unit needed to define a configuration and it's name.

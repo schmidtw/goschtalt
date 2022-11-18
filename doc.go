@@ -43,7 +43,7 @@
 // The project contains several packages that are versioned together, but are
 // otherwise independent (different go modules).  They can be found here:
 //
-// https://github.com/schmidtw/goschtalt/tree/main/extensions/
+// https://github.com/goschtalt/goschtalt/tree/main/extensions/
 //
 //	decoders/env        - decoder for environment variables
 //	decoders/json       - decoder for json files
@@ -132,4 +132,4 @@
 // except there were still several things that used it, including a go framework.
 // This goschtalt project is the only response google returned as of Aug 12,
 // 2022.
-package goschtalt // import "github.com/schmidtw/goschtalt"
+package goschtalt // import "github.com/goschtalt/goschtalt"

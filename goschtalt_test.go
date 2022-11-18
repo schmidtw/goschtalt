@@ -12,7 +12,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/schmidtw/goschtalt/pkg/meta"
+	"github.com/goschtalt/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

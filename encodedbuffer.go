@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/schmidtw/goschtalt/pkg/decoder"
-	"github.com/schmidtw/goschtalt/pkg/meta"
+	"github.com/goschtalt/goschtalt/pkg/decoder"
+	"github.com/goschtalt/goschtalt/pkg/meta"
 )
 
 // AddBuffer adds a buffer of bytes for inclusion when compiling the configuration.

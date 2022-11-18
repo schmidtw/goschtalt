@@ -12,8 +12,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/schmidtw/goschtalt/pkg/decoder"
-	"github.com/schmidtw/goschtalt/pkg/meta"
+	"github.com/goschtalt/goschtalt/pkg/decoder"
+	"github.com/goschtalt/goschtalt/pkg/meta"
 )
 
 // filegroup is a filesystem and paths to examine for configuration files.

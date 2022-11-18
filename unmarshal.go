@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goschtalt/goschtalt/pkg/meta"
 	"github.com/mitchellh/mapstructure"
-	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
 // UnmarshalFunc provides a special use Unmarshal() function during AddBufferFn()

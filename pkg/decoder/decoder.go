@@ -3,7 +3,7 @@
 
 package decoder
 
-import "github.com/schmidtw/goschtalt/pkg/meta"
+import "github.com/goschtalt/goschtalt/pkg/meta"
 
 // Context is a way to pass additional information that the decoder may need
 // access to in a more future proof way.

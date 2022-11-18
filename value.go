@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/goschtalt/goschtalt/pkg/meta"
 	"github.com/mitchellh/mapstructure"
-	"github.com/schmidtw/goschtalt/pkg/meta"
 )
 
 // AddValues provides a simple way to set additional configuration values at

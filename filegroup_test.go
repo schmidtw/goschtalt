@@ -11,7 +11,7 @@ import (
 	"testing"
 	"testing/fstest"
 
-	"github.com/schmidtw/goschtalt/pkg/decoder"
+	"github.com/goschtalt/goschtalt/pkg/decoder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

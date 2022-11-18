@@ -8,9 +8,9 @@ import (
 	"io/fs"
 	"strings"
 
-	"github.com/schmidtw/goschtalt/internal/natsort"
-	"github.com/schmidtw/goschtalt/pkg/decoder"
-	"github.com/schmidtw/goschtalt/pkg/encoder"
+	"github.com/goschtalt/goschtalt/internal/natsort"
+	"github.com/goschtalt/goschtalt/pkg/decoder"
+	"github.com/goschtalt/goschtalt/pkg/encoder"
 )
 
 // Option configures specific behavior of Config as well as the locations used

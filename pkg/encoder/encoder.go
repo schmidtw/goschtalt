@@ -3,7 +3,7 @@
 
 package encoder
 
-import "github.com/schmidtw/goschtalt/pkg/meta"
+import "github.com/goschtalt/goschtalt/pkg/meta"
 
 // Encoder provides the encoder interface for goschtalt to use.
 type Encoder interface {
