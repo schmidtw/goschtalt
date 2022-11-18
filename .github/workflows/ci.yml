@@ -13,8 +13,6 @@ on:
       - .gitignore
     tags:
       - 'v*'
-  schedule:
-    - cron: '28 22 * * 6'
 
   pull_request:
   workflow_dispatch:
@@ -24,5 +22,5 @@ permissions:
 
 jobs:
   ci:
-    uses: goschtalt/.github/.github/workflows/ci.yml@e774129d4a5a31490d5e6714101ca6ee063bcc81
+    uses: goschtalt/.github/.github/workflows/ci.yml@2b440d13c4bc2d25d73f9978593c1a9b891d01bb
     secrets: inherit
