@@ -6,7 +6,7 @@ require (
 	github.com/google/go-cmp v0.5.8
 	github.com/magiconair/properties v1.8.6
 	github.com/psanford/memfs v0.0.0-20210214183328-a001468d78ef
-	github.com/schmidtw/goschtalt v0.0.2
+	github.com/schmidtw/goschtalt v0.1.0
 	github.com/stretchr/testify v1.8.0
 )
 
