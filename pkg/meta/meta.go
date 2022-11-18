@@ -175,11 +175,20 @@ func (obj Object) ToRaw() any {
 
 // ObjectFromRaw converts a native go tree into the equivalent Object tree structure.
 func ObjectFromRaw(in any, at ...string) (obj Object) {
+	return ObjectFromRawWithOrigin(in, nil, at...)
+}
+
+// ObjectFromRawWithOrigin converts a native go tree into the equivalent Object
+// tree structure with the specified origin applied across the tree.
+func ObjectFromRawWithOrigin(in any, where []Origin, at ...string) (obj Object) {
 	obj.Origins = []Origin{}
+	if len(where) != 0 {
+		obj.Origins = where
+	}
 
 	if len(at) > 0 && len(at[0]) > 0 {
 		obj.Map = make(map[string]Object)
-		obj.Map[at[0]] = ObjectFromRaw(in, at[1:]...)
+		obj.Map[at[0]] = ObjectFromRawWithOrigin(in, where, at[1:]...)
 		return obj
 	}
 
@@ -187,12 +196,12 @@ func ObjectFromRaw(in any, at ...string) (obj Object) {
 	case []any:
 		obj.Array = make([]Object, len(in))
 		for i, val := range in {
-			obj.Array[i] = ObjectFromRaw(val)
+			obj.Array[i] = ObjectFromRawWithOrigin(val, where)
 		}
 	case map[string]any:
 		obj.Map = make(map[string]Object)
 		for key, val := range in {
-			obj.Map[key] = ObjectFromRaw(val)
+			obj.Map[key] = ObjectFromRawWithOrigin(val, where)
 		}
 	default:
 		obj.Value = in

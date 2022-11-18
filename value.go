@@ -81,7 +81,9 @@ func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOp
 		return meta.Object{}, err
 	}
 
-	return meta.ObjectFromRaw(tree, strings.Split(v.key, delimiter)...), nil
+	origin := []meta.Origin{{File: v.recordName}}
+
+	return meta.ObjectFromRawWithOrigin(tree, origin, strings.Split(v.key, delimiter)...), nil
 }
 
 func (v value) apply(opts *options) error {

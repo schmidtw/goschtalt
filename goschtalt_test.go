@@ -516,7 +516,7 @@ func TestHash(t *testing.T) {
 				AddValue("rec", "", map[string]string{"hello": "world"}),
 				AutoCompile(),
 			},
-			expect: 0x98d4eff95a6db2d3,
+			expect: 0x66c6ba5f017f3756,
 		},
 	}
 
