@@ -24,7 +24,9 @@ func (c *Config) Marshal(opts ...MarshalOption) ([]byte, error) {
 	if len(exts) > 0 {
 		cfg.format = exts[0]
 	}
-	for _, opt := range opts {
+
+	full := append(c.opts.marshalOptions, opts...)
+	for _, opt := range full {
 		if opt != nil {
 			opt.marshalApply(&cfg)
 		}
