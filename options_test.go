@@ -141,6 +141,19 @@ func TestOptions(t *testing.T) {
 				},
 			},
 		}, {
+			description: "AddTrees( /, path1, path2 )",
+			opt:         AddTrees(fs, "./path1", "./path2"),
+			str:         "AddTrees( './path1', './path2' )",
+			goal: options{
+				filegroups: []filegroup{
+					{
+						fs:      fs,
+						paths:   []string{"./path1", "./path2"},
+						recurse: true,
+					},
+				},
+			},
+		}, {
 			description: "AddDir( /, path )",
 			opt:         AddDir(fs, "./path"),
 			str:         "AddDir( './path' )",
@@ -149,6 +162,17 @@ func TestOptions(t *testing.T) {
 					{
 						fs:    fs,
 						paths: []string{"./path"},
+					},
+				},
+			}}, {
+			description: "AddDirs( /, path1, path2)",
+			opt:         AddDirs(fs, "./path1", "./path2"),
+			str:         "AddDirs( './path1', './path2' )",
+			goal: options{
+				filegroups: []filegroup{
+					{
+						fs:    fs,
+						paths: []string{"./path1", "./path2"},
 					},
 				},
 			},

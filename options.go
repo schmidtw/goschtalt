@@ -148,6 +148,26 @@ func AddTree(fs fs.FS, path string) Option {
 	}
 }
 
+// AddTrees adds a list of directory trees (including all subdirectories) for
+// inclusion when compiling the configuration.  Any files that cannot be
+// processed will be ignored.  It is not an error if any files are missing, or
+// if all the files cannot be processed.
+//
+// Use AddFile() if you need to require a file to be present.
+//
+// All the files that can be processed with a decoder will be compiled into the
+// configuration.
+func AddTrees(fs fs.FS, paths ...string) Option {
+	return &groupOption{
+		name: "AddTrees",
+		grp: filegroup{
+			fs:      fs,
+			paths:   paths,
+			recurse: true,
+		},
+	}
+}
+
 // AddDir adds a directory (excluding all subdirectories) for inclusion
 // when compiling the configuration.  Any files that cannot be processed will be
 // ignored.  It is not an error if any files are missing, or if all the files
@@ -163,6 +183,25 @@ func AddDir(fs fs.FS, path string) Option {
 		grp: filegroup{
 			fs:    fs,
 			paths: []string{path},
+		},
+	}
+}
+
+// AddDirs adds a list of directories (excluding all subdirectories) for inclusion
+// when compiling the configuration.  Any files that cannot be processed will be
+// ignored.  It is not an error if any files are missing, or if all the files
+// cannot be processed.
+//
+// Use AddFile() if you need to require a file to be present.
+//
+// All the files that can be processed with a decoder will be compiled into the
+// configuration.
+func AddDirs(fs fs.FS, paths ...string) Option {
+	return &groupOption{
+		name: "AddDirs",
+		grp: filegroup{
+			fs:    fs,
+			paths: paths,
 		},
 	}
 }
