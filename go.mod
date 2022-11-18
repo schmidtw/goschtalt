@@ -5,7 +5,6 @@ go 1.18
 require (
 	github.com/google/go-cmp v0.5.9
 	github.com/k0kubun/pp/v3 v3.2.0
-	github.com/mitchellh/hashstructure v1.1.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.8.1
 	gonum.org/v1/gonum v0.12.0
