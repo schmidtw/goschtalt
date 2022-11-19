@@ -52,7 +52,7 @@ from.
 
 | Status | GoDoc | Extension | Description |
 |--------|-------|-----------|-------------|
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/yaml-encoder/yaml-encoder)](https://goreportcard.com/report/github.com/goschtalt/yaml-encoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/yaml-encoder)](https://pkg.go.dev/github.com/goschtalt/yaml-encoder) | `yaml-encoder` | A YAML/YML configuration encoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/yaml-encoder)](https://goreportcard.com/report/github.com/goschtalt/yaml-encoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/yaml-encoder)](https://pkg.go.dev/github.com/goschtalt/yaml-encoder) | `.yaml`, `.yml` | A YAML/YML configuration encoder. |
 
 
 ## Dependencies
