@@ -38,10 +38,10 @@ the hardest part is determining where you are processing in the original file.
 
 | Status | GoDoc | Extension | Description |
 |--------|-------|-----------|-------------|
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/goschtalt/extensions/decoders/env)](https://goreportcard.com/report/github.com/goschtalt/goschtalt/extensions/decoders/env) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/goschtalt/extensions/decoders/env)](https://pkg.go.dev/github.com/goschtalt/goschtalt/extensions/decoders/env) | `decoders/env` | An environment variable based configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/goschtalt/extensions/decoders/json)](https://goreportcard.com/report/github.com/goschtalt/goschtalt/extensions/decoders/json) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/goschtalt/extensions/decoders/json)](https://pkg.go.dev/github.com/goschtalt/goschtalt/extensions/decoders/json) | `decoders/json` | A JSON configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/goschtalt/extensions/decoders/properties)](https://goreportcard.com/report/github.com/goschtalt/goschtalt/extensions/decoders/properties) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/goschtalt/extensions/decoders/properties)](https://pkg.go.dev/github.com/goschtalt/goschtalt/extensions/decoders/properties) | `decoders/properties` | A properties configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/goschtalt/extensions/decoders/yaml)](https://goreportcard.com/report/github.com/goschtalt/goschtalt/extensions/decoders/yaml) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/goschtalt/extensions/decoders/yaml)](https://pkg.go.dev/github.com/goschtalt/goschtalt/extensions/decoders/yaml) | `decoders/yaml` | A YAML/YML configuration decoder |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/env-decoder)](https://goreportcard.com/report/github.com/goschtalt/env) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/env-decoder)](https://pkg.go.dev/github.com/goschtalt/env-decoder) | `env-decoder` | An environment variable based configuration decoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/json-decoder)](https://goreportcard.com/report/github.com/goschtalt/json) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/json-decoder)](https://pkg.go.dev/github.com/goschtalt/json-decoder) | `json-decoder` | A JSON configuration decoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/properties-decoder)](https://goreportcard.com/report/github.com/goschtalt/properties) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/properties-decoder)](https://pkg.go.dev/github.com/goschtalt/properties-decoder) | `properties-decoder` | A properties configuration decoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/yaml-decoder)](https://goreportcard.com/report/github.com/goschtalt/yaml) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/yaml-decoder)](https://pkg.go.dev/github.com/goschtalt/yaml-decoder) | `yaml-decoder` | A YAML/YML configuration decoder |
 
 
 ### Configuration Encoders
@@ -52,7 +52,7 @@ from.
 
 | Status | GoDoc | Extension | Description |
 |--------|-------|-----------|-------------|
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/goschtalt/extensions/encoders/yaml)](https://goreportcard.com/report/github.com/goschtalt/goschtalt/extensions/encoders/yaml) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/goschtalt/extensions/encoders/yaml)](https://pkg.go.dev/github.com/goschtalt/goschtalt/extensions/encoders/yaml) | `encoders/yaml` | A YAML/YML configuration encoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/yaml-encoder/yaml-encoder)](https://goreportcard.com/report/github.com/goschtalt/yaml-encoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/yaml-encoder)](https://pkg.go.dev/github.com/goschtalt/yaml-encoder) | `yaml-encoder` | A YAML/YML configuration encoder. |
 
 
 ## Dependencies
@@ -62,8 +62,8 @@ go standard library.  The rest are testing dependencies.
 
 Production dependencies:
 
-* github.com/mitchellh/hashstructure
-* github.com/mitchellh/mapstructure
+* [github.com/mitchellh/hashstructure](https://github.com/mitchellh/hashstructure)
+* [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure)
 
 ## Examples
 

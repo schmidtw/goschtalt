@@ -7,38 +7,30 @@ Files: CODE_OF_CONDUCT.md
 Copyright: SPDX-FileCopyrightText: 2014-2021 Coraline Ada Ehmke and contributors
 License: CC-BY-4.0
 
-Files: examples/simple/go.mod examples/simple/go.sum
+Files: .goreleaser.yml
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: Apache-2.0
 
-Files: extensions/cli/simple/go.mod extensions/cli/simple/go.sum
+Files: .golangci.yml
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: Apache-2.0
 
-Files: extensions/decoders/cli/go.mod extensions/decoders/cli/go.sum
+Files: .github/*
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: Apache-2.0
 
-Files: extensions/decoders/env/go.mod extensions/decoders/env/go.sum
+Files: go.mod
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: Apache-2.0
 
-Files: extensions/decoders/json/go.mod extensions/decoders/json/go.sum
+Files: go.sum
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: Apache-2.0
 
-Files: extensions/decoders/properties/go.mod extensions/decoders/properties/go.sum
+Files: .gitignore
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: Apache-2.0
 
-Files: extensions/decoders/yaml/go.mod extensions/decoders/yaml/go.sum
-Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
-License: Apache-2.0
-
-Files: extensions/encoders/yaml/go.mod extensions/encoders/yaml/go.sum
-Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
-License: Apache-2.0
-
-Files: .goreleaser.yml .golangci.yml .github/* .github/workflow/* go.mod go.sum .gitignore .licensed.yml MAINTAINERS.md
+Files: MAINTAINERS.md
 Copyright: SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 License: Apache-2.0
