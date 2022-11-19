@@ -38,10 +38,10 @@ the hardest part is determining where you are processing in the original file.
 
 | Status | GoDoc | Extension | Description |
 |--------|-------|-----------|-------------|
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/env-decoder)](https://goreportcard.com/report/github.com/goschtalt/env) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/env-decoder)](https://pkg.go.dev/github.com/goschtalt/env-decoder) | `env-decoder` | An environment variable based configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/json-decoder)](https://goreportcard.com/report/github.com/goschtalt/json) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/json-decoder)](https://pkg.go.dev/github.com/goschtalt/json-decoder) | `json-decoder` | A JSON configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/properties-decoder)](https://goreportcard.com/report/github.com/goschtalt/properties) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/properties-decoder)](https://pkg.go.dev/github.com/goschtalt/properties-decoder) | `properties-decoder` | A properties configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/yaml-decoder)](https://goreportcard.com/report/github.com/goschtalt/yaml) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/yaml-decoder)](https://pkg.go.dev/github.com/goschtalt/yaml-decoder) | `yaml-decoder` | A YAML/YML configuration decoder |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/env-decoder)](https://goreportcard.com/report/github.com/goschtalt/env-decoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/env-decoder)](https://pkg.go.dev/github.com/goschtalt/env-decoder) | `env-decoder` | An environment variable based configuration decoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/json-decoder)](https://goreportcard.com/report/github.com/goschtalt/json-decoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/json-decoder)](https://pkg.go.dev/github.com/goschtalt/json-decoder) | `json-decoder` | A JSON configuration decoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/properties-decoder)](https://goreportcard.com/report/github.com/goschtalt/properties-decoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/properties-decoder)](https://pkg.go.dev/github.com/goschtalt/properties-decoder) | `properties-decoder` | A properties configuration decoder. |
+| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/yaml-decoder)](https://goreportcard.com/report/github.com/goschtalt/yaml-decoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/yaml-decoder)](https://pkg.go.dev/github.com/goschtalt/yaml-decoder) | `yaml-decoder` | A YAML/YML configuration decoder |
 
 
 ### Configuration Encoders
