@@ -30,6 +30,10 @@ extensions/**/.licensed.yml
 **/disallowed.yml
 .licenses/
 licensed
+.licensed.yml
+
+# Ignore goreleaser & use org one.
+.goreleaser.yml
 
 # Ignore helper shell scripts in root.
 *.sh
