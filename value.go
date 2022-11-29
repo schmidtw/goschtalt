@@ -58,15 +58,19 @@ type value struct {
 	opts []ValueOption
 }
 
+// toTree does the work of converting from a structure of some sort to the
+// normalized object tree goschtalt uses.
 func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOption) (meta.Object, error) {
-	tree := make(map[string]any)
+	raw := make(map[string]any)
 	cfg := mapstructure.DecoderConfig{
-		Result: &tree,
+		Result: &raw,
 	}
+	var valopts valueOptions
 
 	all := append(defaultOpts, v.opts...)
 	for _, opt := range all {
 		opt.decoderApply(&cfg)
+		opt.valueApply(&valopts)
 	}
 
 	decoder, err := mapstructure.NewDecoder(&cfg)
@@ -81,9 +85,17 @@ func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOp
 		return meta.Object{}, err
 	}
 
-	origin := []meta.Origin{{File: v.recordName}}
+	tree := meta.ObjectFromRawWithOrigin(raw,
+		[]meta.Origin{{File: v.recordName}},
+		strings.Split(v.key, delimiter)...)
 
-	return meta.ObjectFromRawWithOrigin(tree, origin, strings.Split(v.key, delimiter)...), nil
+	if valopts.failOnNonSerializable {
+		if err = tree.ErrOnNonSerializable(); err != nil {
+			return meta.Object{}, err
+		}
+	}
+
+	return tree.FilterNonSerializable(), nil
 }
 
 func (v value) apply(opts *options) error {
@@ -104,7 +116,6 @@ func (v value) apply(opts *options) error {
 	}
 
 	opts.values = append(opts.values, r)
-
 	return nil
 }
 
@@ -148,6 +159,12 @@ type ValueOption interface {
 	// decoderApply applies the options to the DecoderConfig used by several
 	// parts of goschtalt.
 	decoderApply(*mapstructure.DecoderConfig)
+
+	valueApply(*valueOptions)
+}
+
+type valueOptions struct {
+	failOnNonSerializable bool
 }
 
 // AsDefault specifies that this value is a default value & is applied prior to
@@ -166,10 +183,42 @@ func (o optionalAsDefault) isDefault() bool {
 }
 
 func (_ optionalAsDefault) decoderApply(_ *mapstructure.DecoderConfig) {}
+func (_ optionalAsDefault) valueApply(_ *valueOptions)                 {}
 
 func (o optionalAsDefault) String() string {
 	if o {
 		return "AsDefault()"
 	}
 	return "AsDefault(false)"
+}
+
+// FailOnNonSerializable specifies that an error should be returned if any
+// non-serializable objects (channels, functions, unsafe pointers) are
+// encountered in the resulting configuration tree.  Non-serializable objects
+// cannot be in the configuration sets that goschtalt works with.
+//
+// The default behavior is to ignore and drop any non-serializable objects.
+func FailOnNonSerializable(fail ...bool) ValueOption {
+	fail = append(fail, true)
+	return failOnNonSerializableOption(fail[0])
+}
+
+type failOnNonSerializableOption bool
+
+func (_ failOnNonSerializableOption) isDefault() bool {
+	return false
+}
+
+func (_ failOnNonSerializableOption) decoderApply(_ *mapstructure.DecoderConfig) {}
+
+func (e failOnNonSerializableOption) valueApply(opt *valueOptions) {
+	opt.failOnNonSerializable = bool(e)
+}
+
+func (e failOnNonSerializableOption) String() string {
+	if bool(e) {
+		return "FailOnNonSerializable()"
+	}
+
+	return "FailOnNonSerializable(false)"
 }

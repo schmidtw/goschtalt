@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"reflect"
 	"strconv"
 	"strings"
 )
@@ -31,6 +32,7 @@ var (
 	ErrArrayOutOfBounds = errors.New("array index is out of bounds")
 	ErrInvalidIndex     = errors.New("invalid index")
 	ErrRecursionTooDeep = errors.New("recursion too deep")
+	ErrNonSerializable  = errors.New("non-serializeable objects encountered")
 )
 
 // Origin provides details about an origin of a parameter.
@@ -699,4 +701,98 @@ func getValidCmd(key string, obj Object) (command, error) {
 	}
 
 	return command{}, ErrInvalidCommand
+}
+
+// FilterNonSerializable builds a copy of the tree where any non-serializeable
+// types are excluded from the values.
+func (obj Object) FilterNonSerializable() Object {
+	switch obj.Kind() {
+	case Array:
+		//array := make([]Object, 0, len(obj.Array))
+		var array []Object
+
+		for _, val := range obj.Array {
+			if val.isSerializable() {
+				got := val.FilterNonSerializable()
+				if !got.isEmpty() {
+					array = append(array, got)
+				}
+			}
+		}
+		obj.Array = array
+	case Map:
+		m := make(map[string]Object)
+
+		for key, val := range obj.Map {
+			if val.isSerializable() {
+				got := val.FilterNonSerializable()
+				if !got.isEmpty() {
+					m[key] = val.FilterNonSerializable()
+				}
+			}
+		}
+		obj.Map = m
+	}
+
+	return obj
+}
+
+// ErrOnNonSerializable returns if the
+// types are excluded from the values.
+func (obj Object) ErrOnNonSerializable() error {
+	switch obj.Kind() {
+	case Array:
+		for _, val := range obj.Array {
+			if err := val.ErrOnNonSerializable(); err != nil {
+				return err
+			}
+		}
+	case Map:
+		for _, val := range obj.Map {
+			if err := val.ErrOnNonSerializable(); err != nil {
+				return err
+			}
+		}
+	case Value:
+		if !obj.isSerializable() {
+			return ErrNonSerializable
+		}
+	}
+
+	return nil
+}
+
+// isSerializable returns if the object is serializeable or not.  Children
+// objects are not explored.
+func (obj Object) isSerializable() bool {
+	if obj.Value == nil {
+		return true
+	}
+
+	v := reflect.ValueOf(obj.Value)
+	kind := v.Kind()
+	for kind == reflect.Pointer {
+		v = v.Elem()
+		kind = v.Kind()
+	}
+	switch kind {
+	case reflect.Invalid,
+		reflect.Chan,
+		reflect.Func,
+		reflect.Interface,
+		reflect.Struct,
+		reflect.UnsafePointer:
+		return false
+	}
+
+	return true
+}
+
+// isEmpty returns if the object is an empty node.  Metadata about the node
+// like the origin or secret are ignored in this determination.
+func (o Object) isEmpty() bool {
+	if len(o.Array) == 0 && len(o.Map) == 0 && o.Value == nil {
+		return true
+	}
+	return false
 }

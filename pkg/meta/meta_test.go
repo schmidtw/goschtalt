@@ -25,6 +25,58 @@ func decode(s string) Object {
 	return ObjectFromRaw(data)
 }
 
+func TestObjectFromRawWithOrigin(t *testing.T) {
+	origin := Origin{
+		File: "file",
+		Line: 12,
+		Col:  36,
+	}
+	tests := []struct {
+		description string
+		thing       any
+		where       []Origin
+		at          []string
+		expected    Object
+	}{
+		{
+			description: "Output an empty origin.",
+			thing: map[string]any{
+				"one": "fish",
+			},
+			where: []Origin{origin},
+			at:    []string{"a", "b"},
+			expected: Object{
+				Origins: []Origin{origin},
+				Map: map[string]Object{
+					"a": Object{
+						Origins: []Origin{origin},
+						Map: map[string]Object{
+							"b": Object{
+								Origins: []Origin{origin},
+								Map: map[string]Object{
+									"one": Object{
+										Origins: []Origin{origin},
+										Value:   "fish",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			got := ObjectFromRawWithOrigin(tc.thing, tc.where, tc.at...)
+
+			assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+		})
+	}
+}
+
 func TestOrigin_String(t *testing.T) {
 	tests := []struct {
 		description string
@@ -1509,6 +1561,160 @@ func TestOrigin_OriginString(t *testing.T) {
 			got := tc.obj.OriginString()
 
 			assert.Equal(tc.expected, got)
+		})
+	}
+}
+
+func TestIsSerializable(t *testing.T) {
+	fn := func() {}
+	ch := make(chan string)
+
+	tests := []struct {
+		description string
+		thing       Object
+		expected    bool
+	}{
+		{
+			description: "simple string",
+			expected:    true,
+			thing: Object{
+				Value: "fish",
+			},
+		}, {
+			description: "empty object",
+			expected:    true,
+		}, {
+			description: "functions can't be serialized",
+			expected:    false,
+			thing: Object{
+				Value: fn,
+			},
+		}, {
+			description: "pointers to functions can't be serialized",
+			expected:    false,
+			thing: Object{
+				Value: &fn,
+			},
+		}, {
+			description: "channels can't be serialized",
+			expected:    false,
+			thing: Object{
+				Value: ch,
+			},
+		}, {
+			description: "pointers to channels can't be serialized",
+			expected:    false,
+			thing: Object{
+				Value: &ch,
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			got := tc.thing.isSerializable()
+
+			assert.Equal(tc.expected, got)
+		})
+	}
+}
+
+func TestFilterNonSerializable(t *testing.T) {
+	origin := Origin{
+		File: "file",
+		Line: 12,
+		Col:  36,
+	}
+	tests := []struct {
+		description string
+		thing       any
+		expected    any
+	}{
+		{
+			description: "everything serializes",
+			thing: map[string]any{
+				"one": []any{
+					map[string]any{"fish": "blue"},
+					map[string]any{"dog": "red"},
+				},
+			},
+			expected: map[string]any{
+				"one": []any{
+					map[string]any{"fish": "blue"},
+					map[string]any{"dog": "red"},
+				},
+			},
+		}, {
+			description: "one thing does not serializes",
+			thing: map[string]any{
+				"one": []any{
+					map[string]any{"fish": "blue"},
+					map[string]any{"dog": func() {}},
+				},
+			},
+			expected: map[string]any{
+				"one": []any{
+					map[string]any{"fish": "blue"},
+				},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			obj := ObjectFromRawWithOrigin(tc.thing, []Origin{origin})
+			want := ObjectFromRawWithOrigin(tc.expected, []Origin{origin})
+			got := obj.FilterNonSerializable()
+
+			assert.Empty(cmp.Diff(want, got, cmpopts.IgnoreUnexported(Object{})))
+		})
+	}
+}
+
+func TestErrOnNonSerializable(t *testing.T) {
+	origin := Origin{
+		File: "file",
+		Line: 12,
+		Col:  36,
+	}
+	tests := []struct {
+		description string
+		thing       any
+		expected    error
+	}{
+		{
+			description: "everything serializes",
+			thing: map[string]any{
+				"one": []any{
+					map[string]any{"fish": "blue"},
+					map[string]any{"dog": "red"},
+				},
+			},
+		}, {
+			description: "one thing does not serializes",
+			expected:    ErrNonSerializable,
+			thing: map[string]any{
+				"one": []any{
+					map[string]any{"fish": "blue"},
+					map[string]any{"dog": func() {}},
+				},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			obj := ObjectFromRawWithOrigin(tc.thing, []Origin{origin})
+			err := obj.ErrOnNonSerializable()
+
+			if tc.expected == nil {
+				return
+			}
+
+			assert.ErrorIs(err, tc.expected)
 		})
 	}
 }

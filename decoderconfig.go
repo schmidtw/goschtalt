@@ -54,6 +54,8 @@ func (_ decodeHookOption) isDefault() bool {
 	return false
 }
 
+func (_ decodeHookOption) valueApply(_ *valueOptions) {}
+
 func (d decodeHookOption) String() string {
 	if d.fn == nil {
 		return "DecodeHook('')"
@@ -86,6 +88,8 @@ func (_ errorUnusedOption) isDefault() bool {
 	return false
 }
 
+func (_ errorUnusedOption) valueApply(_ *valueOptions) {}
+
 func (val errorUnusedOption) String() string {
 	if val {
 		return "ErrorUnused()"
@@ -117,6 +121,8 @@ func (val errorUnsetOption) unmarshalApply(opts *unmarshalOptions) {
 func (_ errorUnsetOption) isDefault() bool {
 	return false
 }
+
+func (_ errorUnsetOption) valueApply(_ *valueOptions) {}
 
 func (val errorUnsetOption) String() string {
 	if val {
@@ -162,6 +168,8 @@ func (_ weaklyTypedInputOption) isDefault() bool {
 	return false
 }
 
+func (_ weaklyTypedInputOption) valueApply(_ *valueOptions) {}
+
 func (val weaklyTypedInputOption) String() string {
 	if val {
 		return "WeaklyTypedInput()"
@@ -190,6 +198,8 @@ func (_ tagNameOption) isDefault() bool {
 	return false
 }
 
+func (_ tagNameOption) valueApply(_ *valueOptions) {}
+
 func (val tagNameOption) String() string {
 	return fmt.Sprintf("TagName('%s')", string(val))
 }
@@ -214,6 +224,8 @@ func (val ignoreUntaggedFieldsOption) unmarshalApply(opts *unmarshalOptions) {
 func (_ ignoreUntaggedFieldsOption) isDefault() bool {
 	return false
 }
+
+func (_ ignoreUntaggedFieldsOption) valueApply(_ *valueOptions) {}
 
 func (val ignoreUntaggedFieldsOption) String() string {
 	if val {
@@ -247,6 +259,8 @@ func (_ matchNameOption) isDefault() bool {
 	return false
 }
 
+func (_ matchNameOption) valueApply(_ *valueOptions) {}
+
 func (match matchNameOption) String() string {
 	if match.fn == nil {
 		return "MatchName('')"
@@ -277,6 +291,8 @@ func (z zeroFieldsOption) unmarshalApply(opts *unmarshalOptions) {
 func (_ zeroFieldsOption) isDefault() bool {
 	return false
 }
+
+func (_ zeroFieldsOption) valueApply(_ *valueOptions) {}
 
 func (z zeroFieldsOption) String() string {
 	if bool(z) {
@@ -320,6 +336,8 @@ func (exact exactlyOption) unmarshalApply(opts *unmarshalOptions) {
 func (_ exactlyOption) isDefault() bool {
 	return false
 }
+
+func (_ exactlyOption) valueApply(_ *valueOptions) {}
 
 func (exact exactlyOption) String() string {
 	decodeHook := "''"

@@ -136,6 +136,13 @@ func TestCompile(t *testing.T) {
 		Madd  string
 	}
 
+	type st2 struct {
+		Hello string
+		Blue  string
+		Madd  string
+		Func  func()
+	}
+
 	tests := []struct {
 		description   string
 		compileOption bool
@@ -300,6 +307,43 @@ func TestCompile(t *testing.T) {
 			},
 			files: []string{"record1"},
 		}, {
+			description: "A normal case with non-serializable values being errors.",
+			opts: []Option{
+				AlterKeyCase(strings.ToLower),
+				AddValue("record1", "",
+					st1{
+						Hello: "Mr. Blue Sky",
+						Blue:  "jay",
+						Madd:  "cat",
+					},
+					FailOnNonSerializable()),
+			},
+			want: st1{},
+			expect: st1{
+				Hello: "Mr. Blue Sky",
+				Blue:  "jay",
+				Madd:  "cat",
+			},
+			files: []string{"record1"},
+		}, {
+			description: "A normal case with non-serializable values being dropped.",
+			opts: []Option{
+				AlterKeyCase(strings.ToLower),
+				AddValue("record1", "",
+					st2{
+						Hello: "Mr. Blue Sky",
+						Blue:  "jay",
+						Madd:  "cat",
+					}),
+			},
+			want: st1{},
+			expect: st1{
+				Hello: "Mr. Blue Sky",
+				Blue:  "jay",
+				Madd:  "cat",
+			},
+			files: []string{"record1"},
+		}, {
 			description: "An empty case.",
 			opts: []Option{
 				AlterKeyCase(strings.ToLower),
@@ -380,6 +424,23 @@ func TestCompile(t *testing.T) {
 			want:          st1{},
 			expect:        st1{},
 			expectedErr:   ErrInvalidInput,
+		}, {
+			description: "A case with non-serializable values producing an error.",
+			opts: []Option{
+				AlterKeyCase(strings.ToLower),
+				AddValue("record1", "",
+					st2{
+						Hello: "Mr. Blue Sky",
+						Blue:  "jay",
+						Madd:  "cat",
+						Func:  func() {},
+					},
+					FailOnNonSerializable(),
+				),
+			},
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: meta.ErrNonSerializable,
 		},
 	}
 
