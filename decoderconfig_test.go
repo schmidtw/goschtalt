@@ -197,6 +197,10 @@ func TestDecoderConfig(t *testing.T) {
 			un := unmarshalOptions{}
 			tc.opt.unmarshalApply(&un)
 
+			vo := valueOptions{}
+			tc.opt.valueApply(&vo)
+			assert.Equal(vo, valueOptions{})
+
 			if tc.check == nil {
 				assert.Equal(opt, tc.want)
 				assert.Equal(un.decoder, tc.want)
