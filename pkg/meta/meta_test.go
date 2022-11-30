@@ -48,13 +48,13 @@ func TestObjectFromRawWithOrigin(t *testing.T) {
 			expected: Object{
 				Origins: []Origin{origin},
 				Map: map[string]Object{
-					"a": Object{
+					"a": {
 						Origins: []Origin{origin},
 						Map: map[string]Object{
-							"b": Object{
+							"b": {
 								Origins: []Origin{origin},
 								Map: map[string]Object{
-									"one": Object{
+									"one": {
 										Origins: []Origin{origin},
 										Value:   "fish",
 									},
