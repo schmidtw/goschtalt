@@ -6,6 +6,7 @@ package goschtalt
 import (
 	"fmt"
 	"io/fs"
+	"path/filepath"
 	"strings"
 
 	"github.com/goschtalt/goschtalt/internal/natsort"
@@ -112,7 +113,7 @@ func AddFile(fs fs.FS, filename string) Option {
 // AddFiles adds any number of files to the list of files to be compiled into a
 // configuration.  The filenames must be relative to the fs.  Any files that
 // cannot be processed will be ignored.  It is not an error if any files are
-// missing, or if all the files cannot be processed.
+// missing or if all the files cannot be processed.
 //
 // Use AddFile() if you need to require a file to be present.
 //
@@ -202,6 +203,50 @@ func AddDirs(fs fs.FS, paths ...string) Option {
 		grp: filegroup{
 			fs:    fs,
 			paths: paths,
+		},
+	}
+}
+
+// AddJumbledFiles adds any number of files or directories (excluding all
+// subdirectories) for inclusion when compiling the configuration.  The files
+// and directories are sorted into either a relative based filesystem or an
+// absolute path based filesystem.  Any files or directories that cannot be
+// processed will be ignored.  It is not an error if any files are missing or if
+// all the files cannot be processed.
+//
+// Use AddFile() if you need to require a file to be present.
+//
+// Generally this option is useful when processing files from the same filesystem
+// but some are absolute path based and others are relative path based.  Instead
+// of needing to sort the files into two buckets, this option will handle that
+// for you.
+func AddJumbled(abs, rel fs.FS, paths ...string) Option {
+	absPaths := make([]string, 0, len(paths))
+	relPaths := make([]string, 0, len(paths))
+
+	for _, path := range paths {
+		if filepath.IsAbs(path) {
+			absPaths = append(absPaths, path)
+		} else {
+			relPaths = append(relPaths, path)
+		}
+	}
+
+	return &multipleOptionsOption{
+		name: "AddJumbled( abs, rel, '" + strings.Join(paths, "', '") + "' )",
+		opts: []Option{
+			&groupOption{
+				grp: filegroup{
+					fs:    abs,
+					paths: absPaths,
+				},
+			},
+			&groupOption{
+				grp: filegroup{
+					fs:    rel,
+					paths: relPaths,
+				},
+			},
 		},
 	}
 }
@@ -554,6 +599,37 @@ func (d defaultValueOption) String() string {
 		s[i] = opt.String()
 	}
 	return "DefaultValueOptions( " + strings.Join(s, ", ") + " )"
+}
+
+// multipleOptionsOption allows for returning an option that is actually several
+// sub options when needed, without needing to return []Option everywhere.
+type multipleOptionsOption struct {
+	name string
+	opts []Option
+}
+
+func (m multipleOptionsOption) apply(in *options) error {
+	for _, opt := range m.opts {
+		err := opt.apply(in)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (m multipleOptionsOption) ignoreDefaults() bool {
+	for _, opt := range m.opts {
+		if opt.ignoreDefaults() {
+			return true
+		}
+	}
+	return false
+}
+
+func (m multipleOptionsOption) String() string {
+	return m.name
 }
 
 // ---- Options related helper functions follow --------------------------------

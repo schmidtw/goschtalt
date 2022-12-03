@@ -22,6 +22,8 @@ func TestOptions(t *testing.T) {
 
 	testErr := errors.New("test err")
 	fs := os.DirFS("/")
+	abs := fs
+	rel := os.DirFS("/")
 	list := []string{"zeta", "alpha", "19beta", "19alpha", "4tango",
 		"1alpha", "7alpha", "bravo", "7alpha10", "7alpha2", "7alpha0"}
 
@@ -150,6 +152,34 @@ func TestOptions(t *testing.T) {
 						fs:      fs,
 						paths:   []string{"./path1", "./path2"},
 						recurse: true,
+					},
+				},
+			},
+		}, {
+			description: "AddJumbled( /, ., /path1, path2 )",
+			opt:         AddJumbled(abs, rel, "/path1", "./path2"),
+			str:         "AddJumbled( abs, rel, '/path1', './path2' )",
+			goal: options{
+				filegroups: []filegroup{
+					{
+						fs:    abs,
+						paths: []string{"/path1"},
+					},
+					{
+						fs:    rel,
+						paths: []string{"./path2"},
+					},
+				},
+			},
+		}, {
+			description: "AddDirs( /, path1, path2)",
+			opt:         AddDirs(fs, "./path1", "./path2"),
+			str:         "AddDirs( './path1', './path2' )",
+			goal: options{
+				filegroups: []filegroup{
+					{
+						fs:    fs,
+						paths: []string{"./path1", "./path2"},
 					},
 				},
 			},
@@ -637,6 +667,26 @@ func TestOptions(t *testing.T) {
 				}
 				return false
 			},
+		}, {
+			description: "multipleOptionsOption returning an error",
+			opt: &multipleOptionsOption{
+				opts: []Option{
+					AutoCompile(),      // the options don't matter except that
+					WithError(testErr), // there is an error that happens
+					AutoCompile(),
+				},
+			},
+			expectErr: testErr,
+		}, {
+			description: "multipleOptionsOption handles the isDefault case",
+			opt: &multipleOptionsOption{
+				opts: []Option{
+					WithDecoder(nil),               // the options don't matter except that
+					DisableDefaultPackageOptions(), // this option is able to return true
+					WithDecoder(nil),               // for the isDefault() case.
+				},
+			},
+			ignore: true,
 		},
 	}
 
