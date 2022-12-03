@@ -5,11 +5,11 @@ package goschtalt
 
 import (
 	"errors"
-	"os"
 	"reflect"
 	"sort"
 	"strings"
 	"testing"
+	"testing/fstest"
 
 	"github.com/goschtalt/goschtalt/pkg/decoder"
 	"github.com/goschtalt/goschtalt/pkg/encoder"
@@ -21,9 +21,9 @@ func TestOptions(t *testing.T) {
 	unknown := errors.New("unknown")
 
 	testErr := errors.New("test err")
-	fs := os.DirFS("/")
-	abs := fs
-	rel := os.DirFS("/")
+	fs := fstest.MapFS{}
+	abs := fstest.MapFS{}
+	rel := fstest.MapFS{}
 	list := []string{"zeta", "alpha", "19beta", "19alpha", "4tango",
 		"1alpha", "7alpha", "bravo", "7alpha10", "7alpha2", "7alpha0"}
 
