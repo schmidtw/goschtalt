@@ -5,6 +5,7 @@ package goschtalt
 
 import (
 	"errors"
+	"path/filepath"
 	"reflect"
 	"sort"
 	"strings"
@@ -15,6 +16,7 @@ import (
 	"github.com/goschtalt/goschtalt/pkg/encoder"
 	"github.com/k0kubun/pp/v3"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestOptions(t *testing.T) {
@@ -24,6 +26,8 @@ func TestOptions(t *testing.T) {
 	fs := fstest.MapFS{}
 	abs := fstest.MapFS{}
 	rel := fstest.MapFS{}
+	absFile, err := filepath.Abs("path1")
+	require.NoError(t, err)
 	list := []string{"zeta", "alpha", "19beta", "19alpha", "4tango",
 		"1alpha", "7alpha", "bravo", "7alpha10", "7alpha2", "7alpha0"}
 
@@ -157,13 +161,13 @@ func TestOptions(t *testing.T) {
 			},
 		}, {
 			description: "AddJumbled( /, ., /path1, path2 )",
-			opt:         AddJumbled(abs, rel, "/path1", "./path2"),
-			str:         "AddJumbled( abs, rel, '/path1', './path2' )",
+			opt:         AddJumbled(abs, rel, absFile, "./path2"),
+			str:         "AddJumbled( abs, rel, '" + absFile + "', './path2' )",
 			goal: options{
 				filegroups: []filegroup{
 					{
 						fs:    abs,
-						paths: []string{"/path1"},
+						paths: []string{absFile},
 					},
 					{
 						fs:    rel,
