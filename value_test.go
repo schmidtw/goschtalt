@@ -21,20 +21,6 @@ func TestValueOptions(t *testing.T) {
 		str         string
 	}{
 		{
-			description: "Verify AsDefault()",
-			opt:         AsDefault(),
-			asDefault:   true,
-			str:         "AsDefault()",
-		}, {
-			description: "Verify AsDefault(true)",
-			opt:         AsDefault(true),
-			asDefault:   true,
-			str:         "AsDefault()",
-		}, {
-			description: "Verify AsDefault(false)",
-			opt:         AsDefault(false),
-			str:         "AsDefault(false)",
-		}, {
 			description: "Verify FailOnNonSerializable()",
 			opt:         FailOnNonSerializable(),
 			want: valueOptions{

@@ -672,6 +672,34 @@ func TestOptions(t *testing.T) {
 				return false
 			},
 		}, {
+			description: "AddBuffer( filename.ext, bytes, AsDefault )",
+			opt:         AddBuffer("filename.ext", []byte("bytes"), AsDefault()),
+			str:         "AddBuffer( 'filename.ext', []byte, AsDefault() )",
+			check: func(cfg *options) bool {
+				if len(cfg.defaults) == 1 {
+					if cfg.defaults[0].name == "filename.ext" {
+						if cfg.defaults[0].encoded.fn != nil {
+							return true
+						}
+					}
+				}
+				return false
+			},
+		}, {
+			description: "AddBuffer( filename.ext, bytes, AsDefault(false) )",
+			opt:         AddBuffer("filename.ext", []byte("bytes"), AsDefault(false)),
+			str:         "AddBuffer( 'filename.ext', []byte, AsDefault(false) )",
+			check: func(cfg *options) bool {
+				if len(cfg.values) == 1 {
+					if cfg.values[0].name == "filename.ext" {
+						if cfg.values[0].encoded.fn != nil {
+							return true
+						}
+					}
+				}
+				return false
+			},
+		}, {
 			description: "multipleOptionsOption returning an error",
 			opt: &multipleOptionsOption{
 				opts: []Option{

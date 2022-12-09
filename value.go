@@ -167,31 +167,6 @@ type valueOptions struct {
 	failOnNonSerializable bool
 }
 
-// AsDefault specifies that this value is a default value & is applied prior to
-// any other configuration values.  Default values are applied in the order the
-// options are specified.
-func AsDefault(asDefault ...bool) ValueOption {
-	asDefault = append(asDefault, true)
-
-	return optionalAsDefault(asDefault[0])
-}
-
-type optionalAsDefault bool
-
-func (o optionalAsDefault) isDefault() bool {
-	return bool(o)
-}
-
-func (_ optionalAsDefault) decoderApply(_ *mapstructure.DecoderConfig) {}
-func (_ optionalAsDefault) valueApply(_ *valueOptions)                 {}
-
-func (o optionalAsDefault) String() string {
-	if o {
-		return "AsDefault()"
-	}
-	return "AsDefault(false)"
-}
-
 // FailOnNonSerializable specifies that an error should be returned if any
 // non-serializable objects (channels, functions, unsafe pointers) are
 // encountered in the resulting configuration tree.  Non-serializable objects

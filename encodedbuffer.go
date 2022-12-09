@@ -16,18 +16,18 @@ import (
 // The format of the bytes is determined by the extension of the recordName field.
 // The recordName field is also used for sorting this configuration value relative
 // to other configuration values.
-func AddBuffer(recordName string, in []byte) Option {
+func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 	bytesText := "[]byte"
 	if in == nil {
 		bytesText = "nil"
 	}
 	return &encodedBuffer{
-		text:       fmt.Sprintf("AddBuffer( '%s', %s )", recordName, bytesText),
+		text:       fmt.Sprintf("AddBuffer( '%s', %s", recordName, bytesText),
 		recordName: recordName,
 		fn: func(_ string, _ UnmarshalFunc) ([]byte, error) {
 			return in, nil
 		},
-		//return io.NopCloser(bytes.NewReader(in)), nil
+		opts: opts,
 	}
 }
 
@@ -40,20 +40,22 @@ func AddBuffer(recordName string, in []byte) Option {
 // The format of th ebytes is determined by the extension of the recordName field.
 // The recordName field is also used for sorting this configuration value relative
 // to other configuration values.
-func AddBufferFn(recordName string, fn func(recordName string, un UnmarshalFunc) ([]byte, error)) Option {
+func AddBufferFn(recordName string, fn func(recordName string, un UnmarshalFunc) ([]byte, error), opts ...BufferOption) Option {
 	if fn == nil {
 		return &encodedBuffer{
-			text:       fmt.Sprintf("AddBufferFn( '%s', '' )", recordName),
+			text:       fmt.Sprintf("AddBufferFn( '%s', ''", recordName),
 			recordName: recordName,
+			opts:       opts,
 		}
 	}
 
 	return &encodedBuffer{
-		text:       fmt.Sprintf("AddBufferFn( '%s', custom )", recordName),
+		text:       fmt.Sprintf("AddBufferFn( '%s', custom", recordName),
 		recordName: recordName,
 		fn: func(name string, un UnmarshalFunc) ([]byte, error) {
 			return fn(name, un)
 		},
+		opts: opts,
 	}
 }
 
@@ -61,11 +63,16 @@ type encodedBuffer struct {
 	// The text to use when String() is called.
 	text string
 
-	// The red
+	// The record name.
 	recordName string
 
 	// The fn to use to get the value.
 	fn func(recordName string, unmarshal UnmarshalFunc) ([]byte, error)
+
+	// Options that configure how this buffer is treated and processed.
+	// These options are in addition to any default settings set with
+	// AddDefaultValueOptions().
+	opts []BufferOption
 }
 
 func (eb encodedBuffer) apply(opts *options) error {
@@ -81,12 +88,31 @@ func (eb encodedBuffer) apply(opts *options) error {
 		name:    eb.recordName,
 		encoded: &eb,
 	}
+
+	for _, opt := range eb.opts {
+		if opt.isDefault() {
+			opts.defaults = append(opts.defaults, r)
+			return nil
+		}
+	}
+
 	opts.values = append(opts.values, r)
 	return nil
 }
 
-func (_ encodedBuffer) ignoreDefaults() bool { return false }
-func (eb encodedBuffer) String() string      { return eb.text }
+func (_ encodedBuffer) ignoreDefaults() bool {
+	return false
+}
+
+func (eb encodedBuffer) String() string {
+	s := make([]string, len(eb.opts)+1)
+	s[0] = eb.text
+	for i, opt := range eb.opts {
+		s[i+1] = opt.String()
+	}
+
+	return strings.Join(s, ", ") + " )"
+}
 
 // toTree converts an encodedBuffer into a meta.Object tree.  This will happen
 // during the compilation stage.
@@ -118,4 +144,14 @@ func (eb *encodedBuffer) toTree(delimiter string, umf UnmarshalFunc, decoders *c
 	}
 
 	return tree, nil
+}
+
+// -- BufferOption options follow ----------------------------------------------
+
+// BufferOption provides the means to configure options for handling of the
+// buffer configuration values.
+type BufferOption interface {
+	fmt.Stringer
+
+	isDefault() bool
 }
