@@ -700,25 +700,23 @@ func TestOptions(t *testing.T) {
 				return false
 			},
 		}, {
-			description: "multipleOptionsOption returning an error",
-			opt: &multipleOptionsOption{
-				opts: []Option{
-					AutoCompile(),      // the options don't matter except that
-					WithError(testErr), // there is an error that happens
-					AutoCompile(),
-				},
-			},
+			description: "Options returning an error",
+			opt: Options(
+				AutoCompile(),      // the options don't matter except that
+				WithError(testErr), // there is an error that happens
+				AutoCompile(),
+			),
 			expectErr: testErr,
+			str:       "Options( AutoCompile(), WithError( 'test err' ), AutoCompile() )",
 		}, {
-			description: "multipleOptionsOption handles the isDefault case",
-			opt: &multipleOptionsOption{
-				opts: []Option{
-					WithDecoder(nil),               // the options don't matter except that
-					DisableDefaultPackageOptions(), // this option is able to return true
-					WithDecoder(nil),               // for the isDefault() case.
-				},
-			},
+			description: "Options handles the isDefault case",
+			opt: Options(
+				WithDecoder(nil),               // the options don't matter except that
+				DisableDefaultPackageOptions(), // this option is able to return true
+				WithDecoder(nil),               // for the isDefault() case.
+			),
 			ignore: true,
+			str:    "Options( WithDecoder( '' ), DisableDefaultPackageOptions(), WithDecoder( '' ) )",
 		},
 	}
 

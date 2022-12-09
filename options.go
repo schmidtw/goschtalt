@@ -232,7 +232,7 @@ func AddJumbled(abs, rel fs.FS, paths ...string) Option {
 		}
 	}
 
-	return &multipleOptionsOption{
+	return &optionsOption{
 		name: "AddJumbled( abs, rel, '" + strings.Join(paths, "', '") + "' )",
 		opts: []Option{
 			&groupOption{
@@ -601,14 +601,27 @@ func (d defaultValueOption) String() string {
 	return "DefaultValueOptions( " + strings.Join(s, ", ") + " )"
 }
 
-// multipleOptionsOption allows for returning an option that is actually several
+// Options provides a way to group multiple options together into an easy to
+// use Option.
+func Options(opts ...Option) Option {
+	s := make([]string, len(opts))
+	for i, opt := range opts {
+		s[i] = opt.String()
+	}
+	return &optionsOption{
+		name: "Options( " + strings.Join(s, ", ") + " )",
+		opts: opts,
+	}
+}
+
+// optionsOption allows for returning an option that is actually several
 // sub options when needed, without needing to return []Option everywhere.
-type multipleOptionsOption struct {
+type optionsOption struct {
 	name string
 	opts []Option
 }
 
-func (m multipleOptionsOption) apply(in *options) error {
+func (m optionsOption) apply(in *options) error {
 	for _, opt := range m.opts {
 		err := opt.apply(in)
 		if err != nil {
@@ -619,7 +632,7 @@ func (m multipleOptionsOption) apply(in *options) error {
 	return nil
 }
 
-func (m multipleOptionsOption) ignoreDefaults() bool {
+func (m optionsOption) ignoreDefaults() bool {
 	for _, opt := range m.opts {
 		if opt.ignoreDefaults() {
 			return true
@@ -628,7 +641,7 @@ func (m multipleOptionsOption) ignoreDefaults() bool {
 	return false
 }
 
-func (m multipleOptionsOption) String() string {
+func (m optionsOption) String() string {
 	return m.name
 }
 
