@@ -98,7 +98,15 @@ func (c *Config) unmarshal(key string, result any, tree meta.Object, opts ...Unm
 	if err != nil {
 		return err
 	}
-	return decoder.Decode(raw)
+	if err := decoder.Decode(raw); err != nil {
+		return err
+	}
+	if options.validator != nil {
+		if err := options.validator(result); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 // -- UnmarshalOption options follow -------------------------------------------
@@ -113,8 +121,9 @@ type UnmarshalOption interface {
 }
 
 type unmarshalOptions struct {
-	optional bool
-	decoder  mapstructure.DecoderConfig
+	optional  bool
+	decoder   mapstructure.DecoderConfig
+	validator func(any) error
 }
 
 // Optional provides a way to allow the requested configuration to not be present
@@ -170,4 +179,37 @@ func (o optionalOption) unmarshalApply(opts *unmarshalOptions) {
 
 func (o optionalOption) String() string {
 	return o.text
+}
+
+// WithValidator provides a way to specify a validator to use after a structure
+// has been unmarshaled, but prior to returning the data.  This allows for an
+// easy way to consistently validate configuration as it is being consumed.  If
+// the validator function returns an error the Unmarshal operation will result
+// in a failure and return the error.
+//
+// The default behavior is to not validate.
+//
+// Setting the value to nil disables validation.
+func WithValidator(fn func(any) error) UnmarshalOption {
+	fnType := "nil"
+	if fn != nil {
+		fnType = "custom"
+	}
+	return &validatorOption{
+		text: fnType,
+		fn:   fn,
+	}
+}
+
+type validatorOption struct {
+	text string
+	fn   func(any) error
+}
+
+func (v validatorOption) unmarshalApply(opts *unmarshalOptions) {
+	opts.validator = v.fn
+}
+
+func (v validatorOption) String() string {
+	return fmt.Sprintf("WithValidator(%s)", v.text)
 }

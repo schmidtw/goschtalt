@@ -415,9 +415,9 @@ func TestOptions(t *testing.T) {
 			opt:         DefaultUnmarshalOptions(),
 			str:         "DefaultUnmarshalOptions()",
 		}, {
-			description: "DefaultUnmarshalOptions( Optional(true), Required(true) )",
-			opt:         DefaultUnmarshalOptions(Optional(true), Required(true)),
-			str:         "DefaultUnmarshalOptions( Optional(), Required() )",
+			description: "DefaultUnmarshalOptions( Optional(true), Required(true), WithValidator(nil) )",
+			opt:         DefaultUnmarshalOptions(Optional(true), Required(true), WithValidator(nil)),
+			str:         "DefaultUnmarshalOptions( Optional(), Required(), WithValidator(nil) )",
 			goal: options{
 				unmarshalOptions: []UnmarshalOption{
 					&optionalOption{
@@ -426,6 +426,9 @@ func TestOptions(t *testing.T) {
 					},
 					&optionalOption{
 						text: "Required()",
+					},
+					&validatorOption{
+						text: "nil",
 					},
 				},
 			},

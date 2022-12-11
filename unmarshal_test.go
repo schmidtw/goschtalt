@@ -146,6 +146,33 @@ func TestUnmarshal(t *testing.T) {
 				Foo: "bar",
 			},
 		}, {
+			description: "Verify the WithValidator(fn) behavior works.",
+			input:       `{"foo":"bar"}`,
+			opts:        []UnmarshalOption{WithValidator(func(any) error { return nil })},
+			want:        simple{},
+			expected: simple{
+				Foo: "bar",
+			},
+		}, {
+			description: "Verify the WithValidator(nil) behavior works.",
+			input:       `{"foo":"bar"}`,
+			opts: []UnmarshalOption{
+				WithValidator(func(any) error { return unknownErr }),
+				WithValidator(nil),
+			},
+			want: simple{},
+			expected: simple{
+				Foo: "bar",
+			},
+		}, {
+			description: "Verify the WithValidator(fn) failure mode works.",
+			input:       `{"foo":"bar"}`,
+			opts: []UnmarshalOption{
+				WithValidator(func(any) error { return unknownErr }),
+			},
+			want:        simple{},
+			expectedErr: unknownErr,
+		}, {
 			description: "A struct that wasn't compiled.",
 			input:       `{"foo":"bar", "delta": "1s"}`,
 			notCompiled: true,
