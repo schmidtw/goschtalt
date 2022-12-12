@@ -6,6 +6,7 @@ package goschtalt
 import (
 	"fmt"
 
+	"github.com/goschtalt/goschtalt/internal/print"
 	"github.com/mitchellh/mapstructure"
 )
 
@@ -57,11 +58,7 @@ func (_ decodeHookOption) isDefault() bool {
 func (_ decodeHookOption) valueApply(_ *valueOptions) {}
 
 func (d decodeHookOption) String() string {
-	if d.fn == nil {
-		return "DecodeHook('')"
-	}
-
-	return "DecodeHook(custom)"
+	return print.P("DecodeHook", print.Fn(d.fn), print.SubOpt())
 }
 
 // If ErrorUnused is true, then it is an error for there to exist
@@ -91,10 +88,7 @@ func (_ errorUnusedOption) isDefault() bool {
 func (_ errorUnusedOption) valueApply(_ *valueOptions) {}
 
 func (val errorUnusedOption) String() string {
-	if val {
-		return "ErrorUnused()"
-	}
-	return "ErrorUnused(false)"
+	return print.P("ErrorUnused", print.BoolSilentTrue(bool(val)), print.SubOpt())
 }
 
 // If ErrorUnset is true, then it is an error for there to exist
@@ -125,10 +119,7 @@ func (_ errorUnsetOption) isDefault() bool {
 func (_ errorUnsetOption) valueApply(_ *valueOptions) {}
 
 func (val errorUnsetOption) String() string {
-	if val {
-		return "ErrorUnset()"
-	}
-	return "ErrorUnset(false)"
+	return print.P("ErrorUnset", print.BoolSilentTrue(bool(val)), print.SubOpt())
 }
 
 // If WeaklyTypedInput is true, the decoder will make the following
@@ -171,10 +162,7 @@ func (_ weaklyTypedInputOption) isDefault() bool {
 func (_ weaklyTypedInputOption) valueApply(_ *valueOptions) {}
 
 func (val weaklyTypedInputOption) String() string {
-	if val {
-		return "WeaklyTypedInput()"
-	}
-	return "WeaklyTypedInput(false)"
+	return print.P("WeaklyTypedInput", print.BoolSilentTrue(bool(val)), print.SubOpt())
 }
 
 // The tag name that mapstructure reads for field names.
@@ -201,7 +189,7 @@ func (_ tagNameOption) isDefault() bool {
 func (_ tagNameOption) valueApply(_ *valueOptions) {}
 
 func (val tagNameOption) String() string {
-	return fmt.Sprintf("TagName('%s')", string(val))
+	return print.P("TagName", print.String(string(val)), print.SubOpt())
 }
 
 // IgnoreUntaggedFields ignores all struct fields without explicit
@@ -228,10 +216,7 @@ func (_ ignoreUntaggedFieldsOption) isDefault() bool {
 func (_ ignoreUntaggedFieldsOption) valueApply(_ *valueOptions) {}
 
 func (val ignoreUntaggedFieldsOption) String() string {
-	if val {
-		return "IgnoreUntaggedFields()"
-	}
-	return "IgnoreUntaggedFields(false)"
+	return print.P("IgnoreUntaggedFields", print.BoolSilentTrue(bool(val)), print.SubOpt())
 }
 
 // MatchName is the function used to match the map key to the struct
@@ -262,10 +247,7 @@ func (_ matchNameOption) isDefault() bool {
 func (_ matchNameOption) valueApply(_ *valueOptions) {}
 
 func (match matchNameOption) String() string {
-	if match.fn == nil {
-		return "MatchName('')"
-	}
-	return "MatchName(custom)"
+	return print.P("MatchName", print.Fn(match.fn), print.SubOpt())
 }
 
 // ZeroFields, if set to true, will zero fields before writing them.
@@ -295,10 +277,7 @@ func (_ zeroFieldsOption) isDefault() bool {
 func (_ zeroFieldsOption) valueApply(_ *valueOptions) {}
 
 func (z zeroFieldsOption) String() string {
-	if bool(z) {
-		return "ZeroFields()"
-	}
-	return "ZeroFields(false)"
+	return print.P("ZeroFields", print.BoolSilentTrue(bool(z)), print.SubOpt())
 }
 
 // Exactly allows setting nearly all the mapstructure.DecoderConfig values to
@@ -340,18 +319,14 @@ func (_ exactlyOption) isDefault() bool {
 func (_ exactlyOption) valueApply(_ *valueOptions) {}
 
 func (exact exactlyOption) String() string {
-	decodeHook := "''"
-	matchName := "''"
-	if exact.dc.DecodeHook != nil {
-		decodeHook = "custom"
-	}
-	if exact.dc.MatchName != nil {
-		matchName = "custom"
-	}
-	return fmt.Sprintf("Exactly(DecodeHook: %s, ErrorUnused: %t, "+
-		"ErrorUnset: %t, ZeroFields: %t, WeaklyTypedInput: %t, TagName: '%s', "+
-		"IgnoreUntaggedFields: %t, MatchName: %s)",
-		decodeHook, exact.dc.ErrorUnused, exact.dc.ErrorUnset, exact.dc.ZeroFields,
-		exact.dc.WeaklyTypedInput, exact.dc.TagName, exact.dc.IgnoreUntaggedFields,
-		matchName)
+	return print.P("Exactly",
+		print.Fn(exact.dc.DecodeHook, "DecodeHook"),
+		print.Bool(exact.dc.ErrorUnused, "ErrorUnused"),
+		print.Bool(exact.dc.ErrorUnset, "ErrorUnset"),
+		print.Bool(exact.dc.ZeroFields, "ZeroFields"),
+		print.Bool(exact.dc.WeaklyTypedInput, "WeaklyTypedInput"),
+		print.String(exact.dc.TagName, "TagName"),
+		print.Bool(exact.dc.IgnoreUntaggedFields, "IgnoreUntaggedFields"),
+		print.Fn(exact.dc.MatchName, "MatchName"),
+		print.SubOpt())
 }

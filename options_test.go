@@ -72,11 +72,11 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "WithError( nil )",
 			opt:         WithError(nil),
-			str:         "WithError( '' )",
+			str:         "WithError( nil )",
 		}, {
 			description: "AddFile( /, filename )",
 			opt:         AddFile(fs, "filename"),
-			str:         "AddFile( 'filename' )",
+			str:         "AddFile( fs, 'filename' )",
 			goal: options{
 				filegroups: []filegroup{
 					{
@@ -105,14 +105,14 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "AddFiles( / )",
 			opt:         AddFiles(fs),
-			str:         "AddFiles( '' )",
+			str:         "AddFiles( fs, '' )",
 			goal: options{
 				filegroups: []filegroup{{fs: fs}},
 			},
 		}, {
 			description: "AddFiles( /, filename )",
 			opt:         AddFiles(fs, "filename"),
-			str:         "AddFiles( 'filename' )",
+			str:         "AddFiles( fs, 'filename' )",
 			goal: options{
 				filegroups: []filegroup{
 					{
@@ -124,7 +124,7 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "AddFiles( /, a, b )",
 			opt:         AddFiles(fs, "a", "b"),
-			str:         "AddFiles( 'a', 'b' )",
+			str:         "AddFiles( fs, 'a', 'b' )",
 			goal: options{
 				filegroups: []filegroup{
 					{
@@ -136,7 +136,7 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "AddTree( /, path )",
 			opt:         AddTree(fs, "./path"),
-			str:         "AddTree( './path' )",
+			str:         "AddTree( fs, './path' )",
 			goal: options{
 				filegroups: []filegroup{
 					{
@@ -149,7 +149,7 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "AddTrees( /, path1, path2 )",
 			opt:         AddTrees(fs, "./path1", "./path2"),
-			str:         "AddTrees( './path1', './path2' )",
+			str:         "AddTrees( fs, './path1', './path2' )",
 			goal: options{
 				filegroups: []filegroup{
 					{
@@ -178,7 +178,7 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "AddDirs( /, path1, path2)",
 			opt:         AddDirs(fs, "./path1", "./path2"),
-			str:         "AddDirs( './path1', './path2' )",
+			str:         "AddDirs( fs, './path1', './path2' )",
 			goal: options{
 				filegroups: []filegroup{
 					{
@@ -190,7 +190,7 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "AddDir( /, path )",
 			opt:         AddDir(fs, "./path"),
-			str:         "AddDir( './path' )",
+			str:         "AddDir( fs, './path' )",
 			goal: options{
 				filegroups: []filegroup{
 					{
@@ -201,7 +201,7 @@ func TestOptions(t *testing.T) {
 			}}, {
 			description: "AddDirs( /, path1, path2)",
 			opt:         AddDirs(fs, "./path1", "./path2"),
-			str:         "AddDirs( './path1', './path2' )",
+			str:         "AddDirs( fs, './path1', './path2' )",
 			goal: options{
 				filegroups: []filegroup{
 					{
@@ -264,9 +264,9 @@ func TestOptions(t *testing.T) {
 			str:         "SetKeyDelimiter( '' )",
 			expectErr:   ErrInvalidInput,
 		}, {
-			description: "SortRecordsCustomFn( '' )",
+			description: "SortRecordsCustomFn( nil )",
 			opt:         SortRecordsCustomFn(nil),
-			str:         "SortRecordsCustomFn( custom )",
+			str:         "SortRecordsCustomFn( nil )",
 			expectErr:   ErrInvalidInput,
 		}, {
 			description: "SortRecordsCustomFn( '(reverse)' )",
@@ -511,7 +511,7 @@ func TestOptions(t *testing.T) {
 					&matchNameOption{},
 				},
 			},
-			str: "DefaultUnmarshalOptions( DecodeHook(''), ErrorUnused(), ErrorUnset(), WeaklyTypedInput(), TagName('tag'), IgnoreUntaggedFields(), MatchName('') )",
+			str: "DefaultUnmarshalOptions( DecodeHook(nil), ErrorUnused(), ErrorUnset(), WeaklyTypedInput(), TagName('tag'), IgnoreUntaggedFields(), MatchName(nil) )",
 		}, {
 			description: "DefaultUnmarshalOptions( most )",
 			opt: DefaultUnmarshalOptions(
@@ -551,7 +551,7 @@ func TestOptions(t *testing.T) {
 					&decodeHookOption{},
 				},
 			},
-			str: "DefaultValueOptions( DecodeHook('') )",
+			str: "DefaultValueOptions( DecodeHook(nil) )",
 		}, {
 			description: "AddBuffer( filename.ext, bytes )",
 			opt:         AddBuffer("filename.ext", []byte("bytes")),
@@ -588,7 +588,7 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "AddBufferFn( filename.ext, nil )",
 			opt:         AddBufferFn("filename.ext", nil),
-			str:         "AddBufferFn( 'filename.ext', '' )",
+			str:         "AddBufferFn( 'filename.ext', nil )",
 			expectErr:   unknown,
 		}, {
 			description: "AddBufferFn( filename.ext, bytes )",

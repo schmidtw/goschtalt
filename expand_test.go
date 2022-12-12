@@ -25,7 +25,7 @@ func TestExpand(t *testing.T) {
 		{
 			description: "Simple success",
 			in:          Expand(fn),
-			str:         "Expand( custom, start: '${', end: '}', origin: '', maximum: 0 )",
+			str:         "Expand( custom, ... ) --> start: '${', end: '}', origin: '', maximum: 0",
 			count:       1,
 			want: expand{
 				start:   "${",
@@ -35,11 +35,11 @@ func TestExpand(t *testing.T) {
 		}, {
 			description: "Empty expand",
 			in:          Expand(nil),
-			str:         "Expand( '', start: '${', end: '}', origin: '', maximum: 0 )",
+			str:         "Expand( nil, ... ) --> start: '${', end: '}', origin: '', maximum: 0",
 		}, {
 			description: "Fully defined",
 			in:          Expand(fn, WithOrigin("origin"), WithDelimiters("${{", "}}"), WithMaximum(10)),
-			str:         "Expand( custom, start: '${{', end: '}}', origin: 'origin', maximum: 10 )",
+			str:         "Expand( custom, ... ) --> start: '${{', end: '}}', origin: 'origin', maximum: 10",
 			count:       1,
 			want: expand{
 				origin:  "origin",
@@ -50,7 +50,7 @@ func TestExpand(t *testing.T) {
 		}, {
 			description: "Fully defined",
 			in:          ExpandEnv(WithOrigin("origin"), WithDelimiters("${{", "}}"), WithMaximum(-1)),
-			str:         "ExpandEnv( start: '${{', end: '}}', origin: 'origin', maximum: -1 )",
+			str:         "ExpandEnv( ... ) --> start: '${{', end: '}}', origin: 'origin', maximum: -1",
 			count:       1,
 			want: expand{
 				origin:  "origin",
@@ -77,7 +77,7 @@ func TestExpand(t *testing.T) {
 					assert.Nil(c.opts.expansions[0].mapper)
 				}
 				c.opts.expansions[0].mapper = nil
-				c.opts.expansions[0].name = ""
+				c.opts.expansions[0].text = ""
 
 				assert.True(reflect.DeepEqual(tc.want, c.opts.expansions[0]))
 			}

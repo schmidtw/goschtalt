@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/goschtalt/goschtalt/internal/print"
 	"github.com/goschtalt/goschtalt/pkg/decoder"
 	"github.com/goschtalt/goschtalt/pkg/meta"
 )
@@ -17,12 +18,8 @@ import (
 // The recordName field is also used for sorting this configuration value relative
 // to other configuration values.
 func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
-	bytesText := "[]byte"
-	if in == nil {
-		bytesText = "nil"
-	}
 	return &encodedBuffer{
-		text:       fmt.Sprintf("AddBuffer( '%s', %s", recordName, bytesText),
+		text:       print.P("AddBuffer", print.String(recordName), print.Bytes(in), print.LiteralStringers(opts)),
 		recordName: recordName,
 		fn: func(_ string, _ UnmarshalFunc) ([]byte, error) {
 			return in, nil
@@ -41,22 +38,19 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 // The recordName field is also used for sorting this configuration value relative
 // to other configuration values.
 func AddBufferFn(recordName string, fn func(recordName string, un UnmarshalFunc) ([]byte, error), opts ...BufferOption) Option {
-	if fn == nil {
-		return &encodedBuffer{
-			text:       fmt.Sprintf("AddBufferFn( '%s', ''", recordName),
-			recordName: recordName,
-			opts:       opts,
+	rv := encodedBuffer{
+		text:       print.P("AddBufferFn", print.String(recordName), print.Fn(fn), print.LiteralStringers(opts)),
+		recordName: recordName,
+		opts:       opts,
+	}
+
+	if fn != nil {
+		rv.fn = func(name string, un UnmarshalFunc) ([]byte, error) {
+			return fn(name, un)
 		}
 	}
 
-	return &encodedBuffer{
-		text:       fmt.Sprintf("AddBufferFn( '%s', custom", recordName),
-		recordName: recordName,
-		fn: func(name string, un UnmarshalFunc) ([]byte, error) {
-			return fn(name, un)
-		},
-		opts: opts,
-	}
+	return &rv
 }
 
 type encodedBuffer struct {
@@ -105,13 +99,7 @@ func (_ encodedBuffer) ignoreDefaults() bool {
 }
 
 func (eb encodedBuffer) String() string {
-	s := make([]string, len(eb.opts)+1)
-	s[0] = eb.text
-	for i, opt := range eb.opts {
-		s[i+1] = opt.String()
-	}
-
-	return strings.Join(s, ", ") + " )"
+	return eb.text
 }
 
 // toTree converts an encodedBuffer into a meta.Object tree.  This will happen

@@ -143,7 +143,7 @@ func TestDecoderConfig(t *testing.T) {
 			},
 		}, {
 			description: "Exactly(1)",
-			str:         "Exactly(DecodeHook: '', ErrorUnused: false, ErrorUnset: true, ZeroFields: true, WeaklyTypedInput: false, TagName: '', IgnoreUntaggedFields: false, MatchName: '')",
+			str:         "Exactly(DecodeHook: nil, ErrorUnused: false, ErrorUnset: true, ZeroFields: true, WeaklyTypedInput: false, TagName: '', IgnoreUntaggedFields: false, MatchName: nil)",
 			opt: Exactly(mapstructure.DecoderConfig{
 				ErrorUnset: true,
 				Squash:     true, // ignored
@@ -155,7 +155,7 @@ func TestDecoderConfig(t *testing.T) {
 			},
 		}, {
 			description: "Exactly(2)",
-			str:         "Exactly(DecodeHook: '', ErrorUnused: true, ErrorUnset: false, ZeroFields: false, WeaklyTypedInput: true, TagName: 'tags', IgnoreUntaggedFields: true, MatchName: '')",
+			str:         "Exactly(DecodeHook: nil, ErrorUnused: true, ErrorUnset: false, ZeroFields: false, WeaklyTypedInput: true, TagName: 'tags', IgnoreUntaggedFields: true, MatchName: nil)",
 			opt: Exactly(mapstructure.DecoderConfig{
 				ErrorUnused:          true,
 				Result:               &thing, // ignored

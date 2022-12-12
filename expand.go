@@ -4,15 +4,15 @@
 package goschtalt
 
 import (
-	"fmt"
 	"os"
+
+	"github.com/goschtalt/goschtalt/internal/print"
 )
 
 // ExpandEnv is a simple way to add automatic environment variable expansion
 // after the configuration has been compiled.
 func ExpandEnv(opts ...ExpandOption) Option {
 	exp := expand{
-		name:   "ExpandEnv(",
 		origin: "environment",
 		mapper: os.Getenv,
 		start:  "${",
@@ -22,6 +22,16 @@ func ExpandEnv(opts ...ExpandOption) Option {
 	for _, opt := range opts {
 		opt.expandApply(&exp)
 	}
+
+	exp.text = print.P("ExpandEnv",
+		print.Literal("..."),
+		print.Yields(
+			print.String(exp.start, "start"),
+			print.String(exp.end, "end"),
+			print.String(exp.origin, "origin"),
+			print.Int(exp.maximum, "maximum"),
+		),
+	)
 
 	return &exp
 }
@@ -38,13 +48,7 @@ func ExpandEnv(opts ...ExpandOption) Option {
 //
 // Expand directives are evaluated in the order specified.
 func Expand(mapper func(string) string, opts ...ExpandOption) Option {
-	fn := "Expand( custom,"
-	if mapper == nil {
-		fn = "Expand( '',"
-	}
-
 	exp := expand{
-		name:   fn,
 		mapper: mapper,
 		start:  "${",
 		end:    "}",
@@ -54,13 +58,24 @@ func Expand(mapper func(string) string, opts ...ExpandOption) Option {
 		opt.expandApply(&exp)
 	}
 
+	exp.text = print.P("Expand",
+		print.Fn(mapper),
+		print.Literal("..."),
+		print.Yields(
+			print.String(exp.start, "start"),
+			print.String(exp.end, "end"),
+			print.String(exp.origin, "origin"),
+			print.Int(exp.maximum, "maximum"),
+		),
+	)
+
 	return &exp
 }
 
 // expand controls how variables are identified and processed.
 type expand struct {
-	// The name of the option that provided this expand command.
-	name string
+	// The text of the option that provided this expand command.
+	text string
 
 	// Optional name showing where the value came from.
 	origin string
@@ -98,8 +113,7 @@ func (_ expand) ignoreDefaults() bool {
 }
 
 func (exp expand) String() string {
-	return fmt.Sprintf("%s start: '%s', end: '%s', origin: '%s', maximum: %d )",
-		exp.name, exp.start, exp.end, exp.origin, exp.maximum)
+	return exp.text
 }
 
 // ---- ExpandOption follow --------------------------------------------------

@@ -7,9 +7,9 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
-	"strings"
 
 	"github.com/goschtalt/goschtalt/internal/natsort"
+	"github.com/goschtalt/goschtalt/internal/print"
 	"github.com/goschtalt/goschtalt/pkg/decoder"
 	"github.com/goschtalt/goschtalt/pkg/encoder"
 )
@@ -89,11 +89,7 @@ func (_ errorOption) ignoreDefaults() bool {
 }
 
 func (o errorOption) String() string {
-	if o.err == nil {
-		return "WithError( '' )"
-	}
-
-	return fmt.Sprintf("WithError( '%v' )", o.err)
+	return print.P("WithError", print.Error(o.err))
 }
 
 // AddFile adds exactly one file to the list of files to be compiled into a
@@ -233,7 +229,11 @@ func AddJumbled(abs, rel fs.FS, paths ...string) Option {
 	}
 
 	return &optionsOption{
-		name: "AddJumbled( abs, rel, '" + strings.Join(paths, "', '") + "' )",
+		text: print.P("AddJumbled",
+			print.Literal("abs"),
+			print.Literal("rel"),
+			print.Strings(paths),
+		),
 		opts: []Option{
 			&groupOption{
 				grp: filegroup{
@@ -268,7 +268,7 @@ func (_ groupOption) ignoreDefaults() bool {
 }
 
 func (o groupOption) String() string {
-	return o.name + "( '" + strings.Join(o.grp.paths, "', '") + "' )"
+	return print.P(o.name, print.Literal("fs"), print.Strings(o.grp.paths))
 }
 
 // AutoCompile instructs New() and With() to also compile the configuration
@@ -288,11 +288,7 @@ func (a autoCompileOption) apply(opts *options) error {
 
 func (_ autoCompileOption) ignoreDefaults() bool { return false }
 func (a autoCompileOption) String() string {
-	if bool(a) {
-		return "AutoCompile()"
-	}
-
-	return "AutoCompile( false )"
+	return print.P("AutoCompile", print.BoolSilentTrue(bool(a)))
 }
 
 // AlterKeyCase defines how the keys should be altered prior to use.  This
@@ -327,11 +323,7 @@ func (_ alterKeyCaseOption) ignoreDefaults() bool {
 }
 
 func (a alterKeyCaseOption) String() string {
-	if a == nil {
-		return "AlterKeyCase( none )"
-	}
-
-	return "AlterKeyCase( custom )"
+	return print.P("AlterKeyCase", print.FnAltNil(a, "none"))
 }
 
 // SetKeyDelimiter provides the delimiter used for determining key parts.  A
@@ -356,7 +348,7 @@ func (_ setKeyDelimiterOption) ignoreDefaults() bool {
 }
 
 func (s setKeyDelimiterOption) String() string {
-	return fmt.Sprintf("SetKeyDelimiter( '%s' )", string(s))
+	return print.P("SetKeyDelimiter", print.String(string(s)))
 }
 
 // SortRecordsCustomFn provides a way to specify how you want the files sorted
@@ -367,7 +359,10 @@ func (s setKeyDelimiterOption) String() string {
 //
 // See also: [SortRecordsLexically], [SortRecordsNaturally]
 func SortRecordsCustomFn(less func(a, b string) bool) Option {
-	return &sortRecordsCustomFnOption{name: "SortRecordsCustomFn( custom )", fn: less}
+	return &sortRecordsCustomFnOption{
+		text: print.P("SortRecordsCustomFn", print.Fn(less)),
+		fn:   less,
+	}
 }
 
 // SortRecordsLexically provides a built in sorter based on lexical order.
@@ -377,7 +372,7 @@ func SortRecordsCustomFn(less func(a, b string) bool) Option {
 // See also: [SortRecordsCustomFn], [SortRecordsNaturally]
 func SortRecordsLexically() Option {
 	return &sortRecordsCustomFnOption{
-		name: "SortRecordsLexically()",
+		text: print.P("SortRecordsLexically"),
 		fn: func(a, b string) bool {
 			return a < b
 		},
@@ -409,13 +404,13 @@ func SortRecordsLexically() Option {
 // See also: [SortRecordsCustomFn], [SortRecordsLexically]
 func SortRecordsNaturally() Option {
 	return &sortRecordsCustomFnOption{
-		name: "SortRecordsNaturally()",
+		text: print.P("SortRecordsNaturally"),
 		fn:   natsort.Compare,
 	}
 }
 
 type sortRecordsCustomFnOption struct {
-	name string
+	text string
 	fn   func(a, b string) bool
 }
 
@@ -429,7 +424,7 @@ func (s sortRecordsCustomFnOption) apply(opts *options) error {
 }
 
 func (_ sortRecordsCustomFnOption) ignoreDefaults() bool { return false }
-func (s sortRecordsCustomFnOption) String() string       { return s.name }
+func (s sortRecordsCustomFnOption) String() string       { return s.text }
 
 // WithDecoder registers a Decoder for the specific file extensions provided.
 // Attempting to register a duplicate extension is not supported.
@@ -455,11 +450,12 @@ func (_ withDecoderOption) ignoreDefaults() bool {
 }
 
 func (w withDecoderOption) String() string {
-	if w.decoder == nil {
-		return "WithDecoder( '' )"
+	var s []string
+	if w.decoder != nil {
+		s = w.decoder.Extensions()
 	}
 
-	return "WithDecoder( '" + strings.Join(w.decoder.Extensions(), "', '") + "' )"
+	return print.P("WithDecoder", print.Strings(s))
 }
 
 // WithEncoder registers a Encoder for the specific file extensions provided.
@@ -486,11 +482,12 @@ func (_ withEncoderOption) ignoreDefaults() bool {
 }
 
 func (w withEncoderOption) String() string {
-	if w.enc == nil {
-		return "WithEncoder( '' )"
+	var s []string
+	if w.enc != nil {
+		s = w.enc.Extensions()
 	}
 
-	return "WithEncoder( '" + strings.Join(w.enc.Extensions(), "', '") + "' )"
+	return print.P("WithEncoder", print.Strings(s))
 }
 
 // DisableDefaultPackageOptions provides a way to explicitly not use any preconfigured
@@ -503,7 +500,9 @@ type disableDefaultPackageOption struct{}
 
 func (_ disableDefaultPackageOption) apply(opts *options) error { return nil }
 func (_ disableDefaultPackageOption) ignoreDefaults() bool      { return true }
-func (_ disableDefaultPackageOption) String() string            { return "DisableDefaultPackageOptions()" }
+func (_ disableDefaultPackageOption) String() string {
+	return print.P("DisableDefaultPackageOptions")
+}
 
 // DefaultMarshalOptions allows customization of the desired options for all
 // invocations of the Marshal() function.  This should make consistent use
@@ -526,15 +525,7 @@ func (_ defaultMarshalOption) ignoreDefaults() bool {
 }
 
 func (d defaultMarshalOption) String() string {
-	if len(d.opts) == 0 {
-		return "DefaultMarshalOptions()"
-	}
-
-	s := make([]string, len(d.opts))
-	for i, opt := range d.opts {
-		s[i] = opt.String()
-	}
-	return "DefaultMarshalOptions( " + strings.Join(s, ", ") + " )"
+	return print.P("DefaultMarshalOptions", print.LiteralStringers(d.opts))
 }
 
 // DefaultUnmarshalOptions allows customization of the desired options for all
@@ -558,15 +549,7 @@ func (_ defaultUnmarshalOption) ignoreDefaults() bool {
 }
 
 func (d defaultUnmarshalOption) String() string {
-	if len(d.opts) == 0 {
-		return "DefaultUnmarshalOptions()"
-	}
-
-	s := make([]string, len(d.opts))
-	for i, opt := range d.opts {
-		s[i] = opt.String()
-	}
-	return "DefaultUnmarshalOptions( " + strings.Join(s, ", ") + " )"
+	return print.P("DefaultUnmarshalOptions", print.LiteralStringers(d.opts))
 }
 
 // DefaultValueOptions allows customization of the desired options for all
@@ -590,26 +573,14 @@ func (_ defaultValueOption) ignoreDefaults() bool {
 }
 
 func (d defaultValueOption) String() string {
-	if len(d.opts) == 0 {
-		return "DefaultValueOptions()"
-	}
-
-	s := make([]string, len(d.opts))
-	for i, opt := range d.opts {
-		s[i] = opt.String()
-	}
-	return "DefaultValueOptions( " + strings.Join(s, ", ") + " )"
+	return print.P("DefaultValueOptions", print.LiteralStringers(d.opts))
 }
 
 // Options provides a way to group multiple options together into an easy to
 // use Option.
 func Options(opts ...Option) Option {
-	s := make([]string, len(opts))
-	for i, opt := range opts {
-		s[i] = opt.String()
-	}
 	return &optionsOption{
-		name: "Options( " + strings.Join(s, ", ") + " )",
+		text: print.P("Options", print.LiteralStringers(opts)),
 		opts: opts,
 	}
 }
@@ -617,7 +588,7 @@ func Options(opts ...Option) Option {
 // optionsOption allows for returning an option that is actually several
 // sub options when needed, without needing to return []Option everywhere.
 type optionsOption struct {
-	name string
+	text string
 	opts []Option
 }
 
@@ -642,7 +613,7 @@ func (m optionsOption) ignoreDefaults() bool {
 }
 
 func (m optionsOption) String() string {
-	return m.name
+	return m.text
 }
 
 // ---- Options related helper functions follow --------------------------------

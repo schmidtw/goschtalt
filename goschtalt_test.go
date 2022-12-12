@@ -456,8 +456,9 @@ func TestCompile(t *testing.T) {
 				err = cfg.Compile()
 			}
 
+			var tell string
 			if cfg != nil {
-				fmt.Println(cfg.Explain())
+				tell = cfg.Explain()
 			}
 
 			if tc.expectedErr == nil {
@@ -471,8 +472,9 @@ func TestCompile(t *testing.T) {
 				// check the file order
 				got, err := cfg.ShowOrder()
 				require.NoError(err)
-
 				assert.Empty(cmp.Diff(tc.files, got))
+
+				assert.NotEmpty(tell)
 				return
 			}
 
@@ -486,6 +488,7 @@ func TestCompile(t *testing.T) {
 				got, err := cfg.ShowOrder()
 				assert.ErrorIs(err, ErrNotCompiled)
 				assert.Empty(got)
+				assert.NotEmpty(tell)
 			}
 		})
 	}
