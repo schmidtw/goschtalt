@@ -9,18 +9,18 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// AsDefaultOption
-type AsDefaultOption interface {
+// BufferValueOption can be used as a BufferOption or a ValueOption.
+type BufferValueOption interface {
 	fmt.Stringer
 
-	ValueOption
 	BufferOption
+	ValueOption
 }
 
 // AsDefault specifies that this value is a default value & is applied prior to
 // any other configuration values.  Default values are applied in the order the
 // options are specified.
-func AsDefault(asDefault ...bool) AsDefaultOption {
+func AsDefault(asDefault ...bool) BufferValueOption {
 	asDefault = append(asDefault, true)
 
 	return optionalAsDefault(asDefault[0])

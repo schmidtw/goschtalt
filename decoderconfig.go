@@ -17,8 +17,9 @@ import (
 // package.  For additional details please see: https://github.com/mitchellh/mapstructure
 type DecoderConfigOption interface {
 	fmt.Stringer
-	UnmarshalOption
+
 	ValueOption
+	UnmarshalOption
 
 	// decoderApply applies the options to the DecoderConfig used by several
 	// parts of goschtalt.

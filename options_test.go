@@ -559,7 +559,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "filename.ext" {
-						if cfg.values[0].encoded.fn != nil {
+						if cfg.values[0].buf.fn != nil {
 							return true
 						}
 					}
@@ -573,7 +573,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "filename.ext" {
-						if cfg.values[0].encoded.fn != nil {
+						if cfg.values[0].buf.fn != nil {
 							return true
 						}
 					}
@@ -597,7 +597,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "filename.ext" {
-						if cfg.values[0].encoded.fn != nil {
+						if cfg.values[0].buf.fn != nil {
 							return true
 						}
 					}
@@ -681,7 +681,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.defaults) == 1 {
 					if cfg.defaults[0].name == "filename.ext" {
-						if cfg.defaults[0].encoded.fn != nil {
+						if cfg.defaults[0].buf.fn != nil {
 							return true
 						}
 					}
@@ -695,7 +695,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "filename.ext" {
-						if cfg.values[0].encoded.fn != nil {
+						if cfg.values[0].buf.fn != nil {
 							return true
 						}
 					}

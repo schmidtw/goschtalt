@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAsDefaultOptions(t *testing.T) {
+func TestBufferValueOptions(t *testing.T) {
 	tests := []struct {
 		description string
-		opt         AsDefaultOption
+		opt         BufferValueOption
 		asDefault   bool
 		str         string
 	}{

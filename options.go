@@ -67,31 +67,6 @@ type options struct {
 
 // ---- Options follow ---------------------------------------------------------
 
-// WithError provides a way for plugins to return an error during option
-// processing.  This option will always produce the specified error; including
-// if the err value is nil.
-func WithError(err error) Option {
-	return errorOption{err: err}
-}
-
-type errorOption struct {
-	err error
-}
-
-var _ Option = (*errorOption)(nil)
-
-func (opt errorOption) apply(_ *options) error {
-	return opt.err
-}
-
-func (_ errorOption) ignoreDefaults() bool {
-	return false
-}
-
-func (o errorOption) String() string {
-	return print.P("WithError", print.Error(o.err))
-}
-
 // AddFile adds exactly one file to the list of files to be compiled into a
 // configuration.  The filename must be relative to the fs.  If the file
 // specified cannot be processed it is considered an error.

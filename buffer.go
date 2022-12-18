@@ -18,7 +18,7 @@ import (
 // The recordName field is also used for sorting this configuration value relative
 // to other configuration values.
 func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
-	return &encodedBuffer{
+	return &buffer{
 		text:       print.P("AddBuffer", print.String(recordName), print.Bytes(in), print.LiteralStringers(opts)),
 		recordName: recordName,
 		fn: func(_ string, _ UnmarshalFunc) ([]byte, error) {
@@ -38,7 +38,7 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 // The recordName field is also used for sorting this configuration value relative
 // to other configuration values.
 func AddBufferFn(recordName string, fn func(recordName string, un UnmarshalFunc) ([]byte, error), opts ...BufferOption) Option {
-	rv := encodedBuffer{
+	rv := buffer{
 		text:       print.P("AddBufferFn", print.String(recordName), print.Fn(fn), print.LiteralStringers(opts)),
 		recordName: recordName,
 		opts:       opts,
@@ -53,7 +53,7 @@ func AddBufferFn(recordName string, fn func(recordName string, un UnmarshalFunc)
 	return &rv
 }
 
-type encodedBuffer struct {
+type buffer struct {
 	// The text to use when String() is called.
 	text string
 
@@ -69,21 +69,21 @@ type encodedBuffer struct {
 	opts []BufferOption
 }
 
-func (eb encodedBuffer) apply(opts *options) error {
-	if len(eb.recordName) == 0 {
+func (b buffer) apply(opts *options) error {
+	if len(b.recordName) == 0 {
 		return fmt.Errorf("%w: a recordName with length > 0 must be specified.", ErrInvalidInput)
 	}
 
-	if eb.fn == nil {
+	if b.fn == nil {
 		return fmt.Errorf("%w: a non-nil func must be specified.", ErrInvalidInput)
 	}
 
 	r := record{
-		name:    eb.recordName,
-		encoded: &eb,
+		name: b.recordName,
+		buf:  &b,
 	}
 
-	for _, opt := range eb.opts {
+	for _, opt := range b.opts {
 		if opt.isDefault() {
 			opts.defaults = append(opts.defaults, r)
 			return nil
@@ -94,23 +94,23 @@ func (eb encodedBuffer) apply(opts *options) error {
 	return nil
 }
 
-func (_ encodedBuffer) ignoreDefaults() bool {
+func (_ buffer) ignoreDefaults() bool {
 	return false
 }
 
-func (eb encodedBuffer) String() string {
-	return eb.text
+func (b buffer) String() string {
+	return b.text
 }
 
-// toTree converts an encodedBuffer into a meta.Object tree.  This will happen
+// toTree converts an buffer into a meta.Object tree.  This will happen
 // during the compilation stage.
-func (eb *encodedBuffer) toTree(delimiter string, umf UnmarshalFunc, decoders *codecRegistry[decoder.Decoder]) (meta.Object, error) {
-	data, err := eb.fn(eb.recordName, umf)
+func (b *buffer) toTree(delimiter string, umf UnmarshalFunc, decoders *codecRegistry[decoder.Decoder]) (meta.Object, error) {
+	data, err := b.fn(b.recordName, umf)
 	if err != nil {
 		return meta.Object{}, err
 	}
 
-	ext := strings.TrimPrefix(filepath.Ext(eb.recordName), ".")
+	ext := strings.TrimPrefix(filepath.Ext(b.recordName), ".")
 
 	dec, err := decoders.find(ext)
 	if err != nil {
@@ -118,7 +118,7 @@ func (eb *encodedBuffer) toTree(delimiter string, umf UnmarshalFunc, decoders *c
 	}
 
 	ctx := decoder.Context{
-		Filename:  eb.recordName,
+		Filename:  b.recordName,
 		Delimiter: delimiter,
 	}
 
@@ -126,7 +126,7 @@ func (eb *encodedBuffer) toTree(delimiter string, umf UnmarshalFunc, decoders *c
 	err = dec.Decode(ctx, data, &tree)
 	if err != nil {
 		err = fmt.Errorf("decoder error for extension '%s' processing buffer '%s' %w %v",
-			ext, eb.recordName, ErrDecoding, err)
+			ext, b.recordName, ErrDecoding, err)
 
 		return meta.Object{}, err
 	}
