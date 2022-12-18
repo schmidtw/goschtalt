@@ -9,10 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestBuiltinOptions(t *testing.T) {
+func TestAsDefaultOptions(t *testing.T) {
 	tests := []struct {
 		description string
-		opt         BuiltinOption
+		opt         AsDefaultOption
 		asDefault   bool
 		str         string
 	}{

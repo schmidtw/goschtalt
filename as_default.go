@@ -9,8 +9,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// BuiltinOption
-type BuiltinOption interface {
+// AsDefaultOption
+type AsDefaultOption interface {
 	fmt.Stringer
 
 	ValueOption
@@ -20,7 +20,7 @@ type BuiltinOption interface {
 // AsDefault specifies that this value is a default value & is applied prior to
 // any other configuration values.  Default values are applied in the order the
 // options are specified.
-func AsDefault(asDefault ...bool) BuiltinOption {
+func AsDefault(asDefault ...bool) AsDefaultOption {
 	asDefault = append(asDefault, true)
 
 	return optionalAsDefault(asDefault[0])
