@@ -22,6 +22,9 @@ type UnmarshalFunc func(key string, result any, opts ...UnmarshalOption) error
 
 // Unmarshal provides a generics based strict typed approach to fetching parts
 // of the configuration tree.
+//
+// To read the entire configuration tree, use `goschtalt.Root` instead of "" for
+// more clarity.
 func Unmarshal[T any](c *Config, key string, opts ...UnmarshalOption) (T, error) {
 	var rv T
 	err := c.Unmarshal(key, &rv, opts...)
@@ -48,6 +51,9 @@ func Unmarshal[T any](c *Config, key string, opts ...UnmarshalOption) (T, error)
 //			goschtalt.UnmarshalFn[myStruct]("conf"),
 //		),
 //	)
+//
+// To read the entire configuration tree, use `goschtalt.Root` instead of "" for
+// more clarity.
 func UnmarshalFn[T any](key string, opts ...UnmarshalOption) func(*Config) (T, error) {
 	return func(cfg *Config) (T, error) {
 		return Unmarshal[T](cfg, key, opts...)
@@ -57,6 +63,9 @@ func UnmarshalFn[T any](key string, opts ...UnmarshalOption) func(*Config) (T, e
 // Unmarshal performs the act of looking up the specified section of the tree
 // and decoding the tree into the result.  Additional options can be specified
 // to adjust the behavior.
+//
+// To read the entire configuration tree, use `goschtalt.Root` instead of "" for
+// more clarity.
 func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()

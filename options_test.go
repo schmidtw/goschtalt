@@ -606,7 +606,7 @@ func TestOptions(t *testing.T) {
 			},
 		}, {
 			description: "AddValueFn( record1, '', func )",
-			opt:         AddValueFn("record1", "", func(_ string, un UnmarshalFunc) (any, error) { return nil, nil }),
+			opt:         AddValueFn("record1", Root, func(_ string, un UnmarshalFunc) (any, error) { return nil, nil }),
 			str:         "AddValueFn( 'record1', '', custom, none )",
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {

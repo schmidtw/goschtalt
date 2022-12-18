@@ -13,6 +13,9 @@ import (
 
 // AddValues provides a simple way to set additional configuration values at
 // runtime.
+//
+// To place the configuration at the root use `goschtalt.Root` instead of ""
+// for more clarity.
 func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 	return &value{
 		text:       "AddValue",
@@ -29,6 +32,9 @@ func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 // runtime via a function call.  Note that the provided fn will be called each
 // time the configuration is compiled, allowing the value returned to change if
 // desired.
+//
+// To place the configuration at the root use `goschtalt.Root` instead of ""
+// for more clarity.
 func AddValueFn(recordName, key string, fn func(recordName string, unmarshal UnmarshalFunc) (any, error), opts ...ValueOption) Option {
 	return &value{
 		text:       "AddValueFn",

@@ -17,6 +17,10 @@ import (
 	"github.com/mitchellh/hashstructure"
 )
 
+// Root provides a more descriptive name to use for the root node of the
+// configuration tree than a naked "".
+const Root = ""
+
 // DefaultOptions allows a simple place where decoders can automatically register
 // themselves, as well as a simple way to find what is configured by default.
 // Most extensions will register themselves using init().  It is safe to change

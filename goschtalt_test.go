@@ -293,7 +293,7 @@ func TestCompile(t *testing.T) {
 			description: "A normal case with values.",
 			opts: []Option{
 				AlterKeyCase(strings.ToLower),
-				AddValue("record1", "", st1{
+				AddValue("record1", Root, st1{
 					Hello: "Mr. Blue Sky",
 					Blue:  "jay",
 					Madd:  "cat",
@@ -310,7 +310,7 @@ func TestCompile(t *testing.T) {
 			description: "A normal case with non-serializable values being errors.",
 			opts: []Option{
 				AlterKeyCase(strings.ToLower),
-				AddValue("record1", "",
+				AddValue("record1", Root,
 					st1{
 						Hello: "Mr. Blue Sky",
 						Blue:  "jay",
@@ -329,7 +329,7 @@ func TestCompile(t *testing.T) {
 			description: "A normal case with non-serializable values being dropped.",
 			opts: []Option{
 				AlterKeyCase(strings.ToLower),
-				AddValue("record1", "",
+				AddValue("record1", Root,
 					st2{
 						Hello: "Mr. Blue Sky",
 						Blue:  "jay",
@@ -400,7 +400,7 @@ func TestCompile(t *testing.T) {
 			description: "A case where the value decoder errors",
 			opts: []Option{
 				AlterKeyCase(strings.ToLower),
-				AddValue("record1", "", st1{
+				AddValue("record1", Root, st1{
 					Hello: "Mr. Blue Sky",
 					Blue:  "jay",
 					Madd:  "cat",
@@ -414,7 +414,7 @@ func TestCompile(t *testing.T) {
 			opts: []Option{
 				AlterKeyCase(strings.ToLower),
 				AutoCompile(),
-				AddValue("", "", st1{
+				AddValue("", Root, st1{
 					Hello: "Mr. Blue Sky",
 					Blue:  "jay",
 					Madd:  "cat",
@@ -428,7 +428,7 @@ func TestCompile(t *testing.T) {
 			description: "A case with non-serializable values producing an error.",
 			opts: []Option{
 				AlterKeyCase(strings.ToLower),
-				AddValue("record1", "",
+				AddValue("record1", Root,
 					st2{
 						Hello: "Mr. Blue Sky",
 						Blue:  "jay",
@@ -464,7 +464,7 @@ func TestCompile(t *testing.T) {
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				require.NotNil(cfg)
-				err = cfg.Unmarshal("", &tc.want)
+				err = cfg.Unmarshal(Root, &tc.want)
 				require.NoError(err)
 
 				assert.Empty(cmp.Diff(tc.expect, tc.want))
@@ -577,7 +577,7 @@ func TestHash(t *testing.T) {
 		}, {
 			description: "A simple list",
 			opts: []Option{
-				AddValue("rec", "", map[string]string{"hello": "world"}),
+				AddValue("rec", Root, map[string]string{"hello": "world"}),
 				AutoCompile(),
 			},
 			expect: 0x66c6ba5f017f3756,
