@@ -427,9 +427,7 @@ func TestOptions(t *testing.T) {
 					&optionalOption{
 						text: "Required()",
 					},
-					&validatorOption{
-						text: "nil",
-					},
+					&validatorOption{},
 				},
 			},
 		}, {

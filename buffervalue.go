@@ -5,6 +5,8 @@ package goschtalt
 
 import (
 	"fmt"
+
+	"github.com/goschtalt/goschtalt/internal/print"
 )
 
 // BufferValueOption can be used as a BufferOption or a ValueOption.
@@ -41,8 +43,5 @@ func (o optionalAsDefault) valueApply(opts *valueOptions) error {
 }
 
 func (o optionalAsDefault) String() string {
-	if o {
-		return "AsDefault()"
-	}
-	return "AsDefault(false)"
+	return print.P("AsDefault", print.BoolSilentTrue(bool(o)), print.SubOpt())
 }

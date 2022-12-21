@@ -6,6 +6,8 @@ package goschtalt
 import (
 	"fmt"
 	"time"
+
+	"github.com/goschtalt/goschtalt/internal/print"
 )
 
 // Marshal renders the into the format specified ('json', 'yaml' or other extensions
@@ -95,11 +97,7 @@ func (r redactSecretsOption) marshalApply(opts *marshalOptions) error {
 }
 
 func (r redactSecretsOption) String() string {
-	if bool(r) {
-		return "RedactSecrets()"
-	}
-
-	return "RedactSecrets(false)"
+	return print.P("RedactSecrets", print.BoolSilentTrue(bool(r)), print.SubOpt())
 }
 
 // IncludeOrigins enables or disables providing the origin for each configuration
@@ -121,11 +119,7 @@ func (w includeOriginsOption) marshalApply(opts *marshalOptions) error {
 }
 
 func (i includeOriginsOption) String() string {
-	if bool(i) {
-		return "IncludeOrigins()"
-	}
-
-	return "IncludeOrigins(false)"
+	return print.P("IncludeOrigins", print.BoolSilentTrue(bool(i)), print.SubOpt())
 }
 
 // FormatAs specifies the final document format extension to use when performing
@@ -142,5 +136,5 @@ func (f formatAsOption) marshalApply(opts *marshalOptions) error {
 }
 
 func (f formatAsOption) String() string {
-	return "FormatAs('" + string(f) + "')"
+	return print.P("FormatAs", print.String(string(f)), print.SubOpt())
 }

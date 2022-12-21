@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goschtalt/goschtalt/internal/print"
 	"github.com/goschtalt/goschtalt/pkg/meta"
 	"github.com/mitchellh/mapstructure"
 )
@@ -167,15 +168,9 @@ type unmarshalOptions struct {
 // The default behavior is to require the request to be present.
 func Optional(optional ...bool) UnmarshalOption {
 	optional = append(optional, true)
-	if optional[0] {
-		return &optionalOption{
-			text:     "Optional()",
-			optional: true,
-		}
-	}
-
 	return &optionalOption{
-		text: "Optional(false)",
+		text:     print.P("Optional", print.BoolSilentTrue(optional[0]), print.SubOpt()),
+		optional: optional[0],
 	}
 }
 
@@ -193,15 +188,9 @@ func Optional(optional ...bool) UnmarshalOption {
 // The default behavior is to require the request to be present.
 func Required(required ...bool) UnmarshalOption {
 	required = append(required, true)
-	if required[0] {
-		return &optionalOption{
-			text: "Required()",
-		}
-	}
-
 	return &optionalOption{
-		text:     "Required(false)",
-		optional: true,
+		text:     print.P("Required", print.BoolSilentTrue(required[0]), print.SubOpt()),
+		optional: !required[0],
 	}
 }
 
@@ -231,19 +220,13 @@ func (o optionalOption) String() string {
 //
 // The default behavior is to not validate.
 func WithValidator(fn func(any) error) UnmarshalOption {
-	fnType := "nil"
-	if fn != nil {
-		fnType = "custom"
-	}
 	return &validatorOption{
-		text: fnType,
-		fn:   fn,
+		fn: fn,
 	}
 }
 
 type validatorOption struct {
-	text string
-	fn   func(any) error
+	fn func(any) error
 }
 
 func (v validatorOption) unmarshalApply(opts *unmarshalOptions) error {
@@ -252,5 +235,5 @@ func (v validatorOption) unmarshalApply(opts *unmarshalOptions) error {
 }
 
 func (v validatorOption) String() string {
-	return fmt.Sprintf("WithValidator(%s)", v.text)
+	return print.P("WithValidator", print.Fn(v.fn), print.SubOpt())
 }

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/goschtalt/goschtalt/internal/print"
 	"github.com/goschtalt/goschtalt/pkg/meta"
 	"github.com/mitchellh/mapstructure"
 )
@@ -213,9 +214,5 @@ func (e failOnNonSerializableOption) valueApply(opt *valueOptions) error {
 }
 
 func (e failOnNonSerializableOption) String() string {
-	if bool(e) {
-		return "FailOnNonSerializable()"
-	}
-
-	return "FailOnNonSerializable(false)"
+	return print.P("FailOnNonSerializable", print.BoolSilentTrue(bool(e)), print.SubOpt())
 }
