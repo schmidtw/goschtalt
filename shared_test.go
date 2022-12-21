@@ -149,7 +149,6 @@ func (t *testSetResultOption) valueApply(opts *valueOptions) error {
 	return t.retErr()
 }
 
-func (testSetResultOption) isDefault() bool { return false }
 func (t testSetResultOption) String() string {
 	return fmt.Sprintf("testSetResultOption{ val: %v, err: %v }", t.val, t.err)
 }
