@@ -10,13 +10,13 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestDecoderConfig(t *testing.T) {
+func TestUnmarshalValueOption(t *testing.T) {
 	thing := "string"
 
 	tests := []struct {
 		description string
 		str         string
-		opt         DecoderConfigOption
+		opt         UnmarshalValueOption
 		want        mapstructure.DecoderConfig
 		check       func(*mapstructure.DecoderConfig) bool
 	}{

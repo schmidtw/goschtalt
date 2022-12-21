@@ -9,17 +9,16 @@ import (
 	"github.com/goschtalt/goschtalt/internal/print"
 )
 
-// GlobalOption
+// GlobalOption options implement all option interfaces.
 type GlobalOption interface {
 	fmt.Stringer
 
 	BufferOption
-	DecoderConfigOption
 	ExpandOption
 	MarshalOption
 	Option
-	ValueOption
 	UnmarshalOption
+	ValueOption
 }
 
 // WithError provides a way for plugins to return an error during option

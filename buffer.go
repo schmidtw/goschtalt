@@ -17,6 +17,11 @@ import (
 // The format of the bytes is determined by the extension of the recordName field.
 // The recordName field is also used for sorting this configuration value relative
 // to other configuration values.
+//
+// Valid Option Types:
+//   - [BufferOption]
+//   - [BufferValueOption]
+//   - [GlobalOption]
 func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 	return &buffer{
 		text:       print.P("AddBuffer", print.String(recordName), print.Bytes(in), print.LiteralStringers(opts)),
@@ -34,9 +39,14 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 // of the merged configuration prior to adding the buffer that results in the
 // call to fn.
 //
-// The format of th ebytes is determined by the extension of the recordName field.
+// The format of the bytes is determined by the extension of the recordName field.
 // The recordName field is also used for sorting this configuration value relative
 // to other configuration values.
+//
+// Valid Option Types:
+//   - [BufferOption]
+//   - [BufferValueOption]
+//   - [GlobalOption]
 func AddBufferFn(recordName string, fn func(recordName string, un UnmarshalFunc) ([]byte, error), opts ...BufferOption) Option {
 	rv := buffer{
 		text:       print.P("AddBufferFn", print.String(recordName), print.Fn(fn), print.LiteralStringers(opts)),

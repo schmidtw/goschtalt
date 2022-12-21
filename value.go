@@ -14,8 +14,14 @@ import (
 // AddValues provides a simple way to set additional configuration values at
 // runtime.
 //
-// To place the configuration at the root use `goschtalt.Root` instead of ""
-// for more clarity.
+// To place the configuration at the root use `goschtalt.Root` ([Root]) instead
+// of "" for more clarity.
+//
+// Valid Option Types:
+//   - [BufferValueOption]
+//   - [GlobalOption]
+//   - [ValueOption]
+//   - [UnmarshalValueOption]
 func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 	return &value{
 		text:       "AddValue",
@@ -33,8 +39,14 @@ func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 // time the configuration is compiled, allowing the value returned to change if
 // desired.
 //
-// To place the configuration at the root use `goschtalt.Root` instead of ""
-// for more clarity.
+// To place the configuration at the root use `goschtalt.Root` ([Root]) instead
+// of "" for more clarity.
+//
+// Valid Option Types:
+//   - [BufferValueOption]
+//   - [GlobalOption]
+//   - [ValueOption]
+//   - [UnmarshalValueOption]
 func AddValueFn(recordName, key string, fn func(recordName string, unmarshal UnmarshalFunc) (any, error), opts ...ValueOption) Option {
 	return &value{
 		text:       "AddValueFn",
@@ -165,7 +177,7 @@ func (v value) String() string {
 // as well as if the specific value being added should be a default or a normal
 // configuration value.
 //
-// See also DecoderConfigOption which can be used as ValueOption options.
+// See also [UnmarshalValueOption] which can be used as ValueOption options.
 type ValueOption interface {
 	fmt.Stringer
 
@@ -182,6 +194,10 @@ type valueOptions struct {
 // non-serializable objects (channels, functions, unsafe pointers) are
 // encountered in the resulting configuration tree.  Non-serializable objects
 // cannot be in the configuration sets that goschtalt works with.
+//
+// The fail bool value is optional & assumed to be `true` if omitted.  The
+// first specified value is used if provided.  A value of `false` disables the
+// option.
 //
 // The default behavior is to ignore and drop any non-serializable objects.
 func FailOnNonSerializable(fail ...bool) ValueOption {

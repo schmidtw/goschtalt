@@ -27,6 +27,9 @@ const Root = ""
 // this value at pretty much any time & compile afterwards; just know this value
 // is not mutex protected so if you are changing it after init() the synchronization
 // is up to the caller.
+//
+// To disable the use of this global variable, use the [DisableDefaultPackageOptions]
+// option.
 var DefaultOptions = []Option{}
 
 // Config is a configurable, prioritized, merging configuration registry.
@@ -67,6 +70,8 @@ func New(opts ...Option) (*Config, error) {
 // New() can take all the same options as well.  If AutoCompile() is not specified
 // Compile() will need to be called to see changes in the configuration based on
 // the new options.
+//
+// See also: [AutoCompile], [Compile], [New]
 func (c *Config) With(opts ...Option) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -272,7 +277,7 @@ func (c *Config) ShowOrder() ([]string, error) {
 }
 
 // OrderList is a helper function that sorts a caller provided list of filenames
-// exectly the same way the Config object would sort them when reading and
+// exactly the same way the Config object would sort them when reading and
 // merging the records when the configuration is being compiled.  It also filters
 // the list based on the decoders present.
 func (c *Config) OrderList(list []string) []string {

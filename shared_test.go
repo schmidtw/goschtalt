@@ -108,13 +108,13 @@ func addOrigin(obj meta.Object, origin *meta.Origin) meta.Object {
 	return obj
 }
 
-// Test DecoderConfig that lets us easily inject errors.
+// Test UnmarshalValueOption that lets us easily inject errors.
 
-func testSetResult(v any) DecoderConfigOption {
+func testSetResult(v any) UnmarshalValueOption {
 	return &testSetResultOption{val: v}
 }
 
-func testSetError(e []error) DecoderConfigOption {
+func testSetError(e []error) UnmarshalValueOption {
 	return &testSetResultOption{err: e}
 }
 

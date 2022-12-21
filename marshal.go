@@ -12,6 +12,10 @@ import (
 // the Codecs provide and if adding comments should be attempted.  If a format
 // does not support comments, an error is returned.  The result of the call is
 // a slice of bytes with the information rendered into it.
+//
+// Valid Option Types:
+//   - [GlobalOption]
+//   - [MarshalOption]
 func (c *Config) Marshal(opts ...MarshalOption) ([]byte, error) {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -69,8 +73,15 @@ type marshalOptions struct {
 }
 
 // RedactSecrets enables the replacement of secret portions of the tree with
-// REDACTED.  Passing a redact value of false disables this behavior.  The
-// default behavior is to redact secrets.
+// REDACTED.  Passing a redact value of false disables this behavior.
+//
+// The unused bool value is optional & assumed to be `true` if omitted.  The
+// first specified value is used if provided.  A value of `false` disables the
+// option.
+//
+// # Default
+//
+// Secret values are redacted.
 func RedactSecrets(redact ...bool) MarshalOption {
 	redact = append(redact, true)
 	return redactSecretsOption(redact[0])
@@ -92,7 +103,11 @@ func (r redactSecretsOption) String() string {
 }
 
 // IncludeOrigins enables or disables providing the origin for each configuration
-// value present.  The default behavior is not to include origins.
+// value present.
+//
+// # Default
+//
+// Origins are not included by default.
 func IncludeOrigins(origins ...bool) MarshalOption {
 	origins = append(origins, true)
 	return includeOriginsOption(origins[0])

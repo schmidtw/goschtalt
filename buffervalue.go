@@ -18,6 +18,10 @@ type BufferValueOption interface {
 // AsDefault specifies that this value is a default value & is applied prior to
 // any other configuration values.  Default values are applied in the order the
 // options are specified.
+//
+// The unused bool value is optional & assumed to be `true` if omitted.  The
+// first specified value is used if provided.  A value of `false` disables the
+// option.
 func AsDefault(asDefault ...bool) BufferValueOption {
 	asDefault = append(asDefault, true)
 

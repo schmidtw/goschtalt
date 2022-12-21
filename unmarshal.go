@@ -13,18 +13,23 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// UnmarshalFunc provides a special use Unmarshal() function during AddBufferFn()
-// and AddValueFn() option provided callbacks.  This pattern allows the specified
+// UnmarshalFunc provides a special use [Unmarshal]() function during [AddBufferFn]()
+// and [AddValueFn]() option provided callbacks.  This pattern allows the specified
 // function access to the configuration values up to this point.  Expansion of
-// any Expand() or ExpandEnv() options is also applied to the configuration tree
+// any [Expand]() or [ExpandEnv]() options is also applied to the configuration tree
 // provided.
 type UnmarshalFunc func(key string, result any, opts ...UnmarshalOption) error
 
 // Unmarshal provides a generics based strict typed approach to fetching parts
 // of the configuration tree.
 //
-// To read the entire configuration tree, use `goschtalt.Root` instead of "" for
-// more clarity.
+// To read the entire configuration tree, use `goschtalt.Root` [Root] instead of
+// "" for more clarity.
+//
+// Valid Option Types:
+//   - [GlobalOption]
+//   - [UnmarshalOption]
+//   - [UnmarshalValueOption]
 func Unmarshal[T any](c *Config, key string, opts ...UnmarshalOption) (T, error) {
 	var rv T
 	err := c.Unmarshal(key, &rv, opts...)
@@ -52,8 +57,13 @@ func Unmarshal[T any](c *Config, key string, opts ...UnmarshalOption) (T, error)
 //		),
 //	)
 //
-// To read the entire configuration tree, use `goschtalt.Root` instead of "" for
-// more clarity.
+// To read the entire configuration tree, use `goschtalt.Root` [Root] instead of
+// "" for more clarity.
+//
+// Valid Option Types:
+//   - [GlobalOption]
+//   - [UnmarshalOption]
+//   - [UnmarshalValueOption]
 func UnmarshalFn[T any](key string, opts ...UnmarshalOption) func(*Config) (T, error) {
 	return func(cfg *Config) (T, error) {
 		return Unmarshal[T](cfg, key, opts...)
@@ -64,8 +74,13 @@ func UnmarshalFn[T any](key string, opts ...UnmarshalOption) func(*Config) (T, e
 // and decoding the tree into the result.  Additional options can be specified
 // to adjust the behavior.
 //
-// To read the entire configuration tree, use `goschtalt.Root` instead of "" for
-// more clarity.
+// To read the entire configuration tree, use `goschtalt.Root` [Root] instead of
+// "" for more clarity.
+//
+// Valid Option Types:
+//   - [GlobalOption]
+//   - [UnmarshalOption]
+//   - [UnmarshalValueOption]
 func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) error {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
@@ -139,12 +154,17 @@ type unmarshalOptions struct {
 }
 
 // Optional provides a way to allow the requested configuration to not be present
-// and return an empty structure without an error instead of failing.  If the
-// optional parameter is not passed, the value is assumed to be true.
+// and return an empty structure without an error instead of failing.
 //
-// The default behavior is to require the request to be present.
+// The optional bool value is optional & assumed to be `true` if omitted.  The
+// first specified value is used if provided.  A value of `false` disables the
+// option.
 //
 // See also: [Required]
+//
+// # Default
+//
+// The default behavior is to require the request to be present.
 func Optional(optional ...bool) UnmarshalOption {
 	optional = append(optional, true)
 	if optional[0] {
@@ -160,12 +180,17 @@ func Optional(optional ...bool) UnmarshalOption {
 }
 
 // Required provides a way to allow the requested configuration to be required
-// and return an error if it is missing.  If the optional parameter is not
-// passed, the value is assumed to be true.
+// and return an error if it is missing.
 //
-// The default behavior is to require the request to be present.
+// The required bool value is optional & assumed to be `true` if omitted.  The
+// first specified value is used if provided.  A value of `false` disables the
+// option.
 //
 // See also: [Optional]
+//
+// # Default
+//
+// The default behavior is to require the request to be present.
 func Required(required ...bool) UnmarshalOption {
 	required = append(required, true)
 	if required[0] {
@@ -197,12 +222,14 @@ func (o optionalOption) String() string {
 // WithValidator provides a way to specify a validator to use after a structure
 // has been unmarshaled, but prior to returning the data.  This allows for an
 // easy way to consistently validate configuration as it is being consumed.  If
-// the validator function returns an error the Unmarshal operation will result
+// the validator function returns an error the [Unmarshal]() operation will result
 // in a failure and return the error.
 //
-// The default behavior is to not validate.
-//
 // Setting the value to nil disables validation.
+//
+// # Default
+//
+// The default behavior is to not validate.
 func WithValidator(fn func(any) error) UnmarshalOption {
 	fnType := "nil"
 	if fn != nil {

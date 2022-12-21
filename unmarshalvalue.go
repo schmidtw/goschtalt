@@ -10,29 +10,22 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// DecoderConfigOption is used to configure the mapstructure used for decoding
-// structures into the values used by the internal goschtalt tree.
-//
-// All of these options are directly concerned with the mitchellh/mapstructure
-// package.  For additional details please see: https://github.com/mitchellh/mapstructure
-type DecoderConfigOption interface {
+// UnmarshalValueOption options are options shared between UnmarshalOption and
+// ValueOption interfaces.
+type UnmarshalValueOption interface {
 	fmt.Stringer
 
 	UnmarshalOption
 	ValueOption
 }
 
-// DecodeHook, will be called before any decoding and any type conversion (if
-// WeaklyTypedInput is on). This lets you modify the values before they're set
-// down onto the resulting struct. The DecodeHook is called for every map and
-// value in the input. This means that if a struct has embedded fields with
-// squash tags the decode hook is called only once with all of the input data,
-// not once for each embedded struct.
+// DecodeHook ([mapstructure.DecoderConfig.DecodeHook]) is a [mapstructure.DecoderConfig]
+// field that defines how goschtalt unmarshals to/from structures.
 //
-// If an error is returned, the entire decode will fail with that error.
+// # Default
 //
-// Defaults to nothing set.
-func DecodeHook(hook mapstructure.DecodeHookFunc) DecoderConfigOption {
+// No hooks are defined.
+func DecodeHook(hook mapstructure.DecodeHookFunc) UnmarshalValueOption {
 	return &decodeHookOption{fn: hook}
 }
 
@@ -54,12 +47,17 @@ func (d decodeHookOption) String() string {
 	return print.P("DecodeHook", print.Fn(d.fn), print.SubOpt())
 }
 
-// If ErrorUnused is true, then it is an error for there to exist
-// keys in the original map that were unused in the decoding process
-// (extra keys).
+// ErrorUnused ([mapstructure.DecoderConfig.ErrorUnused]) is a [mapstructure.DecoderConfig]
+// field that defines how goschtalt unmarshals to/from structures.
 //
-// Defaults to false.
-func ErrorUnused(unused ...bool) DecoderConfigOption {
+// The unused bool value is optional & assumed to be `true` if omitted.  The
+// first specified value is used if provided.  A value of `false` disables the
+// option.
+//
+// # Default
+//
+// ErrorUnused is set to false.
+func ErrorUnused(unused ...bool) UnmarshalValueOption {
 	unused = append(unused, true)
 	return errorUnusedOption(unused[0])
 }
@@ -80,13 +78,17 @@ func (val errorUnusedOption) String() string {
 	return print.P("ErrorUnused", print.BoolSilentTrue(bool(val)), print.SubOpt())
 }
 
-// If ErrorUnset is true, then it is an error for there to exist
-// fields in the result that were not set in the decoding process
-// (extra fields). This only applies to decoding to a struct. This
-// will affect all nested structs as well.
+// ErrorUnset ([mapstructure.DecoderConfig.ErrorUnset]) is a [mapstructure.DecoderConfig]
+// field that defines how goschtalt unmarshals to/from structures.
 //
-// Defaults to false.
-func ErrorUnset(unset ...bool) DecoderConfigOption {
+// The unset bool value is optional & assumed to be `true` if omitted.  The
+// first specified value is used if provided.  A value of `false` disables the
+// option.
+//
+// # Default
+//
+// ErrorUnset is set to false.
+func ErrorUnset(unset ...bool) UnmarshalValueOption {
 	unset = append(unset, true)
 	return errorUnsetOption(unset[0])
 }
@@ -107,25 +109,17 @@ func (val errorUnsetOption) String() string {
 	return print.P("ErrorUnset", print.BoolSilentTrue(bool(val)), print.SubOpt())
 }
 
-// If WeaklyTypedInput is true, the decoder will make the following
-// "weak" conversions:
+// WeaklyTypedInput ([mapstructure.DecoderConfig.WeaklyTypedInput]) is a [mapstructure.DecoderConfig]
+// field that defines how goschtalt unmarshals to/from structures.
 //
-//   - bools to string (true = "1", false = "0")
-//   - numbers to string (base 10)
-//   - bools to int/uint (true = 1, false = 0)
-//   - strings to int/uint (base implied by prefix)
-//   - int to bool (true if value != 0)
-//   - string to bool (accepts: 1, t, T, TRUE, true, True, 0, f, F,
-//     FALSE, false, False. Anything else is an error)
-//   - empty array = empty map and vice versa
-//   - negative numbers to overflowed uint values (base 10)
-//   - slice of maps to a merged map
-//   - single values are converted to slices if required. Each
-//     element is weakly decoded. For example: "4" can become []int{4}
-//     if the target type is an int slice.
+// The weak bool value is optional & assumed to be `true` if omitted.  The
+// first specified value is used if provided.  A value of `false` disables the
+// option.
 //
-// Defaults to false.
-func WeaklyTypedInput(weak ...bool) DecoderConfigOption {
+// # Default
+//
+// WeaklyTypedInput is set to false.
+func WeaklyTypedInput(weak ...bool) UnmarshalValueOption {
 	weak = append(weak, true)
 	return weaklyTypedInputOption(weak[0])
 }
@@ -146,10 +140,14 @@ func (val weaklyTypedInputOption) String() string {
 	return print.P("WeaklyTypedInput", print.BoolSilentTrue(bool(val)), print.SubOpt())
 }
 
-// The tag name that mapstructure reads for field names.
+// TagName ([mapstructure.DecoderConfig.TagName]) is a [mapstructure.DecoderConfig]
+// field that defines how goschtalt unmarshals to/from structures.  The name
+// string defines the new tag name to read.
 //
-// This defaults to "mapstructure".
-func TagName(name string) DecoderConfigOption {
+// # Default
+//
+// "mapstructure"
+func TagName(name string) UnmarshalValueOption {
 	return tagNameOption(name)
 }
 
@@ -169,9 +167,17 @@ func (val tagNameOption) String() string {
 	return print.P("TagName", print.String(string(val)), print.SubOpt())
 }
 
-// IgnoreUntaggedFields ignores all struct fields without explicit
-// TagName, comparable to `mapstructure:"-"` as default behavior.
-func IgnoreUntaggedFields(ignore ...bool) DecoderConfigOption {
+// IgnoreUntaggedFields ([mapstructure.DecoderConfig.IgnoreUntaggedFields]) is a [mapstructure.DecoderConfig]
+// field that defines how goschtalt unmarshals to/from structures.
+//
+// The ignore bool value is optional & assumed to be `true` if omitted.  The
+// first specified value is used if provided.  A value of `false` disables the
+// option.
+//
+// # Default
+//
+// IgnoreUntaggedFields is set to false.
+func IgnoreUntaggedFields(ignore ...bool) UnmarshalValueOption {
 	ignore = append(ignore, true)
 	return ignoreUntaggedFieldsOption(ignore[0])
 }
@@ -192,12 +198,13 @@ func (val ignoreUntaggedFieldsOption) String() string {
 	return print.P("IgnoreUntaggedFields", print.BoolSilentTrue(bool(val)), print.SubOpt())
 }
 
-// MatchName is the function used to match the map key to the struct
-// field name or tag. Defaults to `strings.EqualFold`. This can be used
-// to implement case-sensitive tag values, support snake casing, etc.
+// MatchName ([mapstructure.DecoderConfig.MatchName]) is a [mapstructure.DecoderConfig]
+// field that defines how goschtalt unmarshals to/from structures.
 //
-// Defaults to nil.
-func MatchName(fn func(key, field string) bool) DecoderConfigOption {
+// # Default
+//
+// MatchName is nil.
+func MatchName(fn func(key, field string) bool) UnmarshalValueOption {
 	return &matchNameOption{fn: fn}
 }
 
@@ -219,12 +226,17 @@ func (match matchNameOption) String() string {
 	return print.P("MatchName", print.Fn(match.fn), print.SubOpt())
 }
 
-// ZeroFields, if set to true, will zero fields before writing them.
-// For example, a map will be emptied before decoded values are put in
-// it. If this is false, a map will be merged.
+// ZeroFields ([mapstructure.DecoderConfig.ZeroFields]) is a [mapstructure.DecoderConfig]
+// field that defines how goschtalt unmarshals to/from structures.
 //
-// Defaults to false.
-func ZeroFields(zero ...bool) DecoderConfigOption {
+// The zero bool value is optional & assumed to be `true` if omitted.  The
+// first specified value is used if provided.  A value of `false` disables the
+// option.
+//
+// # Default
+//
+// ZeroFields is set to false.
+func ZeroFields(zero ...bool) UnmarshalValueOption {
 	zero = append(zero, true)
 	return zeroFieldsOption(zero[0])
 }
@@ -245,13 +257,14 @@ func (z zeroFieldsOption) String() string {
 	return print.P("ZeroFields", print.BoolSilentTrue(bool(z)), print.SubOpt())
 }
 
-// Exactly allows setting nearly all the mapstructure.DecoderConfig values to
-// whatever value is desired.  A few fields aren't available (Metadata, Squash,
-// Result) but the rest are honored.
+// Exactly allows setting nearly all the [mapstructure.DecoderConfig] values to
+// whatever value is desired at once.  A few fields aren't available ([mapstructure.DecoderConfig.Metadata],
+// [mapstructure.DecoderConfig.Squash], [mapstructure.DecoderConfig.Result]) but
+// the rest are honored.
 //
 // This option will mainly be useful in a scope where the code has no idea what
 // options have been set & needs something very specific.
-func Exactly(this mapstructure.DecoderConfig) DecoderConfigOption {
+func Exactly(this mapstructure.DecoderConfig) UnmarshalValueOption {
 	return &exactlyOption{dc: this}
 }
 

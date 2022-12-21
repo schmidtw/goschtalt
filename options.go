@@ -86,7 +86,7 @@ func AddFile(fs fs.FS, filename string) Option {
 // cannot be processed will be ignored.  It is not an error if any files are
 // missing or if all the files cannot be processed.
 //
-// Use AddFile() if you need to require a file to be present.
+// Use [AddFile]() if you need to require a file to be present.
 //
 // All the files that can be processed with a decoder will be compiled into the
 // configuration.
@@ -105,7 +105,7 @@ func AddFiles(fs fs.FS, filenames ...string) Option {
 // ignored.  It is not an error if any files are missing, or if all the files
 // cannot be processed.
 //
-// Use AddFile() if you need to require a file to be present.
+// Use [AddFile]() if you need to require a file to be present.
 //
 // All the files that can be processed with a decoder will be compiled into the
 // configuration.
@@ -125,7 +125,7 @@ func AddTree(fs fs.FS, path string) Option {
 // processed will be ignored.  It is not an error if any files are missing, or
 // if all the files cannot be processed.
 //
-// Use AddFile() if you need to require a file to be present.
+// Use [AddFile]() if you need to require a file to be present.
 //
 // All the files that can be processed with a decoder will be compiled into the
 // configuration.
@@ -145,7 +145,7 @@ func AddTrees(fs fs.FS, paths ...string) Option {
 // ignored.  It is not an error if any files are missing, or if all the files
 // cannot be processed.
 //
-// Use AddFile() if you need to require a file to be present.
+// Use [AddFile]() if you need to require a file to be present.
 //
 // All the files that can be processed with a decoder will be compiled into the
 // configuration.
@@ -164,7 +164,7 @@ func AddDir(fs fs.FS, path string) Option {
 // ignored.  It is not an error if any files are missing, or if all the files
 // cannot be processed.
 //
-// Use AddFile() if you need to require a file to be present.
+// Use [AddFile]() if you need to require a file to be present.
 //
 // All the files that can be processed with a decoder will be compiled into the
 // configuration.
@@ -185,7 +185,7 @@ func AddDirs(fs fs.FS, paths ...string) Option {
 // processed will be ignored.  It is not an error if any files are missing or if
 // all the files cannot be processed.
 //
-// Use AddFile() if you need to require a file to be present.
+// Use [AddFile]() if you need to require a file to be present.
 //
 // Generally this option is useful when processing files from the same filesystem
 // but some are absolute path based and others are relative path based.  Instead
@@ -246,9 +246,17 @@ func (o groupOption) String() string {
 	return print.P(o.name, print.Literal("fs"), print.Strings(o.grp.paths))
 }
 
-// AutoCompile instructs New() and With() to also compile the configuration
+// AutoCompile instructs [New]() and [With]() to also compile the configuration
 // after all the options are applied if enable is true or omitted.  Passing
 // an enable value of false disables the extra behavior.
+//
+// The enable bool value is optional & assumed to be `true` if omitted.  The
+// first specified value is used if provided.  A value of `false` disables the
+// option.
+//
+// # Default
+//
+// AutoCompile is not enabled.
 func AutoCompile(enable ...bool) Option {
 	enable = append(enable, true)
 	return autoCompileOption(enable[0])
@@ -279,6 +287,10 @@ func (a autoCompileOption) String() string {
 //
 //	AlterKeyCase(strings.ToLower)
 //	AlterKeyCase(strings.ToUpper)
+//
+// # Default
+//
+// AlterKeyCase is set to "do not alter".
 func AlterKeyCase(alter func(string) string) Option {
 	return alterKeyCaseOption(alter)
 }
@@ -302,7 +314,11 @@ func (a alterKeyCaseOption) String() string {
 }
 
 // SetKeyDelimiter provides the delimiter used for determining key parts.  A
-// string with length of at least 1 must be provided.  The default value is '.'.
+// string with length of at least 1 must be provided.
+//
+// # Default
+//
+// The default value is '.'.
 func SetKeyDelimiter(delimiter string) Option {
 	return setKeyDelimiterOption(delimiter)
 }
@@ -330,9 +346,11 @@ func (s setKeyDelimiterOption) String() string {
 // prior to their merge.  This function provides a way to provide a completely
 // custom sorting algorithm.
 //
-// The default is SortRecordsNaturally.
-//
 // See also: [SortRecordsLexically], [SortRecordsNaturally]
+//
+// # Default
+//
+// The default is [SortRecordsNaturally].
 func SortRecordsCustomFn(less func(a, b string) bool) Option {
 	return &sortRecordsCustomFnOption{
 		text: print.P("SortRecordsCustomFn", print.Fn(less)),
@@ -342,9 +360,11 @@ func SortRecordsCustomFn(less func(a, b string) bool) Option {
 
 // SortRecordsLexically provides a built in sorter based on lexical order.
 //
-// The default is SortRecordsNaturally.
-//
 // See also: [SortRecordsCustomFn], [SortRecordsNaturally]
+//
+// # Default
+//
+// The default is [SortRecordsNaturally].
 func SortRecordsLexically() Option {
 	return &sortRecordsCustomFnOption{
 		text: print.P("SortRecordsLexically"),
@@ -374,9 +394,11 @@ func SortRecordsLexically() Option {
 //	99_mine.yml
 //	100_alpha.yml
 //
-// The default is SortRecordsNaturally.
-//
 // See also: [SortRecordsCustomFn], [SortRecordsLexically]
+//
+// # Default
+//
+// The default is [SortRecordsNaturally].
 func SortRecordsNaturally() Option {
 	return &sortRecordsCustomFnOption{
 		text: print.P("SortRecordsNaturally"),
@@ -467,6 +489,8 @@ func (w withEncoderOption) String() string {
 
 // DisableDefaultPackageOptions provides a way to explicitly not use any preconfigured
 // default values by this package and instead use just the options specified.
+//
+// See: [DefaultOptions]
 func DisableDefaultPackageOptions() Option {
 	return disableDefaultPackageOption{}
 }
@@ -480,8 +504,12 @@ func (_ disableDefaultPackageOption) String() string {
 }
 
 // DefaultMarshalOptions allows customization of the desired options for all
-// invocations of the Marshal() function.  This should make consistent use
+// invocations of the [Marshal]() function.  This should make consistent use
 // use of the Marshal() call easier.
+//
+// Valid Option Types:
+//   - [GlobalOption]
+//   - [MarshalOption]
 func DefaultMarshalOptions(opts ...MarshalOption) Option {
 	return &defaultMarshalOption{opts: opts}
 }
@@ -504,8 +532,13 @@ func (d defaultMarshalOption) String() string {
 }
 
 // DefaultUnmarshalOptions allows customization of the desired options for all
-// invocations of the Unmarshal() function.  This should make consistent use
+// invocations of the [Unmarshal]() function.  This should make consistent use
 // use of the Unmarshal() call easier.
+//
+// Valid Option Types:
+//   - [GlobalOption]
+//   - [UnmarshalOption]
+//   - [UnmarshalValueOption]
 func DefaultUnmarshalOptions(opts ...UnmarshalOption) Option {
 	return &defaultUnmarshalOption{opts: opts}
 }
@@ -528,8 +561,14 @@ func (d defaultUnmarshalOption) String() string {
 }
 
 // DefaultValueOptions allows customization of the desired options for all
-// invocations of the TODO:() function.  This should make consistent use
-// use of the TODO:() call easier.
+// invocations of the [AddValue]() and [AddValueFn]() functions.  This should
+// make consistent use use of these functions easier.
+//
+// Valid Option Types:
+//   - [BufferValueOption]
+//   - [GlobalOption]
+//   - [ValueOption]
+//   - [UnmarshalValueOption]
 func DefaultValueOptions(opts ...ValueOption) Option {
 	return &defaultValueOption{opts: opts}
 }

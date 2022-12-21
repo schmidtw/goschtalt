@@ -12,6 +12,12 @@ import (
 
 // ExpandEnv is a simple way to add automatic environment variable expansion
 // after the configuration has been compiled.
+//
+// Expand() and ExpandEnv() directives are evaluated in the order specified.
+//
+// Valid Option Types:
+//   - [ExpandOption]
+//   - [GlobalOption]
 func ExpandEnv(opts ...ExpandOption) Option {
 	exp := expand{
 		origin: "environment",
@@ -49,7 +55,11 @@ func ExpandEnv(opts ...ExpandOption) Option {
 // values replaces ${var} or $var in the string based on the mapping function
 // provided.
 //
-// Expand directives are evaluated in the order specified.
+// Expand() and ExpandEnv() directives are evaluated in the order specified.
+//
+// Valid Option Types:
+//   - [ExpandOption]
+//   - [GlobalOption]
 func Expand(mapper func(string) string, opts ...ExpandOption) Option {
 	exp := expand{
 		mapper: mapper,
