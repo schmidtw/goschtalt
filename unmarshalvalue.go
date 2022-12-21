@@ -288,13 +288,11 @@ func (exact exactlyOption) decoderApply(m *mapstructure.DecoderConfig) error {
 }
 
 func (exact exactlyOption) unmarshalApply(opts *unmarshalOptions) error {
-	exact.decoderApply(&opts.decoder)
-	return nil
+	return exact.decoderApply(&opts.decoder)
 }
 
 func (exact exactlyOption) valueApply(opts *valueOptions) error {
-	exact.decoderApply(&opts.decoder)
-	return nil
+	return exact.decoderApply(&opts.decoder)
 }
 
 func (exact exactlyOption) String() string {
