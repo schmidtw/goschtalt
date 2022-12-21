@@ -11,7 +11,6 @@ import (
 	"github.com/goschtalt/goschtalt/pkg/decoder"
 	"github.com/goschtalt/goschtalt/pkg/encoder"
 	"github.com/goschtalt/goschtalt/pkg/meta"
-	"github.com/mitchellh/mapstructure"
 )
 
 // Test Decoder ////////////////////////////////////////////////////////////////
@@ -115,12 +114,42 @@ func testSetResult(v any) DecoderConfigOption {
 	return &testSetResultOption{val: v}
 }
 
-type testSetResultOption struct {
-	val any
+func testSetError(e []error) DecoderConfigOption {
+	return &testSetResultOption{err: e}
 }
 
-func (t testSetResultOption) decoderApply(m *mapstructure.DecoderConfig) { m.Result = t.val }
-func (t testSetResultOption) unmarshalApply(opts *unmarshalOptions)      { t.decoderApply(&opts.decoder) }
-func (_ testSetResultOption) isDefault() bool                            { return false }
-func (_ testSetResultOption) valueApply(_ *valueOptions)                 {}
-func (_ testSetResultOption) String() string                             { return "" }
+type testSetResultOption struct {
+	val any
+	i   int
+	err []error
+}
+
+func (t *testSetResultOption) retErr() error {
+	if len(t.err) == 0 || t.i > len(t.err) {
+		return nil
+	}
+	err := t.err[t.i]
+	t.i++
+	return err
+}
+
+func (t *testSetResultOption) unmarshalApply(opts *unmarshalOptions) error {
+	if t.val != nil {
+		opts.decoder.Result = t.val
+	}
+
+	return t.retErr()
+}
+
+func (t *testSetResultOption) valueApply(opts *valueOptions) error {
+	if t.val != nil {
+		opts.decoder.Result = t.val
+	}
+
+	return t.retErr()
+}
+
+func (testSetResultOption) isDefault() bool { return false }
+func (t testSetResultOption) String() string {
+	return fmt.Sprintf("testSetResultOption{ val: %v, err: %v }", t.val, t.err)
+}

@@ -188,24 +188,17 @@ func TestDecoderConfig(t *testing.T) {
 
 			assert.Equal(tc.str, tc.opt.String())
 
-			// These are not the default option.
-			assert.False(tc.opt.isDefault())
-
-			var opt mapstructure.DecoderConfig
-			tc.opt.decoderApply(&opt)
-
 			un := unmarshalOptions{}
-			tc.opt.unmarshalApply(&un)
+			assert.NoError(tc.opt.unmarshalApply(&un))
 
 			vo := valueOptions{}
-			tc.opt.valueApply(&vo)
-			assert.Equal(vo, valueOptions{})
+			assert.NoError(tc.opt.valueApply(&vo))
 
 			if tc.check == nil {
-				assert.Equal(opt, tc.want)
+				assert.Equal(vo.decoder, tc.want)
 				assert.Equal(un.decoder, tc.want)
 			} else {
-				tc.check(&opt)
+				tc.check(&vo.decoder)
 				tc.check(&un.decoder)
 			}
 		})

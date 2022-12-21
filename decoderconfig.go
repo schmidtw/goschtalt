@@ -18,12 +18,8 @@ import (
 type DecoderConfigOption interface {
 	fmt.Stringer
 
-	ValueOption
 	UnmarshalOption
-
-	// decoderApply applies the options to the DecoderConfig used by several
-	// parts of goschtalt.
-	decoderApply(*mapstructure.DecoderConfig)
+	ValueOption
 }
 
 // DecodeHook, will be called before any decoding and any type conversion (if
@@ -44,19 +40,15 @@ type decodeHookOption struct {
 	fn mapstructure.DecodeHookFunc
 }
 
-func (d decodeHookOption) decoderApply(m *mapstructure.DecoderConfig) {
-	m.DecodeHook = d.fn
+func (d decodeHookOption) unmarshalApply(opts *unmarshalOptions) error {
+	opts.decoder.DecodeHook = d.fn
+	return nil
 }
 
-func (d decodeHookOption) unmarshalApply(opts *unmarshalOptions) {
-	d.decoderApply(&opts.decoder)
+func (d decodeHookOption) valueApply(opts *valueOptions) error {
+	opts.decoder.DecodeHook = d.fn
+	return nil
 }
-
-func (_ decodeHookOption) isDefault() bool {
-	return false
-}
-
-func (_ decodeHookOption) valueApply(_ *valueOptions) {}
 
 func (d decodeHookOption) String() string {
 	return print.P("DecodeHook", print.Fn(d.fn), print.SubOpt())
@@ -74,19 +66,15 @@ func ErrorUnused(unused ...bool) DecoderConfigOption {
 
 type errorUnusedOption bool
 
-func (val errorUnusedOption) decoderApply(m *mapstructure.DecoderConfig) {
-	m.ErrorUnused = bool(val)
+func (val errorUnusedOption) unmarshalApply(opts *unmarshalOptions) error {
+	opts.decoder.ErrorUnused = bool(val)
+	return nil
 }
 
-func (val errorUnusedOption) unmarshalApply(opts *unmarshalOptions) {
-	val.decoderApply(&opts.decoder)
+func (val errorUnusedOption) valueApply(opts *valueOptions) error {
+	opts.decoder.ErrorUnused = bool(val)
+	return nil
 }
-
-func (_ errorUnusedOption) isDefault() bool {
-	return false
-}
-
-func (_ errorUnusedOption) valueApply(_ *valueOptions) {}
 
 func (val errorUnusedOption) String() string {
 	return print.P("ErrorUnused", print.BoolSilentTrue(bool(val)), print.SubOpt())
@@ -105,19 +93,15 @@ func ErrorUnset(unset ...bool) DecoderConfigOption {
 
 type errorUnsetOption bool
 
-func (val errorUnsetOption) decoderApply(m *mapstructure.DecoderConfig) {
-	m.ErrorUnset = bool(val)
+func (val errorUnsetOption) unmarshalApply(opts *unmarshalOptions) error {
+	opts.decoder.ErrorUnset = bool(val)
+	return nil
 }
 
-func (val errorUnsetOption) unmarshalApply(opts *unmarshalOptions) {
-	val.decoderApply(&opts.decoder)
+func (val errorUnsetOption) valueApply(opts *valueOptions) error {
+	opts.decoder.ErrorUnset = bool(val)
+	return nil
 }
-
-func (_ errorUnsetOption) isDefault() bool {
-	return false
-}
-
-func (_ errorUnsetOption) valueApply(_ *valueOptions) {}
 
 func (val errorUnsetOption) String() string {
 	return print.P("ErrorUnset", print.BoolSilentTrue(bool(val)), print.SubOpt())
@@ -148,19 +132,15 @@ func WeaklyTypedInput(weak ...bool) DecoderConfigOption {
 
 type weaklyTypedInputOption bool
 
-func (val weaklyTypedInputOption) decoderApply(m *mapstructure.DecoderConfig) {
-	m.WeaklyTypedInput = bool(val)
+func (val weaklyTypedInputOption) unmarshalApply(opts *unmarshalOptions) error {
+	opts.decoder.WeaklyTypedInput = bool(val)
+	return nil
 }
 
-func (val weaklyTypedInputOption) unmarshalApply(opts *unmarshalOptions) {
-	val.decoderApply(&opts.decoder)
+func (val weaklyTypedInputOption) valueApply(opts *valueOptions) error {
+	opts.decoder.WeaklyTypedInput = bool(val)
+	return nil
 }
-
-func (_ weaklyTypedInputOption) isDefault() bool {
-	return false
-}
-
-func (_ weaklyTypedInputOption) valueApply(_ *valueOptions) {}
 
 func (val weaklyTypedInputOption) String() string {
 	return print.P("WeaklyTypedInput", print.BoolSilentTrue(bool(val)), print.SubOpt())
@@ -175,19 +155,15 @@ func TagName(name string) DecoderConfigOption {
 
 type tagNameOption string
 
-func (val tagNameOption) decoderApply(m *mapstructure.DecoderConfig) {
-	m.TagName = string(val)
+func (val tagNameOption) unmarshalApply(opts *unmarshalOptions) error {
+	opts.decoder.TagName = string(val)
+	return nil
 }
 
-func (val tagNameOption) unmarshalApply(opts *unmarshalOptions) {
-	val.decoderApply(&opts.decoder)
+func (val tagNameOption) valueApply(opts *valueOptions) error {
+	opts.decoder.TagName = string(val)
+	return nil
 }
-
-func (_ tagNameOption) isDefault() bool {
-	return false
-}
-
-func (_ tagNameOption) valueApply(_ *valueOptions) {}
 
 func (val tagNameOption) String() string {
 	return print.P("TagName", print.String(string(val)), print.SubOpt())
@@ -202,19 +178,15 @@ func IgnoreUntaggedFields(ignore ...bool) DecoderConfigOption {
 
 type ignoreUntaggedFieldsOption bool
 
-func (val ignoreUntaggedFieldsOption) decoderApply(m *mapstructure.DecoderConfig) {
-	m.IgnoreUntaggedFields = bool(val)
+func (val ignoreUntaggedFieldsOption) unmarshalApply(opts *unmarshalOptions) error {
+	opts.decoder.IgnoreUntaggedFields = bool(val)
+	return nil
 }
 
-func (val ignoreUntaggedFieldsOption) unmarshalApply(opts *unmarshalOptions) {
-	val.decoderApply(&opts.decoder)
+func (val ignoreUntaggedFieldsOption) valueApply(opts *valueOptions) error {
+	opts.decoder.IgnoreUntaggedFields = bool(val)
+	return nil
 }
-
-func (_ ignoreUntaggedFieldsOption) isDefault() bool {
-	return false
-}
-
-func (_ ignoreUntaggedFieldsOption) valueApply(_ *valueOptions) {}
 
 func (val ignoreUntaggedFieldsOption) String() string {
 	return print.P("IgnoreUntaggedFields", print.BoolSilentTrue(bool(val)), print.SubOpt())
@@ -233,19 +205,15 @@ type matchNameOption struct {
 	fn func(mapKey, fieldName string) bool
 }
 
-func (match matchNameOption) decoderApply(m *mapstructure.DecoderConfig) {
-	m.MatchName = match.fn
+func (match matchNameOption) unmarshalApply(opts *unmarshalOptions) error {
+	opts.decoder.MatchName = match.fn
+	return nil
 }
 
-func (match matchNameOption) unmarshalApply(opts *unmarshalOptions) {
-	match.decoderApply(&opts.decoder)
+func (match matchNameOption) valueApply(opts *valueOptions) error {
+	opts.decoder.MatchName = match.fn
+	return nil
 }
-
-func (_ matchNameOption) isDefault() bool {
-	return false
-}
-
-func (_ matchNameOption) valueApply(_ *valueOptions) {}
 
 func (match matchNameOption) String() string {
 	return print.P("MatchName", print.Fn(match.fn), print.SubOpt())
@@ -263,19 +231,15 @@ func ZeroFields(zero ...bool) DecoderConfigOption {
 
 type zeroFieldsOption bool
 
-func (z zeroFieldsOption) decoderApply(m *mapstructure.DecoderConfig) {
-	m.ZeroFields = bool(z)
+func (z zeroFieldsOption) unmarshalApply(opts *unmarshalOptions) error {
+	opts.decoder.ZeroFields = bool(z)
+	return nil
 }
 
-func (z zeroFieldsOption) unmarshalApply(opts *unmarshalOptions) {
-	z.decoderApply(&opts.decoder)
+func (z zeroFieldsOption) valueApply(opts *valueOptions) error {
+	opts.decoder.ZeroFields = bool(z)
+	return nil
 }
-
-func (_ zeroFieldsOption) isDefault() bool {
-	return false
-}
-
-func (_ zeroFieldsOption) valueApply(_ *valueOptions) {}
 
 func (z zeroFieldsOption) String() string {
 	return print.P("ZeroFields", print.BoolSilentTrue(bool(z)), print.SubOpt())
@@ -295,7 +259,7 @@ type exactlyOption struct {
 	dc mapstructure.DecoderConfig
 }
 
-func (exact exactlyOption) decoderApply(m *mapstructure.DecoderConfig) {
+func (exact exactlyOption) decoderApply(m *mapstructure.DecoderConfig) error {
 	m.DecodeHook = exact.dc.DecodeHook
 	m.ErrorUnused = exact.dc.ErrorUnused
 	m.ErrorUnset = exact.dc.ErrorUnset
@@ -307,17 +271,18 @@ func (exact exactlyOption) decoderApply(m *mapstructure.DecoderConfig) {
 	m.TagName = exact.dc.TagName
 	m.IgnoreUntaggedFields = exact.dc.IgnoreUntaggedFields
 	m.MatchName = exact.dc.MatchName
+	return nil
 }
 
-func (exact exactlyOption) unmarshalApply(opts *unmarshalOptions) {
+func (exact exactlyOption) unmarshalApply(opts *unmarshalOptions) error {
 	exact.decoderApply(&opts.decoder)
+	return nil
 }
 
-func (_ exactlyOption) isDefault() bool {
-	return false
+func (exact exactlyOption) valueApply(opts *valueOptions) error {
+	exact.decoderApply(&opts.decoder)
+	return nil
 }
-
-func (_ exactlyOption) valueApply(_ *valueOptions) {}
 
 func (exact exactlyOption) String() string {
 	return print.P("Exactly",

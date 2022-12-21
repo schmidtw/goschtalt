@@ -675,6 +675,11 @@ func TestOptions(t *testing.T) {
 				return false
 			},
 		}, {
+			description: "AddValue( record1, key, nil, WithError(testErr) )",
+			opt:         AddValue("record1", "key", nil, WithError(testErr)),
+			str:         "AddValue( 'record1', 'key', WithError( 'test err' ) )",
+			expectErr:   testErr,
+		}, {
 			description: "AddBuffer( filename.ext, bytes, AsDefault )",
 			opt:         AddBuffer("filename.ext", []byte("bytes"), AsDefault()),
 			str:         "AddBuffer( 'filename.ext', []byte, AsDefault() )",

@@ -28,7 +28,9 @@ func (c *Config) Marshal(opts ...MarshalOption) ([]byte, error) {
 	full := append(c.opts.marshalOptions, opts...)
 	for _, opt := range full {
 		if opt != nil {
-			opt.marshalApply(&cfg)
+			if err := opt.marshalApply(&cfg); err != nil {
+				return nil, err
+			}
 		}
 	}
 
@@ -57,7 +59,7 @@ type MarshalOption interface {
 	fmt.Stringer
 
 	// marshalApply applies the options to the Marshal function.
-	marshalApply(*marshalOptions)
+	marshalApply(*marshalOptions) error
 }
 
 type marshalOptions struct {
@@ -76,8 +78,9 @@ func RedactSecrets(redact ...bool) MarshalOption {
 
 type redactSecretsOption bool
 
-func (r redactSecretsOption) marshalApply(opts *marshalOptions) {
+func (r redactSecretsOption) marshalApply(opts *marshalOptions) error {
 	opts.redactSecrets = bool(r)
+	return nil
 }
 
 func (r redactSecretsOption) String() string {
@@ -97,8 +100,9 @@ func IncludeOrigins(origins ...bool) MarshalOption {
 
 type includeOriginsOption bool
 
-func (w includeOriginsOption) marshalApply(opts *marshalOptions) {
+func (w includeOriginsOption) marshalApply(opts *marshalOptions) error {
 	opts.withOrigins = bool(w)
+	return nil
 }
 
 func (i includeOriginsOption) String() string {
@@ -117,8 +121,9 @@ func FormatAs(extension string) MarshalOption {
 
 type formatAsOption string
 
-func (f formatAsOption) marshalApply(opts *marshalOptions) {
+func (f formatAsOption) marshalApply(opts *marshalOptions) error {
 	opts.format = string(f)
+	return nil
 }
 
 func (f formatAsOption) String() string {

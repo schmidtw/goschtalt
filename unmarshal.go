@@ -84,7 +84,10 @@ func (c *Config) unmarshal(key string, result any, tree meta.Object, opts ...Unm
 	full := append(c.opts.unmarshalOptions, opts...)
 	for _, opt := range full {
 		if opt != nil {
-			opt.unmarshalApply(&options)
+			err := opt.unmarshalApply(&options)
+			if err != nil {
+				return err
+			}
 		}
 	}
 
@@ -126,7 +129,7 @@ type UnmarshalOption interface {
 	fmt.Stringer
 
 	// marshalApply applies the options to the Marshal function.
-	unmarshalApply(*unmarshalOptions)
+	unmarshalApply(*unmarshalOptions) error
 }
 
 type unmarshalOptions struct {
@@ -182,8 +185,9 @@ type optionalOption struct {
 	optional bool
 }
 
-func (o optionalOption) unmarshalApply(opts *unmarshalOptions) {
+func (o optionalOption) unmarshalApply(opts *unmarshalOptions) error {
 	opts.optional = o.optional
+	return nil
 }
 
 func (o optionalOption) String() string {
@@ -215,8 +219,9 @@ type validatorOption struct {
 	fn   func(any) error
 }
 
-func (v validatorOption) unmarshalApply(opts *unmarshalOptions) {
+func (v validatorOption) unmarshalApply(opts *unmarshalOptions) error {
 	opts.validator = v.fn
+	return nil
 }
 
 func (v validatorOption) String() string {

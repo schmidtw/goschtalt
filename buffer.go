@@ -84,7 +84,11 @@ func (b buffer) apply(opts *options) error {
 	}
 
 	for _, opt := range b.opts {
-		if opt.isDefault() {
+		var info bufferOptions
+		if err := opt.bufferApply(&info); err != nil {
+			return err
+		}
+		if info.isDefault {
 			opts.defaults = append(opts.defaults, r)
 			return nil
 		}
@@ -141,5 +145,9 @@ func (b *buffer) toTree(delimiter string, umf UnmarshalFunc, decoders *codecRegi
 type BufferOption interface {
 	fmt.Stringer
 
-	isDefault() bool
+	bufferApply(*bufferOptions) error
+}
+
+type bufferOptions struct {
+	isDefault bool
 }

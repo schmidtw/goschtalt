@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/goschtalt/goschtalt/internal/print"
-	"github.com/mitchellh/mapstructure"
 )
 
 // GlobalOption
@@ -36,20 +35,17 @@ type errorOption struct {
 
 var _ Option = (*errorOption)(nil)
 
-func (opt errorOption) apply(_ *options) error {
-	return opt.err
-}
-
 func (errorOption) ignoreDefaults() bool {
 	return false
 }
-func (errorOption) isDefault() bool                            { return false }
-func (errorOption) decoderApply(_ *mapstructure.DecoderConfig) {}
-func (errorOption) valueApply(_ *valueOptions)                 {}
-func (errorOption) expandApply(*expand)                        {}
-func (errorOption) marshalApply(*marshalOptions)               {}
-func (errorOption) unmarshalApply(*unmarshalOptions)           {}
 
-func (o errorOption) String() string {
-	return print.P("WithError", print.Error(o.err))
+func (eo errorOption) apply(*options) error                   { return eo.err }
+func (eo errorOption) bufferApply(*bufferOptions) error       { return eo.err }
+func (eo errorOption) expandApply(*expand) error              { return eo.err }
+func (eo errorOption) marshalApply(*marshalOptions) error     { return eo.err }
+func (eo errorOption) unmarshalApply(*unmarshalOptions) error { return eo.err }
+func (eo errorOption) valueApply(*valueOptions) error         { return eo.err }
+
+func (eo errorOption) String() string {
+	return print.P("WithError", print.Error(eo.err))
 }

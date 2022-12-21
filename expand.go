@@ -4,6 +4,7 @@
 package goschtalt
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/goschtalt/goschtalt/internal/print"
@@ -20,7 +21,9 @@ func ExpandEnv(opts ...ExpandOption) Option {
 	}
 
 	for _, opt := range opts {
-		opt.expandApply(&exp)
+		if err := opt.expandApply(&exp); err != nil {
+			return WithError(fmt.Errorf("ExpandEnv() err: %w", err))
+		}
 	}
 
 	exp.text = print.P("ExpandEnv",
@@ -55,7 +58,9 @@ func Expand(mapper func(string) string, opts ...ExpandOption) Option {
 	}
 
 	for _, opt := range opts {
-		opt.expandApply(&exp)
+		if err := opt.expandApply(&exp); err != nil {
+			return WithError(fmt.Errorf("Expand() err: %w", err))
+		}
 	}
 
 	exp.text = print.P("Expand",
@@ -121,7 +126,7 @@ func (exp expand) String() string {
 // ExpandOption provides the means to configure options around variable
 // expansion.
 type ExpandOption interface {
-	expandApply(*expand)
+	expandApply(*expand) error
 }
 
 // WithOrigin provides the origin name to add showing where a value in the
@@ -132,7 +137,10 @@ func WithOrigin(origin string) ExpandOption {
 
 type withOriginOption string
 
-func (w withOriginOption) expandApply(exp *expand) { exp.origin = string(w) }
+func (w withOriginOption) expandApply(exp *expand) error {
+	exp.origin = string(w)
+	return nil
+}
 
 // WithDelimiters provides a way to define different delimiters for the start
 // and end of a variable for matching purposes.
@@ -145,9 +153,10 @@ type withDelimitersOption struct {
 	end   string
 }
 
-func (w withDelimitersOption) expandApply(exp *expand) {
+func (w withDelimitersOption) expandApply(exp *expand) error {
 	exp.start = w.start
 	exp.end = w.end
+	return nil
 }
 
 // WithMaximum provides a way to overwrite the maximum number of times variables
@@ -159,4 +168,7 @@ func WithMaximum(maximum int) ExpandOption {
 
 type withMaximumOption int
 
-func (w withMaximumOption) expandApply(exp *expand) { exp.maximum = int(w) }
+func (w withMaximumOption) expandApply(exp *expand) error {
+	exp.maximum = int(w)
+	return nil
+}

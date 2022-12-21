@@ -4,17 +4,20 @@
 package goschtalt
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
 func TestBufferValueOptions(t *testing.T) {
+	testErr := errors.New("test error")
 	tests := []struct {
 		description string
 		opt         BufferValueOption
 		asDefault   bool
 		str         string
+		expectedErr error
 	}{
 		{
 			description: "Verify AsDefault()",
@@ -30,15 +33,32 @@ func TestBufferValueOptions(t *testing.T) {
 			description: "Verify AsDefault(false)",
 			opt:         AsDefault(false),
 			str:         "AsDefault(false)",
+		}, {
+			description: "Verify WithError(testErr)",
+			opt:         WithError(testErr),
+			str:         "WithError( 'test error' )",
 		},
 	}
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 
-			assert.Equal(tc.asDefault, tc.opt.isDefault())
+			var bo bufferOptions
+			var vo valueOptions
 
-			assert.Equal(tc.str, tc.opt.String())
+			bErr := tc.opt.bufferApply(&bo)
+			vErr := tc.opt.valueApply(&vo)
+
+			if tc.expectedErr == nil {
+				assert.Equal(tc.asDefault, bo.isDefault)
+				assert.Equal(tc.asDefault, vo.isDefault)
+
+				assert.Equal(tc.str, tc.opt.String())
+				return
+			}
+
+			assert.ErrorIs(bErr, tc.expectedErr)
+			assert.ErrorIs(vErr, tc.expectedErr)
 		})
 	}
 }

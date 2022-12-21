@@ -61,6 +61,7 @@ func TestNew(t *testing.T) {
 
 func TestCompile(t *testing.T) {
 	unknownErr := fmt.Errorf("unknown err")
+	testErr := fmt.Errorf("test err")
 
 	fs1 := fstest.MapFS{
 		"a/1.json": &fstest.MapFile{
@@ -249,6 +250,16 @@ func TestCompile(t *testing.T) {
 			},
 			expectedErr: unknownErr,
 		}, {
+			description:   "An encoded buffer with an option that causes a failure.",
+			compileOption: true,
+			opts: []Option{
+				AlterKeyCase(strings.ToLower),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				AutoCompile(),
+				AddBuffer("1.json", []byte(`{}`), WithError(testErr)),
+			},
+			expectedErr: testErr,
+		}, {
 			description:   "A case with an encoded buffer fn that returns an error",
 			compileOption: true,
 			opts: []Option{
@@ -424,6 +435,52 @@ func TestCompile(t *testing.T) {
 			want:          st1{},
 			expect:        st1{},
 			expectedErr:   ErrInvalidInput,
+		}, {
+			description: "A case where the value function returns an error.",
+			opts: []Option{
+				AlterKeyCase(strings.ToLower),
+				AutoCompile(),
+				AddValueFn("record", Root,
+					func(string, UnmarshalFunc) (any, error) {
+						return nil, testErr
+					},
+				),
+			},
+			compileOption: true,
+			want:          st1{},
+			expect:        st1{},
+			expectedErr:   testErr,
+		}, {
+			description: "A case where the decode hook is invalid.",
+			opts: []Option{
+				AlterKeyCase(strings.ToLower),
+				AddValue("record", Root, st1{
+					Hello: "Mr. Blue Sky",
+					Blue:  "jay",
+					Madd:  "cat",
+				}, DecodeHook(func() {})),
+			},
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: unknownErr,
+		}, {
+			description: "A case where the an option is/becomes an error.",
+			opts: []Option{
+				AlterKeyCase(strings.ToLower),
+				AddValue("record", Root, st1{
+					Hello: "Mr. Blue Sky",
+					Blue:  "jay",
+					Madd:  "cat",
+				},
+					// Act like everything is fine the first time through, but then
+					// fail the 2nd time to trigger a failure during the compile
+					// code.
+					testSetError([]error{nil, testErr}),
+				),
+			},
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: testErr,
 		}, {
 			description: "A case with non-serializable values producing an error.",
 			opts: []Option{

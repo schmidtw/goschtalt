@@ -4,6 +4,7 @@
 package goschtalt
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 
@@ -11,6 +12,7 @@ import (
 )
 
 func TestExpand(t *testing.T) {
+	testErr := errors.New("test error")
 	fn := func(_ string) string {
 		return ""
 	}
@@ -21,6 +23,7 @@ func TestExpand(t *testing.T) {
 		want        expand
 		count       int
 		fnNil       bool
+		expectErr   error
 	}{
 		{
 			description: "Simple success",
@@ -58,6 +61,18 @@ func TestExpand(t *testing.T) {
 				end:     "}}",
 				maximum: 10000,
 			},
+		}, {
+			description: "Handle an error",
+			in:          ExpandEnv(WithError(testErr)),
+			str:         "WithError( 'ExpandEnv() err: test error' )",
+			count:       0,
+			expectErr:   testErr,
+		}, {
+			description: "Handle an error in Expand()",
+			in:          Expand(nil, WithError(testErr)),
+			str:         "WithError( 'Expand() err: test error' )",
+			count:       0,
+			expectErr:   testErr,
 		},
 	}
 
@@ -69,18 +84,23 @@ func TestExpand(t *testing.T) {
 
 			var c Config
 			err := c.With(tc.in)
-			assert.NoError(err)
 
-			assert.Equal(tc.count, len(c.opts.expansions))
-			if tc.count == 1 {
-				if tc.fnNil {
-					assert.Nil(c.opts.expansions[0].mapper)
+			if tc.expectErr == nil {
+				assert.NoError(err)
+
+				assert.Equal(tc.count, len(c.opts.expansions))
+				if tc.count == 1 {
+					if tc.fnNil {
+						assert.Nil(c.opts.expansions[0].mapper)
+					}
+					c.opts.expansions[0].mapper = nil
+					c.opts.expansions[0].text = ""
+
+					assert.True(reflect.DeepEqual(tc.want, c.opts.expansions[0]))
 				}
-				c.opts.expansions[0].mapper = nil
-				c.opts.expansions[0].text = ""
-
-				assert.True(reflect.DeepEqual(tc.want, c.opts.expansions[0]))
 			}
+
+			assert.ErrorIs(err, tc.expectErr)
 		})
 	}
 }

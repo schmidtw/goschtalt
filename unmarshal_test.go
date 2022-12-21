@@ -20,6 +20,7 @@ import (
 func TestUnmarshal(t *testing.T) {
 	var zeroOpt UnmarshalOption
 	unknownErr := fmt.Errorf("unknown error")
+	testErr := fmt.Errorf("test error")
 	type simple struct {
 		Foo   string
 		Delta string
@@ -172,6 +173,14 @@ func TestUnmarshal(t *testing.T) {
 			},
 			want:        simple{},
 			expectedErr: unknownErr,
+		}, {
+			description: "Verify handling an error option.",
+			input:       `{"foo":"bar"}`,
+			opts: []UnmarshalOption{
+				WithError(testErr),
+			},
+			want:        simple{},
+			expectedErr: testErr,
 		}, {
 			description: "A struct that wasn't compiled.",
 			input:       `{"foo":"bar", "delta": "1s"}`,

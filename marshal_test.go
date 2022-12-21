@@ -4,6 +4,7 @@
 package goschtalt
 
 import (
+	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -16,6 +17,7 @@ import (
 
 func TestMarshal(t *testing.T) {
 	var zeroOpt MarshalOption
+	testErr := errors.New("test error")
 
 	tests := []struct {
 		description string
@@ -68,6 +70,11 @@ func TestMarshal(t *testing.T) {
 			noEncoders:  true,
 			opts:        []MarshalOption{FormatAs("json")},
 			expectedErr: ErrCodecNotFound,
+		}, {
+			description: "Handle an error.",
+			input:       `{"foo":"bar"}`,
+			opts:        []MarshalOption{WithError(testErr)},
+			expectedErr: testErr,
 		},
 	}
 	for _, tc := range tests {

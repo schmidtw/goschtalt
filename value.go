@@ -67,27 +67,30 @@ type value struct {
 // toTree does the work of converting from a structure of some sort to the
 // normalized object tree goschtalt uses.
 func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOption) (meta.Object, error) {
+	var cfg valueOptions
+
+	// Set this before the options so we can trigger an easy err from the decoder.
 	raw := make(map[string]any)
-	cfg := mapstructure.DecoderConfig{
-		Result: &raw,
-	}
-	var valopts valueOptions
+	cfg.decoder.Result = &raw
 
 	all := append(defaultOpts, v.opts...)
 	for _, opt := range all {
-		opt.decoderApply(&cfg)
-		opt.valueApply(&valopts)
-	}
-
-	decoder, err := mapstructure.NewDecoder(&cfg)
-	if err == nil {
-		var data any
-		data, err = v.fn(v.recordName, um)
-		if err == nil {
-			err = decoder.Decode(data)
+		if err := opt.valueApply(&cfg); err != nil {
+			return meta.Object{}, err
 		}
 	}
+
+	decoder, err := mapstructure.NewDecoder(&cfg.decoder)
 	if err != nil {
+		return meta.Object{}, err
+	}
+
+	data, err := v.fn(v.recordName, um)
+	if err != nil {
+		return meta.Object{}, err
+	}
+
+	if err = decoder.Decode(data); err != nil {
 		return meta.Object{}, err
 	}
 
@@ -95,7 +98,7 @@ func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOp
 		[]meta.Origin{{File: v.recordName}},
 		strings.Split(v.key, delimiter)...)
 
-	if valopts.failOnNonSerializable {
+	if cfg.failOnNonSerializable {
 		if err = tree.ErrOnNonSerializable(); err != nil {
 			return meta.Object{}, err
 		}
@@ -115,7 +118,13 @@ func (v value) apply(opts *options) error {
 	}
 
 	for _, opt := range v.opts {
-		if opt.isDefault() {
+		var info valueOptions
+
+		if err := opt.valueApply(&info); err != nil {
+			return err
+		}
+
+		if info.isDefault {
 			opts.defaults = append(opts.defaults, r)
 			return nil
 		}
@@ -160,17 +169,13 @@ func (v value) String() string {
 type ValueOption interface {
 	fmt.Stringer
 
-	isDefault() bool
-
-	// decoderApply applies the options to the DecoderConfig used by several
-	// parts of goschtalt.
-	decoderApply(*mapstructure.DecoderConfig)
-
-	valueApply(*valueOptions)
+	valueApply(*valueOptions) error
 }
 
 type valueOptions struct {
+	decoder               mapstructure.DecoderConfig
 	failOnNonSerializable bool
+	isDefault             bool
 }
 
 // FailOnNonSerializable specifies that an error should be returned if any
@@ -186,14 +191,9 @@ func FailOnNonSerializable(fail ...bool) ValueOption {
 
 type failOnNonSerializableOption bool
 
-func (_ failOnNonSerializableOption) isDefault() bool {
-	return false
-}
-
-func (_ failOnNonSerializableOption) decoderApply(_ *mapstructure.DecoderConfig) {}
-
-func (e failOnNonSerializableOption) valueApply(opt *valueOptions) {
+func (e failOnNonSerializableOption) valueApply(opt *valueOptions) error {
 	opt.failOnNonSerializable = bool(e)
+	return nil
 }
 
 func (e failOnNonSerializableOption) String() string {
