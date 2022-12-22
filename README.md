@@ -78,7 +78,6 @@ stateDiagram-v2
     Sequence --> Compile
     Compile --> Expand
     Expand --> Active
-    Active --> Sequence:With() or Compile() called<br/>resequences the lists and<br/>recalculates the <br/>configuration tree.
 ```
 
 ## Extensions
