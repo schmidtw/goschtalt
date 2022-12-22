@@ -27,7 +27,7 @@ a bit longer.
 
 ```mermaid
 stateDiagram-v2
-    direction LR
+    direction TB
 
     state Gather_Inputs {
         direction TB
@@ -78,6 +78,7 @@ stateDiagram-v2
     Sequence --> Compile
     Compile --> Expand
     Expand --> Active
+    Active --> Sequence:With() or Compile() called<br/>resequences the lists and<br/>recalculates the <br/>configuration tree.
 ```
 
 ## Extensions
