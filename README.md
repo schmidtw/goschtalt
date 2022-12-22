@@ -13,15 +13,73 @@ A simple configuration library that supports multiple files and formats.
 
 ## Goals & Themes
 
-* Favor small, simple designs.
-* Keep dependencies to a minimum.
+* Support multiple configuration files and sources.
+* Enable tracing the origin of a configuration value.
 * Favor user customization options over building everything in.
-* Leverage go's new fs.FS interface for collecting files.
+* Keep dependencies to a minimum.
 
 ## API Stability
 
 This package has not yet released to 1.x yet, so APIs are subject to change for
 a bit longer.
+
+## Compilation of a Configuration
+
+```mermaid
+stateDiagram-v2
+    direction LR
+
+    state Gather_Inputs {
+        direction TB
+        AddBuffer() --> New()
+        AddFile() --> New()
+        AddValue(AsDefault()) --> New()
+    }
+
+    state Sequence {
+        direction TB
+        Defaults:Defaults by order added.
+        Records:Records sorted using record label.
+        ex:Expand instructions by order added.
+
+        Defaults --> Records
+        Records --> ex
+    }
+
+    state Compile {
+        calc:Calculate configuration<br/>tree at thie point.
+        eval:Apply all Expand()<br/>and ExpandEnv()<br/>to configuration<br/>tree in order.
+        fetch:Call any user<br/>provided funcs with<br/>configuration tree.
+        next:Next<br/>Configuration<br/>Tree Part
+        merge:Merge the new<br/>configuration tree part<br/>with the current tree
+        Empty:Empty<br/>Configuration<br/>Tree
+
+
+        Empty --> calc
+        calc --> eval:If a user func<br/>is provided
+        calc --> next:If no user func<br/>is provided
+        eval --> fetch
+        fetch --> next
+        next --> merge
+        merge --> calc
+    }
+
+    state Expand {
+        exp:Apply all Expand()<br/>and ExpandEnv()<br/>to configuration<br/>tree in order.
+    }
+
+    state Active {
+        active:Active Configuration
+        unmarshal:Unmarshal()
+        active --> unmarshal
+        unmarshal --> active
+    }
+    New() --> Sequence
+    Sequence --> Compile
+    Compile --> Expand
+    Expand --> Active
+    Active --> Sequence:With() or Compile() called<br/>resequences the lists and<br/>recalculates the <br/>configuration tree.
+```
 
 ## Extensions
 
