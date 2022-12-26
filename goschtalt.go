@@ -91,7 +91,6 @@ func (c *Config) With(opts ...Option) error {
 	// These options must always be present to prevent panics, etc.
 	full := []Option{
 		SortRecordsNaturally(),
-		AlterKeyCase(nil),
 		SetKeyDelimiter("."),
 	}
 
@@ -211,9 +210,7 @@ func (c *Config) compile() error { //nolint:funlen
 			fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 			return err
 		}
-		var err error
-		subtree := cfg.tree.AlterKeyCase(c.opts.keySwizzler)
-		merged, err = merged.Merge(subtree)
+		merged, err = merged.Merge(cfg.tree)
 		if err != nil {
 			fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 			return err
