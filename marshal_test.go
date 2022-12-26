@@ -5,7 +5,6 @@ package goschtalt
 
 import (
 	"errors"
-	"strings"
 	"testing"
 	"time"
 
@@ -95,7 +94,6 @@ func TestMarshal(t *testing.T) {
 				compiledAt: now,
 				opts: options{
 					encoders:     newRegistry[encoder.Encoder](),
-					keySwizzler:  strings.ToLower,
 					keyDelimiter: ".",
 				},
 			}

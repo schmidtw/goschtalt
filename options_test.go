@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"reflect"
 	"sort"
-	"strings"
 	"testing"
 	"testing/fstest"
 
@@ -221,36 +220,6 @@ func TestOptions(t *testing.T) {
 			description: "AutoCompile(false)",
 			opt:         AutoCompile(false),
 			str:         "AutoCompile( false )",
-		}, {
-			description: "AlterKeyCase(nil)",
-			opt:         AlterKeyCase(nil),
-			str:         "AlterKeyCase( none )",
-			check: func(cfg *options) bool {
-				if cfg.keySwizzler == nil {
-					return false
-				}
-				return cfg.keySwizzler("AbCd") == "AbCd"
-			},
-		}, {
-			description: "AlterKeyCase(strings.ToLower)",
-			opt:         AlterKeyCase(strings.ToLower),
-			str:         "AlterKeyCase( custom )",
-			check: func(cfg *options) bool {
-				if cfg.keySwizzler == nil {
-					return false
-				}
-				return cfg.keySwizzler("AbCd") == "abcd"
-			},
-		}, {
-			description: "AlterKeyCase(strings.ToUpper)",
-			opt:         AlterKeyCase(strings.ToUpper),
-			str:         "AlterKeyCase( custom )",
-			check: func(cfg *options) bool {
-				if cfg.keySwizzler == nil {
-					return false
-				}
-				return cfg.keySwizzler("AbCd") == "ABCD"
-			},
 		}, {
 			description: "SetKeyDelimiter( . )",
 			opt:         SetKeyDelimiter("."),

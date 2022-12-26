@@ -94,8 +94,12 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 }
 
 func (c *Config) unmarshal(key string, result any, tree meta.Object, opts ...UnmarshalOption) error {
-	var options unmarshalOptions
-	options.decoder.Result = result
+	options := unmarshalOptions{
+		decoder: mapstructure.DecoderConfig{
+			Result:    result,
+			MatchName: func(a, b string) bool { return a == b },
+		},
+	}
 
 	full := append(c.opts.unmarshalOptions, opts...)
 	for _, opt := range full {
@@ -109,7 +113,6 @@ func (c *Config) unmarshal(key string, result any, tree meta.Object, opts ...Unm
 
 	obj := tree
 	if len(key) > 0 {
-		key = c.opts.keySwizzler(key)
 		path := strings.Split(key, c.opts.keyDelimiter)
 
 		var err error

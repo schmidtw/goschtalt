@@ -42,7 +42,6 @@ type options struct {
 	// Settings where there are one.
 	autoCompile  bool
 	keyDelimiter string
-	keySwizzler  func(string) string
 	sorter       func(a, b string) bool
 
 	// Codecs where there can be many.
@@ -272,45 +271,6 @@ func (a autoCompileOption) apply(opts *options) error {
 func (_ autoCompileOption) ignoreDefaults() bool { return false }
 func (a autoCompileOption) String() string {
 	return print.P("AutoCompile", print.BoolSilentTrue(bool(a)))
-}
-
-// AlterKeyCase defines how the keys should be altered prior to use.  This
-// option enables enforcing key case to be all upper case, all lower case,
-// no change or whatever is needed.
-//
-// Passing nil alter value is interpreted as "do not alter" the key case and
-// is the same as passing:
-//
-//	func(s string) string { return s }
-//
-// Examples:
-//
-//	AlterKeyCase(strings.ToLower)
-//	AlterKeyCase(strings.ToUpper)
-//
-// # Default
-//
-// AlterKeyCase is set to "do not alter".
-func AlterKeyCase(alter func(string) string) Option {
-	return alterKeyCaseOption(alter)
-}
-
-type alterKeyCaseOption func(string) string
-
-func (alter alterKeyCaseOption) apply(opts *options) error {
-	if alter == nil {
-		alter = func(s string) string { return s }
-	}
-	opts.keySwizzler = alter
-	return nil
-}
-
-func (_ alterKeyCaseOption) ignoreDefaults() bool {
-	return false
-}
-
-func (a alterKeyCaseOption) String() string {
-	return print.P("AlterKeyCase", print.FnAltNil(a, "none"))
 }
 
 // SetKeyDelimiter provides the delimiter used for determining key parts.  A

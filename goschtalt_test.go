@@ -6,7 +6,6 @@ package goschtalt
 import (
 	"errors"
 	"fmt"
-	"strings"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -30,7 +29,7 @@ func TestNew(t *testing.T) {
 			description: "A normal case with no options.",
 		}, {
 			description: "A normal case with options.",
-			opts:        []Option{AlterKeyCase(strings.ToLower), AutoCompile()},
+			opts:        []Option{AutoCompile()},
 		}, {
 			description: "A case with an empty option.",
 			opts:        []Option{zeroOpt},
@@ -73,21 +72,21 @@ func TestCompile(t *testing.T) {
 			Mode: 0755,
 		},
 		"3.json": &fstest.MapFile{
-			Data: []byte(`{"hello":"Mr. Blue Sky"}`),
+			Data: []byte(`{"Hello":"Mr. Blue Sky"}`),
 			Mode: 0755,
 		},
 	}
 
 	fs2 := fstest.MapFS{
 		"b/90.json": &fstest.MapFile{
-			Data: []byte(`{"madd": "cat", "blue": "${thing}"}`),
+			Data: []byte(`{"Madd": "cat", "Blue": "${thing}"}`),
 			Mode: 0755,
 		},
 	}
 
 	fs3 := fstest.MapFS{
 		"b/90.json": &fstest.MapFile{
-			Data: []byte(`{"Hello((fail))": "cat", "blue": "bird"}`),
+			Data: []byte(`{"Hello((fail))": "cat", "Blue": "bird"}`),
 			Mode: 0755,
 		},
 	}
@@ -156,7 +155,6 @@ func TestCompile(t *testing.T) {
 		{
 			description: "A normal case with options.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddTree(fs1, "."),
 				AddTree(fs2, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -172,7 +170,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A normal case with an encoded buffer.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddBuffer("1.json", []byte(`{"Hello": "Mr. Blue Sky"}`)),
 				AddBuffer("2.json", []byte(`{"Blue": "${thing}"}`)),
 				AddBuffer("3.json", []byte(`{"Madd": "cat"}`)),
@@ -189,7 +186,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A normal case with an encoded buffer function.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddBuffer("3.json", []byte(`{"Madd": "cat"}`)),
 				AddBuffer("2.json", []byte(`{"Blue": "${thing}"}`)),
 				AddBufferFn("1.json", func(_ string, _ UnmarshalFunc) ([]byte, error) {
@@ -208,17 +204,16 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case with an encoded buffer function that looks up something from the tree.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddBuffer("1.json", []byte(`{"Madd": "cat"}`)),
 				AddBufferFn("2.json", func(_ string, un UnmarshalFunc) ([]byte, error) {
 					var s string
-					_ = un("madd", &s)
-					return []byte(fmt.Sprintf(`{"blue": "%s"}`, s)), nil
+					_ = un("Madd", &s)
+					return []byte(fmt.Sprintf(`{"Blue": "%s"}`, s)), nil
 				}),
 				AddBufferFn("3.json", func(_ string, un UnmarshalFunc) ([]byte, error) {
 					var s string
-					_ = un("blue", &s)
-					return []byte(fmt.Sprintf(`{"hello": "%s"}`, s)), nil
+					_ = un("Blue", &s)
+					return []byte(fmt.Sprintf(`{"Hello": "%s"}`, s)), nil
 				}),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
@@ -234,7 +229,6 @@ func TestCompile(t *testing.T) {
 			description:   "A case with an encoded buffer that is invalid",
 			compileOption: true,
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 				AddBuffer("1.json", []byte(`invalid`)),
@@ -244,7 +238,6 @@ func TestCompile(t *testing.T) {
 			description:   "An encoded buffer can't be decoded.",
 			compileOption: true,
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AutoCompile(),
 				AddBuffer("1.json", []byte(`invalid`)),
 			},
@@ -253,7 +246,6 @@ func TestCompile(t *testing.T) {
 			description:   "An encoded buffer with an option that causes a failure.",
 			compileOption: true,
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 				AddBuffer("1.json", []byte(`{}`), WithError(testErr)),
@@ -263,7 +255,6 @@ func TestCompile(t *testing.T) {
 			description:   "A case with an encoded buffer fn that returns an error",
 			compileOption: true,
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 				AddBufferFn("3.json", func(_ string, _ UnmarshalFunc) ([]byte, error) {
@@ -275,7 +266,6 @@ func TestCompile(t *testing.T) {
 			description:   "A case with an encoded buffer fn that returns an invalidly formatted buffer",
 			compileOption: true,
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 				AddBufferFn("3.json", func(_ string, _ UnmarshalFunc) ([]byte, error) {
@@ -286,7 +276,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A normal case with options including expansion.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddTree(fs1, "."),
 				AddTree(fs2, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -303,7 +292,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A normal case with values.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddValue("record1", Root, st1{
 					Hello: "Mr. Blue Sky",
 					Blue:  "jay",
@@ -320,7 +308,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A normal case with non-serializable values being errors.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddValue("record1", Root,
 					st1{
 						Hello: "Mr. Blue Sky",
@@ -339,7 +326,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A normal case with non-serializable values being dropped.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddValue("record1", Root,
 					st2{
 						Hello: "Mr. Blue Sky",
@@ -357,7 +343,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "An empty case.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
 			want:   st1{},
@@ -365,7 +350,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "An empty set of files.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddFiles(fs1),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
@@ -374,7 +358,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A merge failure case.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddTree(fs1, "."),
 				AddTree(fs3, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -385,7 +368,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A decode failure case.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddTree(fs1, "."),
 				AddTree(fs4, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -396,7 +378,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A recursion case where a failure results",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddTree(fs1, "."),
 				AddTree(fs2, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -410,7 +391,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case where the value decoder errors",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddValue("record1", Root, st1{
 					Hello: "Mr. Blue Sky",
 					Blue:  "jay",
@@ -423,7 +403,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case where the value doesn't have a record name.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AutoCompile(),
 				AddValue("", Root, st1{
 					Hello: "Mr. Blue Sky",
@@ -438,7 +417,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case where the value function returns an error.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AutoCompile(),
 				AddValueFn("record", Root,
 					func(string, UnmarshalFunc) (any, error) {
@@ -453,7 +431,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case where the decode hook is invalid.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddValue("record", Root, st1{
 					Hello: "Mr. Blue Sky",
 					Blue:  "jay",
@@ -466,7 +443,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case where the an option is/becomes an error.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddValue("record", Root, st1{
 					Hello: "Mr. Blue Sky",
 					Blue:  "jay",
@@ -484,7 +460,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case with non-serializable values producing an error.",
 			opts: []Option{
-				AlterKeyCase(strings.ToLower),
 				AddValue("record1", Root,
 					st2{
 						Hello: "Mr. Blue Sky",

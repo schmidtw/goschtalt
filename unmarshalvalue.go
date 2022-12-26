@@ -203,7 +203,7 @@ func (val ignoreUntaggedFieldsOption) String() string {
 //
 // # Default
 //
-// MatchName is nil.
+// MatchName is configured to exactly match.
 func MatchName(fn func(key, field string) bool) UnmarshalValueOption {
 	return &matchNameOption{fn: fn}
 }

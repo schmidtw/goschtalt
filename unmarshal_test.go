@@ -52,7 +52,7 @@ func TestUnmarshal(t *testing.T) {
 	}{
 		{
 			description: "A simple tree.",
-			input:       `{"foo":"bar", "delta": "1s"}`,
+			input:       `{"Foo":"bar", "Delta": "1s"}`,
 			opts:        []UnmarshalOption{},
 			want:        simple{},
 			expected: simple{
@@ -61,19 +61,19 @@ func TestUnmarshal(t *testing.T) {
 			},
 		}, {
 			description: "A simple tree showing the duration doesn't decode.",
-			input:       `{"foo":"bar", "delta": "1s"}`,
+			input:       `{"Foo":"bar", "Delta": "1s"}`,
 			opts:        []UnmarshalOption{},
 			want:        withDuration{},
 			expectedErr: unknownErr,
 		}, {
 			description: "A simple tree showing the duration doesn't decode, with zero option.",
-			input:       `{"foo":"bar", "delta": "1s"}`,
+			input:       `{"Foo":"bar", "Delta": "1s"}`,
 			opts:        []UnmarshalOption{zeroOpt},
 			want:        withDuration{},
 			expectedErr: unknownErr,
 		}, {
 			description: "A simple tree with the DecodeHook() behavior works with duration hook.",
-			input:       `{"foo":"bar", "delta": "1s"}`,
+			input:       `{"Foo":"bar", "Delta": "1s"}`,
 			opts: []UnmarshalOption{
 				DecodeHook(
 					mapstructure.ComposeDecodeHookFunc(
@@ -85,7 +85,7 @@ func TestUnmarshal(t *testing.T) {
 			},
 		}, {
 			description: "Verify the ErrorUnused() behavior succeeds.",
-			input:       `{"foo":"bar", "delta": "1s"}`,
+			input:       `{"Foo":"bar", "Delta": "1s"}`,
 			opts:        []UnmarshalOption{ErrorUnused(true)},
 			want:        simple{},
 			expected: simple{
@@ -94,13 +94,13 @@ func TestUnmarshal(t *testing.T) {
 			},
 		}, {
 			description: "Verify the ErrorUnused behavior fails.",
-			input:       `{"foo":"bar", "delta": "1s", "extra": "arg"}`,
+			input:       `{"Foo":"bar", "Delta": "1s", "extra": "arg"}`,
 			opts:        []UnmarshalOption{ErrorUnused(true)},
 			want:        simple{},
 			expectedErr: unknownErr,
 		}, {
 			description: "Verify the ErrorUnset() behavior succeeds.",
-			input:       `{"foo":"bar", "delta": "1s"}`,
+			input:       `{"Foo":"bar", "Delta": "1s"}`,
 			opts:        []UnmarshalOption{ErrorUnset(true)},
 			want:        simple{},
 			expected: simple{
@@ -109,13 +109,13 @@ func TestUnmarshal(t *testing.T) {
 			},
 		}, {
 			description: "Verify the ErrorUnset() behavior fails.",
-			input:       `{"foo":"bar", "extra": "arg"}`,
+			input:       `{"Foo":"bar", "extra": "arg"}`,
 			opts:        []UnmarshalOption{ErrorUnset(true)},
 			want:        simple{},
 			expectedErr: unknownErr,
 		}, {
 			description: "Verify the WeaklyTypedInput() behavior succeeds.",
-			input:       `{"foo":"bar", "bool": "T"}`,
+			input:       `{"Foo":"bar", "Bool": "T"}`,
 			opts:        []UnmarshalOption{WeaklyTypedInput(true)},
 			want:        withBool{},
 			expected: withBool{
@@ -148,7 +148,7 @@ func TestUnmarshal(t *testing.T) {
 			},
 		}, {
 			description: "Verify the WithValidator(fn) behavior works.",
-			input:       `{"foo":"bar"}`,
+			input:       `{"Foo":"bar"}`,
 			opts:        []UnmarshalOption{WithValidator(func(any) error { return nil })},
 			want:        simple{},
 			expected: simple{
@@ -156,7 +156,7 @@ func TestUnmarshal(t *testing.T) {
 			},
 		}, {
 			description: "Verify the WithValidator(nil) behavior works.",
-			input:       `{"foo":"bar"}`,
+			input:       `{"Foo":"bar"}`,
 			opts: []UnmarshalOption{
 				WithValidator(func(any) error { return unknownErr }),
 				WithValidator(nil),
@@ -167,7 +167,7 @@ func TestUnmarshal(t *testing.T) {
 			},
 		}, {
 			description: "Verify the WithValidator(fn) failure mode works.",
-			input:       `{"foo":"bar"}`,
+			input:       `{"Foo":"bar"}`,
 			opts: []UnmarshalOption{
 				WithValidator(func(any) error { return unknownErr }),
 			},
@@ -175,7 +175,7 @@ func TestUnmarshal(t *testing.T) {
 			expectedErr: unknownErr,
 		}, {
 			description: "Verify handling an error option.",
-			input:       `{"foo":"bar"}`,
+			input:       `{"Foo":"bar"}`,
 			opts: []UnmarshalOption{
 				WithError(testErr),
 			},
@@ -183,32 +183,32 @@ func TestUnmarshal(t *testing.T) {
 			expectedErr: testErr,
 		}, {
 			description: "A struct that wasn't compiled.",
-			input:       `{"foo":"bar", "delta": "1s"}`,
+			input:       `{"Foo":"bar", "Delta": "1s"}`,
 			notCompiled: true,
 			opts:        []UnmarshalOption{},
 			want:        simple{},
 			expectedErr: ErrNotCompiled,
 		}, {
 			description: "A nil result value.",
-			input:       `{"foo":"bar", "delta": "1s"}`,
+			input:       `{"Foo":"bar", "Delta": "1s"}`,
 			nilWanted:   true,
 			opts:        []UnmarshalOption{},
 			expectedErr: unknownErr,
 		}, {
 			description: "Make sure that indexing an array works",
-			key:         "foo.0",
-			input:       `{"foo":["one", "two"]}`,
+			key:         "Foo.0",
+			input:       `{"Foo":["one", "two"]}`,
 			opts:        []UnmarshalOption{Required()},
 			want:        "",
 			expected:    "one",
 		}, {
 			description: "Make sure that indexing an array is a number or error",
-			key:         "foo.bar",
-			input:       `{"foo":[{"foo":"one"}, "two"]}`,
+			key:         "Foo.Bar",
+			input:       `{"Foo":[{"Foo":"one"}, "two"]}`,
 			expectedErr: unknownErr,
 		}, {
 			description: "Verify the AddDefaultUnmarshalOption() works.",
-			input:       `{"foo":"bar", "bool": "T"}`,
+			input:       `{"Foo":"bar", "Bool": "T"}`,
 			defOpts:     []Option{DefaultUnmarshalOptions(WeaklyTypedInput(true))},
 			want:        withBool{},
 			expected: withBool{
@@ -234,7 +234,6 @@ func TestUnmarshal(t *testing.T) {
 				tree:       tree,
 				compiledAt: now,
 				opts: options{
-					keySwizzler:  strings.ToLower,
 					keyDelimiter: ".",
 				},
 			}
@@ -304,7 +303,7 @@ func TestUnmarshalFn(t *testing.T) {
 					Map: map[string]meta.Object{
 						"test": {
 							Map: map[string]meta.Object{
-								"foo": {
+								"Foo": {
 									Value: "bar",
 								},
 							},
