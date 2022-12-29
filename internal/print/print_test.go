@@ -174,6 +174,22 @@ func TestP(t *testing.T) {
 			opt:    Strings([]string{}, "label"),
 			expect: "Foo( label: '' )",
 		}, {
+			opt:    StringMap(map[string]string{}),
+			expect: "Foo( map[0] )",
+		}, {
+			opt:    StringMap(map[string]string{}, "label"),
+			expect: "Foo( label: map[0] )",
+		}, {
+			opt: StringMap(map[string]string{
+				"dog": "cat",
+			}),
+			expect: "Foo( map[1] )",
+		}, {
+			opt: StringMap(map[string]string{
+				"dog": "cat",
+			}, "label"),
+			expect: "Foo( label: map[1] )",
+		}, {
 			opts: []Option{
 				Bool(true), Fn(nil, "label"), Literal("abs"),
 			},

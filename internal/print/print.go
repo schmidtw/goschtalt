@@ -98,12 +98,12 @@ func P(name string, opts ...Option) string {
 	return b.String()
 }
 
-// Bool takes a bool and optional label and renders them consistently.
+// Bool takes a bool with optional label and renders them consistently.
 func Bool(b bool, label ...string) Option {
 	return labeledSimpleOption(fmt.Sprintf("%t", b), label...)
 }
 
-// BoolSilentFalse takes a bool and optional label and renders them consistently.
+// BoolSilentFalse takes a bool with optional label and renders them consistently.
 // If the value of the bool is false, no output is added.
 func BoolSilentFalse(b bool, label ...string) Option {
 	if b {
@@ -112,7 +112,7 @@ func BoolSilentFalse(b bool, label ...string) Option {
 	return nil
 }
 
-// BoolSilentTrue takes a bool and optional label and renders them consistently.
+// BoolSilentTrue takes a bool with optional label and renders them consistently.
 // If the value of the bool is true, no output is added.
 func BoolSilentTrue(b bool, label ...string) Option {
 	if b {
@@ -121,7 +121,7 @@ func BoolSilentTrue(b bool, label ...string) Option {
 	return Bool(b, label...)
 }
 
-// Bytes takes a []byte and optional label and renders them consistently.
+// Bytes takes a []byte with optional label and renders them consistently.
 func Bytes(b []byte, label ...string) Option {
 	txt := nilBytesName
 	if b != nil {
@@ -130,7 +130,7 @@ func Bytes(b []byte, label ...string) Option {
 	return labeledSimpleOption(txt, label...)
 }
 
-// Error takes a error and optional label and renders them consistently.
+// Error takes a error with optional label and renders them consistently.
 func Error(e error, label ...string) Option {
 	txt := nilErrorName
 	if e != nil {
@@ -147,7 +147,7 @@ func isFnNil(fn any) bool {
 	return fn == nil || reflect.ValueOf(fn).IsNil()
 }
 
-// Fn takes a func and optional label and renders them consistently.
+// Fn takes a func with optional label and renders them consistently.
 func Fn(fn any, label ...string) Option {
 	txt := nilFnName
 	if !isFnNil(fn) {
@@ -174,23 +174,23 @@ func FnAltNotNil(fn any, alt string, label ...string) Option {
 	return labeledSimpleOption(alt, label...)
 }
 
-// Int takes an int and optional label and renders them consistently.
+// Int takes an int with optional label and renders them consistently.
 func Int(i int, label ...string) Option {
 	return labeledSimpleOption(strconv.Itoa(i), label...)
 }
 
-// Literal takes a string literal and optional label and renders them consistently.
+// Literal takes a string literal with optional label and renders them consistently.
 func Literal(txt string, label ...string) Option {
 	return labeledSimpleOption(txt, label...)
 }
 
-// LiteralStrings takes an array of string literals and optional label and
+// LiteralStrings takes an array of string literals with optional label and
 // renders them consistently.
 func LiteralStrings(s []string, label ...string) Option {
 	return labeledSimpleOption(strings.Join(s, ", "), label...)
 }
 
-// LiteralStringerss takes an array of fmt.Stringers literals and optional label
+// LiteralStringerss takes an array of fmt.Stringers literals with optional label
 // and renders them consistently.
 func LiteralStringers[T fmt.Stringer](list []T, label ...string) Option {
 	s := make([]string, len(list))
@@ -200,12 +200,12 @@ func LiteralStringers[T fmt.Stringer](list []T, label ...string) Option {
 	return LiteralStrings(s, label...)
 }
 
-// String takes a string parameter and optional label and renders them consistently.
+// String takes a string parameter with optional label and renders them consistently.
 func String(txt string, label ...string) Option {
 	return labeledSimpleOption("'"+txt+"'", label...)
 }
 
-// Stringers takes an array of fmt.Stringers parameters and optional label and
+// Stringers takes an array of fmt.Stringers parameters with optional label and
 // renders them consistently.
 func Stringers[T fmt.Stringer](list []T, label ...string) Option {
 	s := make([]string, len(list))
@@ -215,10 +215,16 @@ func Stringers[T fmt.Stringer](list []T, label ...string) Option {
 	return Strings(s, label...)
 }
 
-// Strings takes an array of strings parameter and optional label and renders
+// Strings takes an array of strings parameter with optional label and renders
 // them consistently.
 func Strings(s []string, label ...string) Option {
 	return labeledSimpleOption("'"+strings.Join(s, "', '")+"'", label...)
+}
+
+// StringMap takes a map of strings to strings parameter with optional label and
+// renders them consistently.
+func StringMap(m map[string]string, label ...string) Option {
+	return labeledSimpleOption(fmt.Sprintf("map[%d]", len(m)), label...)
 }
 
 // labeledSimpleOption is a helper function to deal with the labels consistently.
