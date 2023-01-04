@@ -135,13 +135,6 @@ func TestUnmarshalValueOption(t *testing.T) {
 			opt:         ZeroFields(false),
 			want:        mapstructure.DecoderConfig{},
 		}, {
-			description: "MatchName(fn)",
-			str:         "MatchName(custom)",
-			opt:         MatchName(func(key, field string) bool { return true }),
-			check: func(m *mapstructure.DecoderConfig) bool {
-				return m.MatchName != nil
-			},
-		}, {
 			description: "Exactly(1)",
 			str:         "Exactly(DecodeHook: nil, ErrorUnused: false, ErrorUnset: true, ZeroFields: true, WeaklyTypedInput: false, TagName: '', IgnoreUntaggedFields: false, MatchName: nil)",
 			opt: Exactly(mapstructure.DecoderConfig{

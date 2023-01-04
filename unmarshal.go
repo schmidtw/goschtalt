@@ -96,8 +96,7 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 func (c *Config) unmarshal(key string, result any, tree meta.Object, opts ...UnmarshalOption) error {
 	options := unmarshalOptions{
 		decoder: mapstructure.DecoderConfig{
-			Result:    result,
-			MatchName: func(a, b string) bool { return a == b },
+			Result: result,
 		},
 	}
 
@@ -109,6 +108,14 @@ func (c *Config) unmarshal(key string, result any, tree meta.Object, opts ...Unm
 				return err
 			}
 		}
+	}
+
+	options.decoder.MatchName = func(key, field string) bool {
+		encoded := options.mapper(field)
+		if "-" == encoded {
+			return false
+		}
+		return encoded == key
 	}
 
 	obj := tree
@@ -153,8 +160,21 @@ type UnmarshalOption interface {
 
 type unmarshalOptions struct {
 	optional  bool
+	mappers   []Mapper
 	decoder   mapstructure.DecoderConfig
 	validator func(any) error
+}
+
+// mapper is a helper function that applies the mapper function behavior
+// uniformly.
+func (u unmarshalOptions) mapper(s string) string {
+	for _, m := range u.mappers {
+		if rv := m(s); rv != "" {
+			return rv
+		}
+	}
+
+	return s
 }
 
 // Optional provides a way to allow the requested configuration to not be present

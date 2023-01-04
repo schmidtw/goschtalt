@@ -198,34 +198,6 @@ func (val ignoreUntaggedFieldsOption) String() string {
 	return print.P("IgnoreUntaggedFields", print.BoolSilentTrue(bool(val)), print.SubOpt())
 }
 
-// MatchName ([mapstructure.DecoderConfig.MatchName]) is a [mapstructure.DecoderConfig]
-// field that defines how goschtalt unmarshals to/from structures.
-//
-// # Default
-//
-// MatchName is configured to exactly match.
-func MatchName(fn func(key, field string) bool) UnmarshalValueOption {
-	return &matchNameOption{fn: fn}
-}
-
-type matchNameOption struct {
-	fn func(mapKey, fieldName string) bool
-}
-
-func (match matchNameOption) unmarshalApply(opts *unmarshalOptions) error {
-	opts.decoder.MatchName = match.fn
-	return nil
-}
-
-func (match matchNameOption) valueApply(opts *valueOptions) error {
-	opts.decoder.MatchName = match.fn
-	return nil
-}
-
-func (match matchNameOption) String() string {
-	return print.P("MatchName", print.Fn(match.fn), print.SubOpt())
-}
-
 // ZeroFields ([mapstructure.DecoderConfig.ZeroFields]) is a [mapstructure.DecoderConfig]
 // field that defines how goschtalt unmarshals to/from structures.
 //
@@ -306,4 +278,71 @@ func (exact exactlyOption) String() string {
 		print.Bool(exact.dc.IgnoreUntaggedFields, "IgnoreUntaggedFields"),
 		print.Fn(exact.dc.MatchName, "MatchName"),
 		print.SubOpt())
+}
+
+// Mapper takes a golang structure field string and outputs a goschtalt
+// configuration tree name string that is one of the following:
+//   - "" indicating this mapper was unable to perform the remapping, continue
+//     calling mappers in the chain
+//   - "-"  indicating this value should be dropped entirely
+//   - anything else indicates the new full name
+type Mapper func(s string) string
+
+// Keymap takes a map of strings to strings and adds it to the existing
+// chain of keymaps. The key of the map is the golang structure field name and
+// the value is the goschtalt configuration tree name string. The value of "-"
+// means do not convert, and an empty string means call the next in the chain.
+//
+// For example, the map below converts a structure field "FooBarIP" to "foobar_ip".
+//
+//	Keymap( map[string]string{
+//		"FooBarIP": "foobar_ip",
+//	})
+func Keymap(m map[string]string) UnmarshalValueOption {
+	return &keymapOption{
+		text: print.P("Keymap", print.StringMap(m), print.SubOpt()),
+		m: func(s string) string {
+			if val, found := m[s]; found {
+				return val
+			}
+			return ""
+		},
+	}
+}
+
+// KeymapFn takes a Mapper function and adds it to the existing chain of
+// mappers, in the front of the list.
+//
+// This allows for multiple mappers to be specified instead of requiring a
+// single mapper with full knowledge of how to map everything. This makes it
+// easy to add logic to remap full keys without needing to re-implement the
+// underlying converters.
+func KeymapFn(mapper Mapper) UnmarshalValueOption {
+	return &keymapOption{
+		text: print.P("KeymapFn", print.Fn(mapper), print.SubOpt()),
+		m:    mapper,
+	}
+}
+
+type keymapOption struct {
+	text string
+	m    Mapper
+}
+
+func (k keymapOption) unmarshalApply(opts *unmarshalOptions) error {
+	if k.m != nil {
+		opts.mappers = append([]Mapper{k.m}, opts.mappers...)
+	}
+	return nil
+}
+
+func (k keymapOption) valueApply(opts *valueOptions) error {
+	if k.m != nil {
+		opts.mappers = append([]Mapper{k.m}, opts.mappers...)
+	}
+	return nil
+}
+
+func (k keymapOption) String() string {
+	return k.text
 }

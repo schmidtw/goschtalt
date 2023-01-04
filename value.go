@@ -111,6 +111,10 @@ func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOp
 		[]meta.Origin{{File: v.recordName}},
 		strings.Split(v.key, delimiter)...)
 
+	tree = tree.AlterKeyCase(func(s string) string {
+		return cfg.mapper(s)
+	})
+
 	if cfg.failOnNonSerializable {
 		if err = tree.ErrOnNonSerializable(); err != nil {
 			return meta.Object{}, err
@@ -187,8 +191,21 @@ type ValueOption interface {
 
 type valueOptions struct {
 	decoder               mapstructure.DecoderConfig
+	mappers               []Mapper
 	failOnNonSerializable bool
 	isDefault             bool
+}
+
+// mapper is a simple helper that does the mapping based on the specified
+// options.
+func (v valueOptions) mapper(s string) string {
+	for _, m := range v.mappers {
+		if rv := m(s); rv != "" {
+			return rv
+		}
+	}
+
+	return s
 }
 
 // FailOnNonSerializable specifies that an error should be returned if any

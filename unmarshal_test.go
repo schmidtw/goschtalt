@@ -137,16 +137,6 @@ func TestUnmarshal(t *testing.T) {
 			want:        simple{},
 			expected:    simple{},
 		}, {
-			description: "Verify the MatchName() behavior succeeds.",
-			input:       `{"flags":"bar"}`,
-			opts: []UnmarshalOption{MatchName(func(key, fieldName string) bool {
-				return key == "flags" && strings.ToLower(fieldName) == "foo"
-			})},
-			want: simple{},
-			expected: simple{
-				Foo: "bar",
-			},
-		}, {
 			description: "Verify the WithValidator(fn) behavior works.",
 			input:       `{"Foo":"bar"}`,
 			opts:        []UnmarshalOption{WithValidator(func(any) error { return nil })},
@@ -160,6 +150,61 @@ func TestUnmarshal(t *testing.T) {
 			opts: []UnmarshalOption{
 				WithValidator(func(any) error { return unknownErr }),
 				WithValidator(nil),
+			},
+			want: simple{},
+			expected: simple{
+				Foo: "bar",
+			},
+		}, {
+			description: "Convert from camelCase to PascalCase",
+			input:       `{"foo":"bar"}`,
+			opts: []UnmarshalOption{
+				Keymap(map[string]string{
+					"Foo": "foo",
+				}),
+			},
+			want: simple{},
+			expected: simple{
+				Foo: "bar",
+			},
+		}, {
+			description: "Verify a parameter can be ignored",
+			input:       `{"foo":"bar"}`,
+			opts: []UnmarshalOption{
+				Keymap(map[string]string{
+					"Foo": "-",
+				}),
+			},
+			want: simple{},
+			expected: simple{
+				Foo: "",
+			},
+		}, {
+			description: "Perform transforms via two different Keymap() calls.",
+			input:       `{"foo":"bar", "tree": "tree val"}`,
+			opts: []UnmarshalOption{
+				Keymap(map[string]string{
+					"Foo": "food",
+				}),
+				Keymap(map[string]string{
+					"Foo": "foo",
+				}),
+				Keymap(map[string]string{
+					"Delta": "tree",
+				}),
+			},
+			want: simple{},
+			expected: simple{
+				Foo:   "bar",
+				Delta: "tree val",
+			},
+		}, {
+			description: "Verify the KeymapFn() works",
+			input:       `{"foo":"bar"}`,
+			opts: []UnmarshalOption{
+				KeymapFn(func(s string) string {
+					return strings.ToLower(s)
+				}),
 			},
 			want: simple{},
 			expected: simple{

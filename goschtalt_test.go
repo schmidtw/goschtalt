@@ -6,6 +6,7 @@ package goschtalt
 import (
 	"errors"
 	"fmt"
+	"strings"
 	"testing"
 	"testing/fstest"
 	"time"
@@ -306,6 +307,31 @@ func TestCompile(t *testing.T) {
 			},
 			files: []string{"record1"},
 		}, {
+			description: "A normal case with values and remapping.",
+			opts: []Option{
+				AddValue("record1", Root, st1{
+					Hello: "Mr. Blue Sky",
+					Blue:  "jay",
+					Madd:  "cat",
+				},
+					KeymapFn(func(s string) string {
+						return strings.ToLower(s)
+					}),
+				),
+				DefaultUnmarshalOptions(
+					KeymapFn(func(s string) string {
+						return strings.ToLower(s)
+					}),
+				),
+			},
+			want: st1{},
+			expect: st1{
+				Hello: "Mr. Blue Sky",
+				Blue:  "jay",
+				Madd:  "cat",
+			},
+			files: []string{"record1"},
+		}, {
 			description: "A normal case with non-serializable values being errors.",
 			opts: []Option{
 				AddValue("record1", Root,
@@ -315,6 +341,28 @@ func TestCompile(t *testing.T) {
 						Madd:  "cat",
 					},
 					FailOnNonSerializable()),
+			},
+			want: st1{},
+			expect: st1{
+				Hello: "Mr. Blue Sky",
+				Blue:  "jay",
+				Madd:  "cat",
+			},
+			files: []string{"record1"},
+		}, {
+			description: "A normal case with non-serializable values being dropped via Keymap.",
+			opts: []Option{
+				AddValue("record1", Root,
+					st2{
+						Hello: "Mr. Blue Sky",
+						Blue:  "jay",
+						Madd:  "cat",
+					},
+					FailOnNonSerializable(),
+					Keymap(map[string]string{
+						"Func": "-",
+					}),
+				),
 			},
 			want: st1{},
 			expect: st1{
