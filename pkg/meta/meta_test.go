@@ -1090,16 +1090,29 @@ func TestAlterKeyCase(t *testing.T) {
 	tests := []struct {
 		description string
 		in          string
+		mapper      func(string) string
 		expected    string
 	}{
 		{
 			description: "Output a small tree.",
 			in:          `{"foo":"something"}`,
+			mapper:      strings.ToLower,
 			expected:    `{"foo":"something"}`,
 		}, {
 			description: "Output a larger tree.",
 			in:          `{"FOO":{ "BAR": "oNe", "Car": [ { "SAM": "CarT"}, "Golf" ] } }`,
+			mapper:      strings.ToLower,
 			expected:    `{"foo":{ "bar": "oNe", "car": [ { "sam": "CarT"}, "Golf" ] } }`,
+		}, {
+			description: "Output a larger tree but remove one item.",
+			in:          `{"FOO":{ "BAR": "oNe", "Car": [ { "SAM": "CarT"}, "Golf" ] } }`,
+			mapper: func(s string) string {
+				if s == "Car" {
+					return "-"
+				}
+				return strings.ToLower(s)
+			},
+			expected: `{"foo":{ "bar": "oNe" } }`,
 		},
 	}
 	for _, tc := range tests {
@@ -1109,7 +1122,7 @@ func TestAlterKeyCase(t *testing.T) {
 			in := decode(tc.in)
 			expected := decode(tc.expected)
 
-			got := in.AlterKeyCase(strings.ToLower)
+			got := in.AlterKeyCase(tc.mapper)
 
 			assert.Empty(cmp.Diff(expected, got, cmpopts.IgnoreUnexported(Object{})))
 		})

@@ -474,7 +474,8 @@ func (obj Object) ConvertMapsToArrays() Object {
 }
 
 // AlterKeyCase builds a copy of the tree where the keys for all Objects have
-// been converted using the specified conversion function.
+// been converted using the specified conversion function.  If the to function
+// returns the value "-" then the key and it's subtree is dropped entirely.
 func (obj Object) AlterKeyCase(to func(string) string) Object {
 	switch obj.Kind() {
 	case Array:
@@ -487,7 +488,10 @@ func (obj Object) AlterKeyCase(to func(string) string) Object {
 		m := make(map[string]Object)
 
 		for key, val := range obj.Map {
-			m[to(key)] = val.AlterKeyCase(to)
+			target := to(key)
+			if target != "-" {
+				m[target] = val.AlterKeyCase(to)
+			}
 		}
 		obj.Map = m
 	}
