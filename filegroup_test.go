@@ -66,15 +66,33 @@ func TestWalk(t *testing.T) {
 				`4.json`,
 			},
 		}, {
-			description: "Trailing slashes are not allowed.",
+			description: "Trailing slashes are stripped.",
 			grp: filegroup{
 				paths: []string{"nested/"},
 			},
-			expectedErr: iofs.ErrInvalid,
+			expected: []string{
+				`3.json`,
+				`4.json`,
+			},
 		}, {
-			description: "Absolute addressing is not allowed.",
+			description: "Non-clean path is cleaned.",
+			grp: filegroup{
+				paths: []string{"./a/../nested"},
+			},
+			expected: []string{
+				`3.json`,
+				`4.json`,
+			},
+		}, {
+			description: "Absolute path is not allowed.",
 			grp: filegroup{
 				paths: []string{"/nested"},
+			},
+			expectedErr: iofs.ErrInvalid,
+		}, {
+			description: "A relative path can't be outside the fs.",
+			grp: filegroup{
+				paths: []string{"../nested"},
 			},
 			expectedErr: iofs.ErrInvalid,
 		}, {

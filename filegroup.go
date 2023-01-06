@@ -115,7 +115,7 @@ func (g filegroup) enumerate() ([]string, error) {
 	var files []string
 
 	for _, path := range g.paths {
-		found, err := g.enumeratePath(path)
+		found, err := g.enumeratePath(filepath.Clean(path))
 		if err != nil {
 			return nil, err
 		}
