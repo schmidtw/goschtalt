@@ -3,7 +3,6 @@ SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 SPDX-License-Identifier: Apache-2.0
 -->
 # goschtalt
-A simple configuration library that supports multiple files and formats.
 
 [![Build Status](https://github.com/goschtalt/goschtalt/actions/workflows/ci.yml/badge.svg)](https://github.com/goschtalt/goschtalt/actions/workflows/ci.yml)
 [![codecov.io](http://codecov.io/github/goschtalt/goschtalt/coverage.svg?branch=main)](http://codecov.io/github/goschtalt/goschtalt?branch=main)
@@ -11,19 +10,61 @@ A simple configuration library that supports multiple files and formats.
 [![GitHub Release](https://img.shields.io/github/release/goschtalt/goschtalt.svg)](https://github.com/goschtalt/goschtalt/releases)
 [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/goschtalt)](https://pkg.go.dev/github.com/goschtalt/goschtalt)
 
+A customizable configuration library that supports multiple files and formats.
+
 ## Goals & Themes
 
-* Support multiple configuration files and sources.
-* Enable tracing the origin of a configuration value.
-* Favor user customization options over building everything in.
-* Keep dependencies to a minimum.
+* Make support for multiple configuration files and sources easy to use and extend.
+* Simplify tracing the origin of a configuration value.
+* Favor user customization options over building everything in, keeping dependencies
+  to a minimum.
+* Embrace patterns that make using other powerful libraries (like [kong](https://github.com/alecthomas/kong) or [fx](https://github.com/uber-go/fx)) simple.
 
 ## API Stability
 
 This package has not yet released to 1.x yet, so APIs are subject to change for
 a bit longer.
 
+After v1 is released, [SemVer](http://semver.org/) will be followed.
+
+## Installation
+
+```shell
+go get github.com/goschtalt/goschtalt
+```
+
+## Extensions
+
+Instead of trying to build everything in, goschtalt tries to only build in what
+is absolutely necessary and favor extensions.  This enables a diversity of
+ecosystem while not bloating your code with a bunch of dependencies.
+
+The following are popular goschtalt extensions:
+
+* Name nomenclature converter https://github.com/goschtalt/casemapper
+* Environment variable decoder https://github.com/goschtalt/env-decoder
+* JSON file type decoder https://github.com/goschtalt/json-decoder
+* Properties file type Decoder https://github.com/goschtalt/properties-decoder
+* YAML file type decoder https://github.com/goschtalt/yaml-decoder
+* YAML file type encoder https://github.com/goschtalt/yaml-encoder
+
+## Examples
+
+Coming soon.
+
+## Dependencies
+
+There are only two production dependencies in the core goschtalt code beyond the
+go standard library.  The rest are testing dependencies.
+
+Production dependencies:
+
+* [github.com/mitchellh/hashstructure](https://github.com/mitchellh/hashstructure)
+* [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure)
+
 ## Compilation of a Configuration
+
+This is more detailed overview of how the configuration is compiled.
 
 ```mermaid
 stateDiagram-v2
@@ -47,7 +88,7 @@ stateDiagram-v2
     }
 
     state Compile {
-        calc:Calculate configuration<br/>tree at thie point.
+        calc:Calculate configuration<br/>tree at this point.
         eval:Apply all Expand()<br/>and ExpandEnv()<br/>to configuration<br/>tree in order.
         fetch:Call any user<br/>provided funcs with<br/>configuration tree.
         next:Next<br/>Configuration<br/>Tree Part
@@ -80,49 +121,3 @@ stateDiagram-v2
     Expand --> Active
     Active --> Sequence:With() or Compile() called<br/>resequences the lists and<br/>recalculates the <br/>configuration tree.
 ```
-
-## Extensions
-
-These are just the extensions the goschtalt team maintains.  Others may be available
-and it's fairly easy to write your own.  Extensions have their own go.mod files
-that independently track dependencies to keep dependencies only based on what
-you need, not what could be used.
-
-### Configuration Decoders
-
-The decoders convert a file format into a useful object tree.  The meta.Object has
-many convenience functions that make adding decoders pretty simple.  Generally,
-the hardest part is determining where you are processing in the original file.
-
-| Status | GoDoc | Extension | Description |
-|--------|-------|-----------|-------------|
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/env-decoder)](https://goreportcard.com/report/github.com/goschtalt/env-decoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/env-decoder)](https://pkg.go.dev/github.com/goschtalt/env-decoder) | n/a | An environment variable based configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/json-decoder)](https://goreportcard.com/report/github.com/goschtalt/json-decoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/json-decoder)](https://pkg.go.dev/github.com/goschtalt/json-decoder) | `.json` | A JSON configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/properties-decoder)](https://goreportcard.com/report/github.com/goschtalt/properties-decoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/properties-decoder)](https://pkg.go.dev/github.com/goschtalt/properties-decoder) | `.properties` | A properties configuration decoder. |
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/yaml-decoder)](https://goreportcard.com/report/github.com/goschtalt/yaml-decoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/yaml-decoder)](https://pkg.go.dev/github.com/goschtalt/yaml-decoder) | `.yaml`, `.yml` | A YAML/YML configuration decoder |
-
-
-### Configuration Encoders
-
-The encoders are used to output configuration into a file format.  Ideally you want
-a format that accepts comments so it's easier see where the configurations originated
-from.
-
-| Status | GoDoc | Extension | Description |
-|--------|-------|-----------|-------------|
-| [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/yaml-encoder)](https://goreportcard.com/report/github.com/goschtalt/yaml-encoder) | [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/yaml-encoder)](https://pkg.go.dev/github.com/goschtalt/yaml-encoder) | `.yaml`, `.yml` | A YAML/YML configuration encoder. |
-
-
-## Dependencies
-
-There are only two production dependencies in the core goschtalt code beyond the
-go standard library.  The rest are testing dependencies.
-
-Production dependencies:
-
-* [github.com/mitchellh/hashstructure](https://github.com/mitchellh/hashstructure)
-* [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure)
-
-## Examples
-
-Coming soon.
