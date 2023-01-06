@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
-	"path/filepath"
+	"path"
 	"sort"
 	"strings"
 
@@ -70,7 +70,7 @@ func (g filegroup) toRecord(file, delimiter string, decoders *codecRegistry[deco
 	}
 
 	basename := stat.Name()
-	ext := strings.TrimPrefix(filepath.Ext(basename), ".")
+	ext := strings.TrimPrefix(path.Ext(basename), ".")
 
 	dec, err := decoders.find(ext)
 	if dec == nil {
@@ -114,8 +114,8 @@ func (g filegroup) toRecord(file, delimiter string, decoders *codecRegistry[deco
 func (g filegroup) enumerate() ([]string, error) {
 	var files []string
 
-	for _, path := range g.paths {
-		found, err := g.enumeratePath(filepath.Clean(path))
+	for _, p := range g.paths {
+		found, err := g.enumeratePath(path.Clean(p))
 		if err != nil {
 			return nil, err
 		}

@@ -6,7 +6,6 @@ package goschtalt
 import (
 	"errors"
 	iofs "io/fs"
-	"os"
 	"sort"
 	"strings"
 	"testing"
@@ -163,9 +162,6 @@ func TestWalk(t *testing.T) {
 			require.NotNil(dr)
 			dr.register(&testDecoder{extensions: []string{"json"}})
 
-			for i := range tc.grp.paths {
-				tc.grp.paths[i] = strings.ReplaceAll(tc.grp.paths[i], "/", string(os.PathSeparator))
-			}
 			got, err := tc.grp.toRecords(".", dr)
 
 			if tc.expectedErr == nil {
