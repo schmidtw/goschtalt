@@ -18,7 +18,7 @@ A customizable configuration library that supports multiple files and formats.
 * Simplify tracing the origin of a configuration value.
 * Favor user customization options over building everything in, keeping dependencies
   to a minimum.
-* Embrace patterns that make using other powerful libraries (like [kong](https://github.com/alecthomas/kong) or [fx](https://github.com/uber-go/fx)) simple.
+* Embrace patterns that make using other powerful libraries ([kong](https://github.com/alecthomas/kong), [fx](https://github.com/uber-go/fx), etc) simple.
 
 ## API Stability
 
