@@ -131,11 +131,25 @@ func TestUnmarshal(t *testing.T) {
 				Foo: "bar",
 			},
 		}, {
-			description: "Verify the optional behavior.",
+			description: "Verify the required (default) behavior.",
 			key:         "not_present",
 			input:       `{"flags":"bar"}`,
 			want:        simple{},
+			expectedErr: meta.ErrNotFound,
+		}, {
+			description: "Verify the optional behavior.",
+			key:         "not_present",
+			input:       `{"flags":"bar"}`,
+			opts:        []UnmarshalOption{Optional()},
+			want:        simple{},
 			expected:    simple{},
+		}, {
+			description: "Verify the optional behavior with a real failure.",
+			key:         "flags.dog",
+			input:       `{"flags":["bar"]}`,
+			opts:        []UnmarshalOption{Optional()},
+			want:        simple{},
+			expectedErr: unknownErr,
 		}, {
 			description: "Verify the WithValidator(fn) behavior works.",
 			input:       `{"Foo":"bar"}`,

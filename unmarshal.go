@@ -125,7 +125,7 @@ func (c *Config) unmarshal(key string, result any, tree meta.Object, opts ...Unm
 		var err error
 		obj, err = tree.Fetch(path, c.opts.keyDelimiter)
 		if err != nil {
-			if !errors.Is(err, meta.ErrNotFound) && !options.optional {
+			if !options.optional || !errors.Is(err, meta.ErrNotFound) {
 				return err
 			}
 		}
