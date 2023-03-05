@@ -12,6 +12,7 @@
 // SPDX-FileCopyrightText: 2016      https://github.com/roylou
 // SPDX-FileCopyrightText: 2016      kcln1687
 // SPDX-FileCopyrightText: 2018      https://github.com/ferhatelmas
+// SPDX-FileCopyrightText: 2023      Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 // SPDX-License-Identifier: MIT
 //
 // This file originated from https://github.com/fatih/structs/blob/878a968ab22548362a09bdb3322f98b00f470d46/structs.go
@@ -104,7 +105,7 @@ func (s *Struct) Map() map[string]interface{} {
 
 // FillMap is the same as Map. Instead of returning the output, it fills the
 // given map.
-func (s *Struct) FillMap(out map[string]interface{}) {
+func (s *Struct) FillMap(out map[string]interface{}) { //nolint:gocognit
 	if out == nil {
 		return
 	}
@@ -524,7 +525,7 @@ func Name(s interface{}) string {
 
 // nested retrieves recursively all types for the given value and returns the
 // nested value.
-func (s *Struct) nested(val reflect.Value) interface{} {
+func (s *Struct) nested(val reflect.Value) interface{} { //nolint:gocognit
 	var finalVal interface{}
 
 	v := reflect.ValueOf(val.Interface())

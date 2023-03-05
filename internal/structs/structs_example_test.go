@@ -1,5 +1,6 @@
 // SPDX-FileCopyrightText: 2014-2017 https://github.com/fatih
 // SPDX-FileCopyrightText: 2017      https://github.com/thedevsaddam
+// SPDX-FileCopyrightText: 2023      Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 // SPDX-License-Identifier: MIT
 //
 // This file originated from https://github.com/fatih/structs/blob/878a968ab22548362a09bdb3322f98b00f470d46/structs_example_test.go
@@ -96,7 +97,6 @@ func ExampleMap_omitNested() {
 		Time time.Time `structs:"time,omitnested"` // do not convert to map[string]interface{}
 	}
 
-	const shortForm = "2006-Jan-02"
 	t, _ := time.Parse("2006-Jan-02", "2013-Feb-03")
 
 	s := &Server{

@@ -3,6 +3,7 @@
 // SPDX-FileCopyrightText: 2015      https://github.com/shawnps
 // SPDX-FileCopyrightText: 2015-2016 Nathan Perry
 // SPDX-FileCopyrightText: 2018      https://github.com/ferhatelmas
+// SPDX-FileCopyrightText: 2023      Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 // SPDX-License-Identifier: MIT
 //
 // This file originated from https://github.com/fatih/structs/blob/878a968ab22548362a09bdb3322f98b00f470d46/field_test.go
@@ -10,6 +11,7 @@
 package structs
 
 import (
+	"errors"
 	"reflect"
 	"testing"
 )
@@ -21,7 +23,7 @@ type Foo struct {
 	C    bool   `json:"c"`
 	d    string // not exported
 	E    *Baz
-	x    string `xml:"x"` // not exported, with tag
+	x    string `xml:"x"` //nolint:unused,govet // not exported, with tag
 	Y    []string
 	Z    map[string]interface{}
 	*Bar // embedded
@@ -108,7 +110,7 @@ func TestField_Set(t *testing.T) {
 	// let's access an unexported field, which should give an error
 	f = s.Field("d")
 	err = f.Set("large")
-	if err != errNotExported {
+	if !errors.Is(err, errNotExported) {
 		t.Error(err)
 	}
 
@@ -151,7 +153,7 @@ func TestField_NotSettable(t *testing.T) {
 
 	s := New(a[4])
 
-	if err := s.Field("A").Set("newValue"); err != errNotSettable {
+	if err := s.Field("A").Set("newValue"); !errors.Is(err, errNotSettable) {
 		t.Errorf("Trying to set non-settable field should error with %q. Got %q instead.", errNotSettable, err)
 	}
 }
@@ -193,7 +195,7 @@ func TestField_Zero(t *testing.T) {
 	// let's access an unexported field, which should give an error
 	f = s.Field("d")
 	err = f.Zero()
-	if err != errNotExported {
+	if !errors.Is(err, errNotExported) {
 		t.Error(err)
 	}
 

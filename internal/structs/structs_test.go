@@ -11,6 +11,7 @@
 // SPDX-FileCopyrightText: 2017      https://github.com/miku
 // SPDX-FileCopyrightText: 2017      https://github.com/thedevsaddam
 // SPDX-FileCopyrightText: 2018      https://github.com/ferhatelmas
+// SPDX-FileCopyrightText: 2023      Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 // SPDX-License-Identifier: MIT
 //
 // This file originated from https://github.com/fatih/structs/blob/878a968ab22548362a09bdb3322f98b00f470d46/structs_test.go
@@ -22,8 +23,6 @@ import (
 	"reflect"
 	"testing"
 	"time"
-
-	"github.com/k0kubun/pp"
 )
 
 func TestMapNonStruct(t *testing.T) {
@@ -42,7 +41,7 @@ func TestMapNonStruct(t *testing.T) {
 
 func TestStructIndexes(t *testing.T) {
 	type C struct {
-		something int
+		something int //nolint:unused,govet // the presence is the test
 		Props     map[string]interface{}
 	}
 
@@ -180,8 +179,6 @@ func TestMap_CustomTag(t *testing.T) {
 	if e != "e-value" {
 		t.Errorf("D.E field should be equal to 'e-value', got: '%v'", e)
 	}
-
-	pp.Println(a)
 }
 
 func TestMap_MultipleCustomTag(t *testing.T) {
@@ -1338,8 +1335,8 @@ func (p *Person) String() string {
 func TestTagWithStringOption(t *testing.T) {
 
 	type Address struct {
-		Country string  `json:"country"`
-		Person  *Person `json:"person,string"`
+		Country string  `custom:"country"`
+		Person  *Person `custom:"person,string"`
 	}
 
 	person := &Person{
@@ -1362,7 +1359,7 @@ func TestTagWithStringOption(t *testing.T) {
 
 	s := New(address)
 
-	s.TagName = "json"
+	s.TagName = "custom"
 	m := s.Map()
 
 	if m["person"] != person.String() {
@@ -1381,7 +1378,7 @@ type Animal struct {
 }
 
 type Dog struct {
-	Animal *Animal `json:"animal,string"`
+	Animal *Animal `custom:"animal,string"`
 }
 
 func TestNonStringerTagWithStringOption(t *testing.T) {
@@ -1404,7 +1401,7 @@ func TestNonStringerTagWithStringOption(t *testing.T) {
 
 	s := New(d)
 
-	s.TagName = "json"
+	s.TagName = "custom"
 	m := s.Map()
 
 	if _, exists := m["animal"]; exists {
