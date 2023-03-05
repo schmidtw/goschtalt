@@ -246,7 +246,7 @@ func (obj Object) add(keys []string, val any, origin ...Origin) (Object, error) 
 	if kind == Array {
 		idx, err := strconv.Atoi(key)
 		if err != nil {
-			return Object{}, fmt.Errorf("%w: index: '%s' %v", ErrInvalidIndex, key, err)
+			return Object{}, fmt.Errorf("%w: index: '%s' %v", ErrInvalidIndex, key, err) //nolint:errorlint
 		}
 		if idx < 0 || len(obj.Array) < idx {
 			return Object{}, fmt.Errorf("%w: index: '%s' must be %d", ErrArrayOutOfBounds, key, len(obj.Array))

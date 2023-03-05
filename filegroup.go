@@ -98,7 +98,7 @@ func (g filegroup) toRecord(file, delimiter string, decoders *codecRegistry[deco
 	err = dec.Decode(ctx, data, &tree)
 	if err != nil {
 		err = fmt.Errorf("decoder error for extension '%s' processing file '%s' %w %v",
-			ext, basename, ErrDecoding, err)
+			ext, basename, ErrDecoding, err) //nolint:errorlint
 
 		return nil, err
 	}
