@@ -5,11 +5,12 @@ package goschtalt
 
 import (
 	"fmt"
+	"reflect"
 	"strings"
 
 	"github.com/goschtalt/goschtalt/internal/print"
+	"github.com/goschtalt/goschtalt/internal/structs"
 	"github.com/goschtalt/goschtalt/pkg/meta"
-	"github.com/mitchellh/mapstructure"
 )
 
 // AddValues provides a simple way to set additional configuration values at
@@ -71,7 +72,7 @@ type value struct {
 	// The fn to use to get the value.
 	fn func(recordName string, unmarshal UnmarshalFunc) (any, error)
 
-	// Options that configure how mapstructure will process the Value provided.
+	// Options that configure how to process the Value provided.
 	// These options are in addition to any default settings set with
 	// AddDefaultValueOptions().
 	opts []ValueOption
@@ -80,11 +81,9 @@ type value struct {
 // toTree does the work of converting from a structure of some sort to the
 // normalized object tree goschtalt uses.
 func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOption) (meta.Object, error) {
-	var cfg valueOptions
-
-	// Set this before the options so we can trigger an easy err from the decoder.
-	raw := make(map[string]any)
-	cfg.decoder.Result = &raw
+	cfg := valueOptions{
+		tagName: defaultTag,
+	}
 
 	all := append(defaultOpts, v.opts...)
 	for _, opt := range all {
@@ -93,18 +92,16 @@ func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOp
 		}
 	}
 
-	decoder, err := mapstructure.NewDecoder(&cfg.decoder)
-	if err != nil {
-		return meta.Object{}, err
-	}
-
 	data, err := v.fn(v.recordName, um)
 	if err != nil {
 		return meta.Object{}, err
 	}
 
-	if err = decoder.Decode(data); err != nil {
-		return meta.Object{}, err
+	raw := data
+	if reflect.TypeOf(data).Kind() == reflect.Struct {
+		s := structs.New(data)
+		s.TagName = cfg.tagName
+		raw = s.Map()
 	}
 
 	tree := meta.ObjectFromRawWithOrigin(raw,
@@ -114,6 +111,11 @@ func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOp
 	tree = tree.AlterKeyCase(func(s string) string {
 		return cfg.mapper(s)
 	})
+
+	tree, err = tree.AdaptToRaw(adapterIterator(cfg.adapters))
+	if err != nil {
+		return meta.Object{}, err
+	}
 
 	if cfg.failOnNonSerializable {
 		if err = tree.ErrOnNonSerializable(); err != nil {
@@ -190,8 +192,9 @@ type ValueOption interface {
 }
 
 type valueOptions struct {
-	decoder               mapstructure.DecoderConfig
+	tagName               string
 	mappers               []Mapper
+	adapters              []adapter
 	failOnNonSerializable bool
 	isDefault             bool
 }
@@ -232,4 +235,53 @@ func (e failOnNonSerializableOption) valueApply(opt *valueOptions) error {
 
 func (e failOnNonSerializableOption) String() string {
 	return print.P("FailOnNonSerializable", print.BoolSilentTrue(bool(e)), print.SubOpt())
+}
+
+// AdaptToCfg converts a value from one form to another if possible.  The resulting
+// form is returned if adapted.  If the combination of f and t are unknown
+// or unsupported return ErrNotApplicable as the error with a nil value.
+//
+// If ErrNotApplicable is returned the value returned will be ignored.
+//
+// The optional label parameter allows you to provide the function name of the
+// adapter so it is more clear which adapters are registered.
+//
+// All functions provided to Adapt() are called in the order provided until one
+// returns no error or the end of the list is encountered.
+//
+// When used as an option for an Unmarshal() operation, the value of f will
+// be the form in the configuration (string, int, etc) and the value of t will
+// represent the desired form in the target structure.
+//
+// When used as an option for a Value() operation, the value of f will be the
+// form present in the source structure and the t value will always be the type
+// Best.  The returned type should match the type retrieved from the
+// configuration decoder.  This generally will be a built in type like string,
+// int or bool.
+func AdaptToCfg(fn func(from reflect.Value) (any, error), label ...string) ValueOption {
+	label = append(label, "")
+	return &adaptToCfgOption{
+		label: label[0],
+		fn: func(from, to reflect.Value) (any, error) {
+			return fn(from)
+		},
+	}
+}
+
+type adaptToCfgOption struct {
+	label string
+	fn    adapter
+}
+
+func (a adaptToCfgOption) valueApply(opts *valueOptions) error {
+	opts.adapters = append(opts.adapters, a.fn)
+	return nil
+}
+
+func (a adaptToCfgOption) String() string {
+	labels := make([]string, 0, 1)
+	if len(a.label) > 0 {
+		labels = append(labels, a.label)
+	}
+	return print.P("AdaptToCfg", print.Fn(a.fn, labels...), print.SubOpt())
 }

@@ -6,13 +6,13 @@ package goschtalt
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/goschtalt/goschtalt/pkg/meta"
-	"github.com/mitchellh/mapstructure"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -29,13 +29,14 @@ func TestUnmarshal(t *testing.T) {
 		Foo   string
 		Delta time.Duration
 	}
-	type withBool struct {
-		Foo  string
-		Bool bool
-	}
 	type withAltTags struct {
 		Foo string `goschtalt:"flags"`
 		Bob string
+	}
+	type withAll struct {
+		Foo      string
+		Duration time.Duration
+		Time     time.Time
 	}
 
 	tests := []struct {
@@ -72,55 +73,133 @@ func TestUnmarshal(t *testing.T) {
 			want:        withDuration{},
 			expectedErr: unknownErr,
 		}, {
-			description: "A simple tree with the DecodeHook() behavior works with duration hook.",
+			description: "Convert from string to a time.Duration",
 			input:       `{"Foo":"bar", "Delta": "1s"}`,
-			opts: []UnmarshalOption{
-				DecodeHook(
-					mapstructure.ComposeDecodeHookFunc(
-						mapstructure.StringToTimeDurationHookFunc()))},
-			want: withDuration{},
+			opts:        []UnmarshalOption{adaptStringToDuration()},
+			want:        withDuration{},
 			expected: withDuration{
 				Foo:   "bar",
 				Delta: time.Second,
 			},
 		}, {
-			description: "Verify the ErrorUnused() behavior succeeds.",
+			description: "Fail to convert from string to a time.Duration",
+			input:       `{"Foo":"bar", "Delta": "invalid"}`,
+			opts: []UnmarshalOption{
+				adaptStringToDuration(), // Have the same handler registered multiple
+				adaptStringToDuration(), // times so there are multiple errors for
+				adaptStringToDuration(), // the same field.
+			},
+			want:        withDuration{},
+			expectedErr: unknownErr,
+		}, {
+			description: "Convert from string to a all supoorted types",
+			input: `{
+						"Foo":"bar",
+						"Duration": "1s",
+						"Time": "2022-12-30"
+					}`,
+			opts: []UnmarshalOption{
+				adaptStringToDuration(),
+				adaptStringToTime("2006-01-02"),
+			},
+			want: withAll{},
+			expected: withAll{
+				Foo:      "bar",
+				Duration: time.Second,
+				Time:     time.Date(2022, time.December, 30, 0, 0, 0, 0, time.UTC),
+			},
+		}, {
+			description: "Verify the Strictness(EXACT) behavior succeeds with exact match.",
 			input:       `{"Foo":"bar", "Delta": "1s"}`,
-			opts:        []UnmarshalOption{ErrorUnused(true)},
+			opts:        []UnmarshalOption{Strictness(EXACT)},
 			want:        simple{},
 			expected: simple{
 				Foo:   "bar",
 				Delta: "1s",
 			},
 		}, {
-			description: "Verify the ErrorUnused behavior fails.",
-			input:       `{"Foo":"bar", "Delta": "1s", "extra": "arg"}`,
-			opts:        []UnmarshalOption{ErrorUnused(true)},
+			description: "Verify the Strictness(EXACT) behavior catches extra config.",
+			input:       `{"Foo":"bar", "Delta": "1s", "extra": "value"}`,
+			opts:        []UnmarshalOption{Strictness(EXACT)},
 			want:        simple{},
 			expectedErr: unknownErr,
 		}, {
-			description: "Verify the ErrorUnset() behavior succeeds.",
+			description: "Verify the Strictness(EXACT) behavior catches missing config.",
+			input:       `{"Foo":"bar"}`,
+			opts:        []UnmarshalOption{Strictness(EXACT)},
+			want:        simple{},
+			expectedErr: unknownErr,
+		}, {
+			description: "Verify the Strictness(SUBSET) behavior succeeds with exact match.",
 			input:       `{"Foo":"bar", "Delta": "1s"}`,
-			opts:        []UnmarshalOption{ErrorUnset(true)},
+			opts:        []UnmarshalOption{Strictness(SUBSET)},
 			want:        simple{},
 			expected: simple{
 				Foo:   "bar",
 				Delta: "1s",
 			},
 		}, {
-			description: "Verify the ErrorUnset() behavior fails.",
-			input:       `{"Foo":"bar", "extra": "arg"}`,
-			opts:        []UnmarshalOption{ErrorUnset(true)},
+			description: "Verify the Strictness(SUBSET) behavior succeeds with subset.",
+			input:       `{"Foo":"bar"}`,
+			opts:        []UnmarshalOption{Strictness(SUBSET)},
+			want:        simple{},
+			expected: simple{
+				Foo: "bar",
+			},
+		}, {
+			description: "Verify the Strictness(SUBSET) behavior catches extra config.",
+			input:       `{"Foo":"bar", "extra": "value"}`,
+			opts:        []UnmarshalOption{Strictness(SUBSET)},
 			want:        simple{},
 			expectedErr: unknownErr,
 		}, {
-			description: "Verify the WeaklyTypedInput() behavior succeeds.",
-			input:       `{"Foo":"bar", "Bool": "T"}`,
-			opts:        []UnmarshalOption{WeaklyTypedInput(true)},
-			want:        withBool{},
-			expected: withBool{
-				Foo:  "bar",
-				Bool: true,
+			description: "Verify the Strictness(COMPLETE) behavior succeeds with exact match.",
+			input:       `{"Foo":"bar", "Delta": "1s"}`,
+			opts:        []UnmarshalOption{Strictness(COMPLETE)},
+			want:        simple{},
+			expected: simple{
+				Foo:   "bar",
+				Delta: "1s",
+			},
+		}, {
+			description: "Verify the Strictness(COMPLETE) behavior errors with subset.",
+			input:       `{"Foo":"bar"}`,
+			opts:        []UnmarshalOption{Strictness(COMPLETE)},
+			want:        simple{},
+			expectedErr: unknownErr,
+		}, {
+			description: "Verify the Strictness(COMPLETE) behavior ignores extra config.",
+			input:       `{"Foo":"bar", "Delta": "1s", "extra": "value"}`,
+			opts:        []UnmarshalOption{Strictness(COMPLETE)},
+			want:        simple{},
+			expected: simple{
+				Foo:   "bar",
+				Delta: "1s",
+			},
+		}, {
+			description: "Verify the Strictness(NONE) behavior succeeds with exact match.",
+			input:       `{"Foo":"bar", "Delta": "1s"}`,
+			opts:        []UnmarshalOption{Strictness(NONE)},
+			want:        simple{},
+			expected: simple{
+				Foo:   "bar",
+				Delta: "1s",
+			},
+		}, {
+			description: "Verify the Strictness(NONE) behavior succeeds with subset.",
+			input:       `{"Foo":"bar"}`,
+			opts:        []UnmarshalOption{Strictness(NONE)},
+			want:        simple{},
+			expected: simple{
+				Foo: "bar",
+			},
+		}, {
+			description: "Verify the Strictness(NONE) behavior ignores extra config.",
+			input:       `{"Foo":"bar", "extra": "value"}`,
+			opts:        []UnmarshalOption{Strictness(NONE)},
+			want:        simple{},
+			expected: simple{
+				Foo: "bar",
 			},
 		}, {
 			description: "Verify the TagName() behavior succeeds.",
@@ -266,13 +345,27 @@ func TestUnmarshal(t *testing.T) {
 			input:       `{"Foo":[{"Foo":"one"}, "two"]}`,
 			expectedErr: unknownErr,
 		}, {
-			description: "Verify the AddDefaultUnmarshalOption() works.",
-			input:       `{"Foo":"bar", "Bool": "T"}`,
-			defOpts:     []Option{DefaultUnmarshalOptions(WeaklyTypedInput(true))},
-			want:        withBool{},
-			expected: withBool{
-				Foo:  "bar",
-				Bool: true,
+			description: "AdaptFromCfg",
+			input:       `{"Foo":"2022-05-01"}`,
+			key:         "Foo",
+			want:        time.Time{},
+			opts: []UnmarshalOption{
+				AdaptFromCfg(func(f, t reflect.Value) (any, error) {
+					if f.Kind() != reflect.String {
+						return f.Interface(), nil
+					}
+					return time.Parse("2006-01-02", f.Interface().(string))
+				}),
+			},
+			expected: time.Date(2022, time.May, 1, 0, 0, 0, 0, time.UTC),
+		}, {
+			description: "Verify the DefaultUnmarshalOptions() works.",
+			input:       `{"Foo":"bar", "Delta": "bob"}`,
+			defOpts:     []Option{DefaultUnmarshalOptions(Strictness(EXACT))},
+			want:        simple{},
+			expected: simple{
+				Foo:   "bar",
+				Delta: "bob",
 			},
 		},
 	}

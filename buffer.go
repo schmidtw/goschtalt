@@ -140,7 +140,7 @@ func (b *buffer) toTree(delimiter string, umf UnmarshalFunc, decoders *codecRegi
 	err = dec.Decode(ctx, data, &tree)
 	if err != nil {
 		err = fmt.Errorf("decoder error for extension '%s' processing buffer '%s' %w %v",
-			ext, b.recordName, ErrDecoding, err)
+			ext, b.recordName, ErrDecoding, err) //nolint:errorlint
 
 		return meta.Object{}, err
 	}

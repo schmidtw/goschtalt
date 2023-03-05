@@ -6,6 +6,7 @@ package goschtalt
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -93,10 +94,53 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 	return c.unmarshal(key, result, c.tree, opts...)
 }
 
+// adapter is a function that maps a value from one form (from) to a different
+// form (to) if possible.  Generally they are short, simple functions.  The
+// result is returned with no error, or a nil result is returned with
+// ErrNotApplicable, or nil/zero is returned with an error.
+type adapter func(from, to reflect.Value) (any, error)
+
+// adapterIterator takes an array of adapters and applies them one at a time
+// until one of the following happens:
+//   - an adapter succeeds
+//   - all adapters are executed & there are error(s) (excluding ErrNotApplicable)
+//     resulting in an overall error
+//   - all adapters are executed & there are no error(s) (excluding ErrNotApplicable)
+//     resulting in the from value being returned
+func adapterIterator(ff []adapter) func(reflect.Value, reflect.Value) (any, error) {
+	return func(from, to reflect.Value) (any, error) {
+		var out any
+		var err error
+
+		errs := make([]error, 0, len(ff))
+		for _, f := range ff {
+			out, err = f(from, to)
+			if err == nil {
+				return out, nil
+			}
+
+			if !errors.Is(err, ErrNotApplicable) {
+				errs = append(errs, err)
+			}
+		}
+
+		if len(errs) == 0 {
+			return from.Interface(), nil
+		}
+
+		strs := make([]string, len(errs))
+		for i, e := range errs {
+			strs[i] = e.Error()
+		}
+		return nil, fmt.Errorf("%w: %s", ErrAdaptFailure, strings.Join(strs, ", "))
+	}
+}
+
 func (c *Config) unmarshal(key string, result any, tree meta.Object, opts ...UnmarshalOption) error {
 	options := unmarshalOptions{
 		decoder: mapstructure.DecoderConfig{
-			Result: result,
+			Result:  result,
+			TagName: defaultTag,
 		},
 	}
 
@@ -109,6 +153,8 @@ func (c *Config) unmarshal(key string, result any, tree meta.Object, opts ...Unm
 			}
 		}
 	}
+
+	options.decoder.DecodeHook = adapterIterator(options.adapters)
 
 	options.decoder.MatchName = func(key, field string) bool {
 		encoded := options.mapper(field)
@@ -161,6 +207,7 @@ type UnmarshalOption interface {
 type unmarshalOptions struct {
 	optional  bool
 	mappers   []Mapper
+	adapters  []adapter
 	decoder   mapstructure.DecoderConfig
 	validator func(any) error
 }
@@ -259,4 +306,118 @@ func (v validatorOption) unmarshalApply(opts *unmarshalOptions) error {
 
 func (v validatorOption) String() string {
 	return print.P("WithValidator", print.Fn(v.fn), print.SubOpt())
+}
+
+// AdaptFromCfg converts a value from one form to another if possible.  The resulting
+// form is returned if adapted.  If the combination of f and t are unknown
+// or unsupported return ErrNotApplicable as the error with a nil value.
+//
+// If ErrNotApplicable is returned the value returned will be ignored.
+//
+// The optional label parameter allows you to provide the function name of the
+// adapter so it is more clear which adapters are registered.
+//
+// All functions provided to Adapt() are called in the order provided until one
+// returns no error or the end of the list is encountered.
+//
+// When used as an option for an Unmarshal() operation, the value of f will
+// be the form in the configuration (string, int, etc) and the value of t will
+// represent the desired form in the target structure.
+//
+// When used as an option for a Value() operation, the value of f will be the
+// form present in the source structure and the t value will always be the type
+// Best.  The returned type should match the type retrieved from the
+// configuration decoder.  This generally will be a built in type like string,
+// int or bool.
+func AdaptFromCfg(fn func(from, to reflect.Value) (any, error), label ...string) UnmarshalOption {
+	label = append(label, "")
+	return &adaptFromCfgOption{
+		label: label[0],
+		fn:    fn,
+	}
+}
+
+type adaptFromCfgOption struct {
+	label string
+	fn    adapter
+}
+
+func (a adaptFromCfgOption) unmarshalApply(opts *unmarshalOptions) error {
+	opts.adapters = append(opts.adapters, a.fn)
+	return nil
+}
+
+func (a adaptFromCfgOption) String() string {
+	labels := make([]string, 0, 1)
+	if len(a.label) > 0 {
+		labels = append(labels, a.label)
+	}
+	return print.P("AdaptFromCfg", print.Fn(a.fn, labels...), print.SubOpt())
+}
+
+// A Level represents a specific degree in which a configuration matches a
+// structure's fields.
+type Level string
+
+const (
+	NONE     Level = "NONE"
+	SUBSET   Level = "SUBSET"
+	COMPLETE Level = "COMPLETE"
+	EXACT    Level = "EXACT"
+)
+
+// Strictness defines the relationship between the configuration values and the
+// structure fields.  The level parameter defines which mode to use.
+//
+//   - NONE - Any confiugration values are ok.  Neither missing nor extra values
+//     is an error.
+//   - SUBSET - The configuration values are limited to the set defined by the
+//     structure fields or it is an error.  Missing configuration is ok, but
+//     extra configuration values is an error.
+//   - COMPLETE - The configuration values must completely fill the structure
+//     fields or it is an error.  Extra configuration is ok, but missing
+//     configuration values is an error.
+//   - EXACT - The configuration values must exactly fill the structure fields
+//     or it is an error.  Extra or missing configuration are both errors.
+//   - NONE - (default) Both extra or too few configuration values as well as
+//
+// # Default
+//
+// NONE
+func Strictness(level Level) UnmarshalOption {
+	r := remapOption{
+		level: string(level),
+	}
+
+	switch level {
+	case NONE:
+	case SUBSET:
+		r.errorUnused = true
+	case COMPLETE:
+		r.errorUnset = true
+	case EXACT:
+		r.errorUnused = true
+		r.errorUnset = true
+	default:
+		r.err = fmt.Errorf("%w: unsupported strictness level: '%s'", ErrInvalidInput, level)
+	}
+
+	return &r
+}
+
+type remapOption struct {
+	level       string
+	err         error
+	errorUnused bool
+	errorUnset  bool
+}
+
+func (r remapOption) unmarshalApply(opts *unmarshalOptions) error {
+	opts.decoder.ErrorUnused = r.errorUnused
+	opts.decoder.ErrorUnset = r.errorUnset
+	return r.err
+}
+
+func (r remapOption) String() string {
+	return print.P("Strictness", print.String(r.level), print.SubOpt())
 }

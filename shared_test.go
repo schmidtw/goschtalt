@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
+// SPDX-FileCopyrightText: 2022-2023 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 // SPDX-License-Identifier: Apache-2.0
 
 package goschtalt
@@ -6,7 +6,11 @@ package goschtalt
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"reflect"
+	"strings"
+	"time"
 
 	"github.com/goschtalt/goschtalt/pkg/decoder"
 	"github.com/goschtalt/goschtalt/pkg/encoder"
@@ -83,6 +87,104 @@ func (t *testEncoder) Extensions() []string {
 	return t.extensions
 }
 
+// Test Adapters ///////////////////////////////////////////////////////////////
+
+// Don't export these in goschtalt core module.  They are exported as part of
+// the adapters-stl module.
+
+func adaptStringToDuration() UnmarshalOption {
+	return AdaptFromCfg(
+		func(from, to reflect.Value) (any, error) {
+			if from.Kind() == reflect.String && to.Type() == reflect.TypeOf(time.Duration(1)) {
+				return time.ParseDuration(from.Interface().(string))
+			}
+
+			return nil, ErrNotApplicable
+		},
+		"adaptStringToDuration",
+	)
+}
+
+func adaptDurationToCfg() ValueOption {
+	return AdaptToCfg(
+		func(from reflect.Value) (any, error) {
+			if from.Type() == reflect.TypeOf(time.Duration(1)) {
+				return from.Interface().(time.Duration).String(), nil
+			}
+
+			return nil, ErrNotApplicable
+		},
+		"adaptDurationToCfg",
+	)
+}
+
+func adaptStringToTime(layout string) UnmarshalOption {
+	return AdaptFromCfg(
+		func(from, to reflect.Value) (any, error) {
+			if from.Kind() == reflect.String && to.Type() == reflect.TypeOf(time.Time{}) {
+				return time.Parse(layout, from.Interface().(string))
+			}
+
+			return nil, ErrNotApplicable
+		},
+		"adaptStringToTime",
+	)
+}
+
+func adaptTimeToCfg(layout string) ValueOption {
+	return AdaptToCfg(
+		func(from reflect.Value) (any, error) {
+			if from.Type() == reflect.TypeOf(time.Time{}) {
+				return from.Interface().(time.Time).Format(layout), nil
+			}
+
+			return nil, ErrNotApplicable
+		},
+		"adaptTimeToCfg",
+	)
+}
+
+func adaptStringToFunc() UnmarshalOption {
+	return AdaptFromCfg(
+		func(from, to reflect.Value) (any, error) {
+			if from.Kind() == reflect.String && to.Type() == reflect.TypeOf(strings.ToUpper) {
+				switch from.Interface().(string) {
+				case "upper":
+					return strings.ToUpper, nil
+				case "lower":
+					return strings.ToLower, nil
+				default:
+				}
+				return nil, errors.New("unsupported")
+			}
+
+			return nil, ErrNotApplicable
+		},
+		"adaptStringToFunc",
+	)
+}
+
+func adaptFuncToCfg() ValueOption {
+	return AdaptToCfg(
+		func(from reflect.Value) (any, error) {
+			if from.Type() == reflect.TypeOf(strings.ToUpper) {
+				got := from.Call([]reflect.Value{reflect.ValueOf("TestString")})
+				switch got[0].Interface().(string) {
+				case "teststring":
+					return "lower", nil
+				case "TESTSTRING":
+					return "upper", nil
+				default:
+				}
+				return nil, errors.New("unsupported")
+			}
+
+			return nil, ErrNotApplicable
+		},
+		"adaptFuncToCfg",
+	)
+}
+
 // Test Utilities //////////////////////////////////////////////////////////////
 
 func addOrigin(obj meta.Object, origin *meta.Origin) meta.Object {
@@ -110,7 +212,7 @@ func addOrigin(obj meta.Object, origin *meta.Origin) meta.Object {
 
 // Test UnmarshalValueOption that lets us easily inject errors.
 
-func testSetResult(v any) UnmarshalValueOption {
+func testSetResult(v any) UnmarshalValueOption { //nolint:unused
 	return &testSetResultOption{val: v}
 }
 
@@ -143,7 +245,8 @@ func (t *testSetResultOption) unmarshalApply(opts *unmarshalOptions) error {
 
 func (t *testSetResultOption) valueApply(opts *valueOptions) error {
 	if t.val != nil {
-		opts.decoder.Result = t.val
+		// TODO this behavior has changed.
+		panic("this behavior has changed.")
 	}
 
 	return t.retErr()
