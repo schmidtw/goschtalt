@@ -65,11 +65,11 @@ func New(s interface{}) *Struct {
 //   // Field is ignored by this package.
 //   Field bool `structs:"-"`
 //
-// A tag value with the content of "string" uses the stringer to get the value. Example:
+// A tag value with the content of "stringer" uses the stringer to get the value. Example:
 //
 //   // The value will be output of Animal's String() func.
 //   // Map will panic if Animal does not implement String().
-//   Field *Animal `structs:"field,string"`
+//   Field *Animal `structs:"field,stringer"`
 //
 // A tag value with the option of "flatten" used in a struct field is to flatten its fields
 // in the output map. Example:
@@ -150,7 +150,7 @@ func (s *Struct) FillMap(out map[string]interface{}) { //nolint:gocognit
 			finalVal = val.Interface()
 		}
 
-		if tagOpts.Has("string") {
+		if tagOpts.Has("stringer") {
 			s, ok := val.Interface().(fmt.Stringer)
 			if ok {
 				out[name] = s.String()
@@ -211,7 +211,7 @@ func (s *Struct) Values() []interface{} {
 			}
 		}
 
-		if tagOpts.Has("string") {
+		if tagOpts.Has("stringer") {
 			s, ok := val.Interface().(fmt.Stringer)
 			if ok {
 				t = append(t, s.String())

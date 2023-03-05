@@ -1336,7 +1336,7 @@ func TestTagWithStringOption(t *testing.T) {
 
 	type Address struct {
 		Country string  `custom:"country"`
-		Person  *Person `custom:"person,string"`
+		Person  *Person `custom:"person,stringer"`
 	}
 
 	person := &Person{
@@ -1378,7 +1378,7 @@ type Animal struct {
 }
 
 type Dog struct {
-	Animal *Animal `custom:"animal,string"`
+	Animal *Animal `custom:"animal,stringer"`
 }
 
 func TestNonStringerTagWithStringOption(t *testing.T) {
