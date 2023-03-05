@@ -32,6 +32,10 @@ const Root = ""
 // option.
 var DefaultOptions = []Option{}
 
+// defaultTag is the go structure tag goschtalt will use for all it's work unless
+// otherwise specified.
+const defaultTag = "goschtalt"
+
 // Config is a configurable, prioritized, merging configuration registry.
 type Config struct {
 	mutex          sync.Mutex

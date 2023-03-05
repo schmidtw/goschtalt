@@ -5,6 +5,7 @@ package goschtalt
 
 import (
 	"errors"
+	"fmt"
 	"path/filepath"
 	"reflect"
 	"sort"
@@ -447,75 +448,45 @@ func TestOptions(t *testing.T) {
 				},
 			},
 		}, {
-			description: "DefaultUnmarshalOptions( DecodeHook() )",
-			opts: []Option{
-				DefaultUnmarshalOptions(DecodeHook(nil)),
-			},
-			goal: options{
-				unmarshalOptions: []UnmarshalOption{
-					&decodeHookOption{},
-				},
-			},
-		}, {
 			description: "DefaultUnmarshalOptions( most )",
 			opt: DefaultUnmarshalOptions(
-				DecodeHook(nil),
-				ErrorUnused(),
-				ErrorUnset(),
-				WeaklyTypedInput(),
+				Strictness(NONE),
+				Strictness(SUBSET),
+				Strictness(COMPLETE),
+				Strictness(EXACT),
+				Strictness(Level("Invalid")),
 				TagName("tag"),
-				IgnoreUntaggedFields(),
 			),
 			goal: options{
 				unmarshalOptions: []UnmarshalOption{
-					&decodeHookOption{},
-					errorUnusedOption(true),
-					errorUnsetOption(true),
-					weaklyTypedInputOption(true),
+					&remapOption{
+						level: "NONE",
+					},
+					&remapOption{
+						level:       "SUBSET",
+						errorUnused: true,
+					},
+					&remapOption{
+						level:      "COMPLETE",
+						errorUnset: true,
+					},
+					&remapOption{
+						level:       "EXACT",
+						errorUnused: true,
+						errorUnset:  true,
+					},
+					&remapOption{
+						level: "Invalid",
+						err:   fmt.Errorf("%w: unsupported strictness level: 'Invalid'", ErrInvalidInput),
+					},
 					tagNameOption("tag"),
-					ignoreUntaggedFieldsOption(true),
 				},
 			},
-			str: "DefaultUnmarshalOptions( DecodeHook(nil), ErrorUnused(), ErrorUnset(), WeaklyTypedInput(), TagName('tag'), IgnoreUntaggedFields() )",
-		}, {
-			description: "DefaultUnmarshalOptions( most )",
-			opt: DefaultUnmarshalOptions(
-				ErrorUnused(false),
-				ErrorUnset(false),
-				WeaklyTypedInput(false),
-				IgnoreUntaggedFields(false),
-			),
-			goal: options{
-				unmarshalOptions: []UnmarshalOption{
-					errorUnusedOption(false),
-					errorUnsetOption(false),
-					weaklyTypedInputOption(false),
-					ignoreUntaggedFieldsOption(false),
-				},
-			},
-			str: "DefaultUnmarshalOptions( ErrorUnused(false), ErrorUnset(false), WeaklyTypedInput(false), IgnoreUntaggedFields(false) )",
-		}, {
-			description: "DefaultUnmarshalOptions( DecodeHook() )",
-			opt: DefaultUnmarshalOptions(
-				DecodeHook(func() {}),
-			),
-			check: func(cfg *options) bool {
-				return len(cfg.unmarshalOptions) == 1
-			},
-			str: "DefaultUnmarshalOptions( DecodeHook(custom) )",
+			str: "DefaultUnmarshalOptions( Strictness('NONE'), Strictness('SUBSET'), Strictness('COMPLETE'), Strictness('EXACT'), Strictness('Invalid'), TagName('tag') )",
 		}, {
 			description: "DefaultValueOptions()",
 			opt:         DefaultValueOptions(),
 			str:         "DefaultValueOptions()",
-		}, {
-			description: "DefaultValueOptions( DecodeHook() )",
-			opt:         DefaultValueOptions(DecodeHook(nil)),
-			goal: options{
-				valueOptions: []ValueOption{
-					&decodeHookOption{},
-				},
-			},
-			str: "DefaultValueOptions( DecodeHook(nil) )",
 		}, {
 			description: "AddBuffer( filename.ext, bytes )",
 			opt:         AddBuffer("filename.ext", []byte("bytes")),

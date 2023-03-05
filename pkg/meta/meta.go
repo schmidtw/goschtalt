@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
+// SPDX-FileCopyrightText: 2022-2023 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 // SPDX-License-Identifier: Apache-2.0
 
 package meta
@@ -799,4 +799,51 @@ func (o Object) isEmpty() bool {
 		return true
 	}
 	return false
+}
+
+// AdaptToRaw uses the provided converter function against each parameter and
+// builds a new tree based on the output.  This allows for user provided
+// adapters to translate from string to a time.Time{} for example.  If multiple
+// adapters are needed provide a single adapter with the logic of applying the
+// list.
+//
+// # Note
+// The fn must return the original object, and an error of nil if no
+// transformation took place.
+func (obj Object) AdaptToRaw(fn func(from, to reflect.Value) (any, error)) (Object, error) {
+	switch obj.Kind() {
+	case Array:
+		var err error
+		array := make([]Object, len(obj.Array))
+		for i, val := range obj.Array {
+			array[i], err = val.AdaptToRaw(fn)
+			if err != nil {
+				return Object{}, err
+			}
+		}
+		obj.Array = array
+		return obj, nil
+	case Map:
+		m := make(map[string]Object)
+
+		for key, val := range obj.Map {
+			target, err := val.AdaptToRaw(fn)
+			if err != nil {
+				return Object{}, err
+			}
+			m[key] = target
+		}
+		obj.Map = m
+		return obj, nil
+	}
+
+	if fn != nil && obj.Value != nil {
+		v, err := fn(reflect.ValueOf(obj.Value), reflect.ValueOf("ignored"))
+		if err != nil {
+			return Object{}, err
+		}
+		obj.Value = v
+	}
+
+	return obj, nil
 }

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
+// SPDX-FileCopyrightText: 2022-2023 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 // SPDX-License-Identifier: Apache-2.0
 
 package meta
@@ -7,8 +7,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -1728,6 +1730,164 @@ func TestErrOnNonSerializable(t *testing.T) {
 			}
 
 			assert.ErrorIs(err, tc.expected)
+		})
+	}
+}
+
+func TestAdaptToRaw(t *testing.T) {
+	unknownErr := errors.New("unknownErr")
+	common := Object{
+		Map: map[string]Object{
+			"foo": {
+				Map: map[string]Object{
+					"bar": {
+						Value: time.Second,
+					},
+					"car": {
+						Array: []Object{
+							{
+								Map: map[string]Object{
+									"joe": {
+										Value: "other",
+									},
+									"sam": {
+										Value: 10 * time.Second,
+									},
+								},
+							}, {
+								Value: 15 * time.Second,
+							}, {
+								Value: time.Date(2022, time.December, 0, 0, 0, 0, 0, time.UTC),
+							}, {
+								Value: nil,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	tests := []struct {
+		description string
+		thing       Object
+		fn          func(from, to reflect.Value) (any, error)
+		expected    Object
+		expectedErr error
+	}{
+		{
+			description: "nil adapter",
+			thing:       common,
+			expected:    common,
+		}, {
+			description: "duration adapter",
+			thing:       common,
+			fn: func(from, to reflect.Value) (any, error) {
+				if from.Type() == reflect.TypeOf(time.Second) &&
+					to.Type() == reflect.TypeOf("string") {
+					return from.Interface().(time.Duration).String(), nil
+				}
+
+				return from.Interface(), nil
+			},
+			expected: Object{
+				Map: map[string]Object{
+					"foo": {
+						Map: map[string]Object{
+							"bar": {
+								Value: "1s",
+							},
+							"car": {
+								Array: []Object{
+									{
+										Map: map[string]Object{
+											"joe": {
+												Value: "other",
+											},
+											"sam": {
+												Value: "10s",
+											},
+										},
+									}, {
+										Value: "15s",
+									}, {
+										Value: time.Date(2022, time.December, 0, 0, 0, 0, 0, time.UTC),
+									}, {
+										Value: nil,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "time adapter",
+			thing:       common,
+			fn: func(from, to reflect.Value) (any, error) {
+				if from.Type() == reflect.TypeOf(time.Time{}) &&
+					to.Type() == reflect.TypeOf("string") {
+					return from.Interface().(time.Time).Format("2006"), nil
+				}
+
+				return from.Interface(), nil
+			},
+			expected: Object{
+				Map: map[string]Object{
+					"foo": {
+						Map: map[string]Object{
+							"bar": {
+								Value: time.Second,
+							},
+							"car": {
+								Array: []Object{
+									{
+										Map: map[string]Object{
+											"joe": {
+												Value: "other",
+											},
+											"sam": {
+												Value: time.Second * 10,
+											},
+										},
+									}, {
+										Value: time.Second * 15,
+									}, {
+										Value: "2022",
+									}, {
+										Value: nil,
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		}, {
+			description: "return an error for the 'other' string field",
+			thing:       common,
+			fn: func(from, to reflect.Value) (any, error) {
+				if from.Type() == reflect.TypeOf("string") {
+					return nil, unknownErr
+				}
+				return from.Interface(), nil
+			},
+			expectedErr: unknownErr,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			got, err := tc.thing.AdaptToRaw(tc.fn)
+
+			assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+			if tc.expectedErr == nil {
+				assert.NoError(err)
+				return
+			}
+
+			assert.ErrorIs(err, tc.expectedErr)
 		})
 	}
 }

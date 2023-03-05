@@ -6,6 +6,7 @@ package goschtalt
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"testing"
 	"testing/fstest"
@@ -142,6 +143,13 @@ func TestCompile(t *testing.T) {
 		Blue  string
 		Madd  string
 		Func  func()
+	}
+
+	type withAll struct {
+		Foo      string
+		Duration time.Duration
+		T        time.Time
+		Func     func(string) string
 	}
 
 	tests := []struct {
@@ -389,6 +397,35 @@ func TestCompile(t *testing.T) {
 			},
 			files: []string{"record1"},
 		}, {
+			description: "A case with adapters.",
+			opts: []Option{
+				AddValue("record1", Root,
+					withAll{
+						Foo:      "string",
+						Duration: time.Second,
+						T:        time.Date(2022, time.December, 30, 0, 0, 0, 0, time.UTC),
+						Func:     strings.ToUpper,
+					},
+					adaptTimeToCfg("2006-01-02"),
+					adaptDurationToCfg(),
+					adaptFuncToCfg(),
+				),
+				DefaultUnmarshalOptions(
+					adaptStringToTime("2006-01-02"),
+					adaptStringToDuration(),
+					adaptStringToFunc(),
+				),
+			},
+			want: withAll{},
+			expect: withAll{
+				Foo:      "string",
+				Duration: time.Second,
+				T:        time.Date(2022, time.December, 30, 0, 0, 0, 0, time.UTC),
+				Func:     strings.ToUpper,
+			},
+			files: []string{"record1"},
+		}, {
+
 			description: "An empty case.",
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -437,17 +474,22 @@ func TestCompile(t *testing.T) {
 			expect:        st1{},
 			expectedErr:   unknownErr,
 		}, {
-			description: "A case where the value decoder errors",
+			description: "A case where the value adapter returns an error.",
 			opts: []Option{
-				AddValue("record1", Root, st1{
-					Hello: "Mr. Blue Sky",
-					Blue:  "jay",
-					Madd:  "cat",
-				}, testSetResult(5)), // the result must be a pointer
+				AddValue("record1", Root,
+					withAll{
+						Foo:      "string",
+						Duration: time.Second,
+						T:        time.Date(2022, time.December, 30, 0, 0, 0, 0, time.UTC),
+					},
+					AdaptToCfg(func(reflect.Value) (any, error) { return nil, unknownErr }),
+					adaptTimeToCfg("2006-01-02"),
+					adaptDurationToCfg(),
+				),
 			},
-			want:        st1{},
-			expect:      st1{},
+			want:        withAll{},
 			expectedErr: unknownErr,
+			files:       []string{"record1"},
 		}, {
 			description: "A case where the value doesn't have a record name.",
 			opts: []Option{
@@ -476,18 +518,6 @@ func TestCompile(t *testing.T) {
 			want:          st1{},
 			expect:        st1{},
 			expectedErr:   testErr,
-		}, {
-			description: "A case where the decode hook is invalid.",
-			opts: []Option{
-				AddValue("record", Root, st1{
-					Hello: "Mr. Blue Sky",
-					Blue:  "jay",
-					Madd:  "cat",
-				}, DecodeHook(func() {})),
-			},
-			want:        st1{},
-			expect:      st1{},
-			expectedErr: unknownErr,
 		}, {
 			description: "A case where the an option is/becomes an error.",
 			opts: []Option{
@@ -547,7 +577,14 @@ func TestCompile(t *testing.T) {
 				err = cfg.Unmarshal(Root, &tc.want)
 				require.NoError(err)
 
-				assert.Empty(cmp.Diff(tc.expect, tc.want))
+				assert.Empty(cmp.Diff(tc.expect, tc.want,
+					cmp.Comparer(
+						func(a, b func(string) string) bool {
+							test := "TestString"
+							return a(test) == b(test)
+						},
+					),
+				))
 
 				// check the file order
 				got, err := cfg.ShowOrder()
@@ -660,7 +697,7 @@ func TestHash(t *testing.T) {
 				AddValue("rec", Root, map[string]string{"hello": "world"}),
 				AutoCompile(),
 			},
-			expect: 0x66c6ba5f017f3756,
+			expect: 0xd4998250e28306ae,
 		},
 	}
 
