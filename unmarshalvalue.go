@@ -104,14 +104,14 @@ type keymapOption struct {
 
 func (k keymapOption) unmarshalApply(opts *unmarshalOptions) error {
 	if k.m != nil {
-		opts.mappers = append([]Mapper{k.m}, opts.mappers...)
+		opts.mappers = append(opts.mappers, k.m)
 	}
 	return nil
 }
 
 func (k keymapOption) valueApply(opts *valueOptions) error {
 	if k.m != nil {
-		opts.mappers = append([]Mapper{k.m}, opts.mappers...)
+		opts.mappers = append(opts.mappers, k.m)
 	}
 	return nil
 }

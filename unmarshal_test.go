@@ -276,11 +276,13 @@ func TestUnmarshal(t *testing.T) {
 			description: "Perform transforms via two different Keymap() calls.",
 			input:       `{"foo":"bar", "tree": "tree val"}`,
 			opts: []UnmarshalOption{
+				// Processed first, renames the string to flood
 				Keymap(map[string]string{
-					"Foo": "food",
+					"Foo": "flood",
 				}),
+				// Processed second, renames flood to foo
 				Keymap(map[string]string{
-					"Foo": "foo",
+					"flood": "foo",
 				}),
 				Keymap(map[string]string{
 					"Delta": "tree",
