@@ -774,3 +774,43 @@ func TestCompiledAt(t *testing.T) {
 		})
 	}
 }
+
+func TestGetTree(t *testing.T) {
+	tests := []struct {
+		description string
+		opts        []Option
+		mapsize     int
+	}{
+		{
+			description: "An empty list",
+		}, {
+			description: "A simple list",
+			opts: []Option{
+				AutoCompile(),
+				AddValue("record1", Root,
+					struct {
+						Entry string
+					}{
+						Entry: "side door",
+					},
+				),
+			},
+			mapsize: 1,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			cfg, err := New(tc.opts...)
+			require.NotNil(cfg)
+			require.NoError(err)
+
+			got := cfg.GetTree()
+			require.NotNil(got)
+			assert.Equal(tc.mapsize, len(got.Map))
+		})
+	}
+}

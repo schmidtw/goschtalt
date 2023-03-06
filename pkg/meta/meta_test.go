@@ -1891,3 +1891,67 @@ func TestAdaptToRaw(t *testing.T) {
 		})
 	}
 }
+
+func TestClone(t *testing.T) {
+	tests := []struct {
+		description string
+		in          Object
+	}{
+		{
+			description: "Output an small tree.",
+			in: Object{
+				Origins: []Origin{},
+				Map: map[string]Object{
+					"foo": {
+						Origins: []Origin{},
+						secret:  true,
+						Value:   "very secret.",
+					},
+				},
+			},
+		}, {
+			description: "Output an larger tree.",
+			in: Object{
+				Origins: []Origin{},
+				Map: map[string]Object{
+					"foo": {
+						Origins: []Origin{},
+						Map: map[string]Object{
+							"bar": {
+								Origins: []Origin{},
+								Value:   int(123),
+							},
+							"car": {
+								Origins: []Origin{},
+								Array: []Object{
+									{
+										Origins: []Origin{},
+										Map: map[string]Object{
+											"sam": {
+												Origins: []Origin{},
+												secret:  true,
+												Value:   "cart",
+											},
+										},
+									}, {
+										Origins: []Origin{},
+										Value:   "golf",
+									},
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			got := tc.in.Clone()
+
+			assert.Empty(cmp.Diff(tc.in, got, cmpopts.IgnoreUnexported(Object{})))
+		})
+	}
+}

@@ -342,3 +342,15 @@ func (c *Config) Explain() string {
 
 	return c.explainOptions.String() + "\n" + c.explainCompile.String()
 }
+
+// GetTree returns a copy of the compiled tree.  This is useful for debugging
+// what the configuration tree looks like with a tool like k0kubun/pp.
+//
+// The value returned is a deep clone & has nothing to do with the original
+// that still resides inside the Config object.
+func (c *Config) GetTree() meta.Object {
+	c.mutex.Lock()
+	defer c.mutex.Unlock()
+
+	return c.tree.Clone()
+}

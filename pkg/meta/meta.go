@@ -847,3 +847,25 @@ func (obj Object) AdaptToRaw(fn func(from, to reflect.Value) (any, error)) (Obje
 
 	return obj, nil
 }
+
+// Clone builds a copy of the tree where secrets are redacted.  Secret maps
+// or arrays will now show up as values containing the value 'REDACTED'.
+func (obj Object) Clone() Object {
+	switch obj.Kind() {
+	case Array:
+		array := make([]Object, len(obj.Array))
+		for i, val := range obj.Array {
+			array[i] = val.Clone()
+		}
+		obj.Array = array
+	case Map:
+		m := make(map[string]Object)
+
+		for key, val := range obj.Map {
+			m[key] = val.Clone()
+		}
+		obj.Map = m
+	}
+
+	return obj
+}
