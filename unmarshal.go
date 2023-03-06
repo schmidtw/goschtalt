@@ -217,7 +217,7 @@ type unmarshalOptions struct {
 func (u unmarshalOptions) mapper(s string) string {
 	for _, m := range u.mappers {
 		if rv := m(s); rv != "" {
-			return rv
+			s = rv
 		}
 	}
 

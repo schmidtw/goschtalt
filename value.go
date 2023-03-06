@@ -208,7 +208,7 @@ type valueOptions struct {
 func (v valueOptions) mapper(s string) string {
 	for _, m := range v.mappers {
 		if rv := m(s); rv != "" {
-			return rv
+			s = rv
 		}
 	}
 

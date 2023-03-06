@@ -78,7 +78,7 @@ func Keymap(m map[string]string) UnmarshalValueOption {
 			if val, found := m[s]; found {
 				return val
 			}
-			return ""
+			return s
 		},
 	}
 }
