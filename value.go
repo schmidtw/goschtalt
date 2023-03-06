@@ -97,14 +97,18 @@ func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOp
 		return meta.Object{}, err
 	}
 
-	raw := data
+	// Dereference the pointer if it is one.
+	if reflect.TypeOf(data).Kind() == reflect.Ptr {
+		data = reflect.ValueOf(data).Elem().Interface()
+	}
+
 	if reflect.TypeOf(data).Kind() == reflect.Struct {
 		s := structs.New(data)
 		s.TagName = cfg.tagName
-		raw = s.Map()
+		data = s.Map()
 	}
 
-	tree := meta.ObjectFromRawWithOrigin(raw,
+	tree := meta.ObjectFromRawWithOrigin(data,
 		[]meta.Origin{{File: v.recordName}},
 		strings.Split(v.key, delimiter)...)
 

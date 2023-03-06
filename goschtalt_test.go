@@ -145,6 +145,12 @@ func TestCompile(t *testing.T) {
 		Func  func()
 	}
 
+	type st3 struct {
+		Dog  string `goschtalt:"Hello"`
+		Blue string
+		Madd string
+	}
+
 	type withAll struct {
 		Foo      string
 		Duration time.Duration
@@ -157,6 +163,7 @@ func TestCompile(t *testing.T) {
 		compileOption bool
 		opts          []Option
 		want          any
+		key           string
 		expect        any
 		files         []string
 		expectedErr   error
@@ -314,6 +321,19 @@ func TestCompile(t *testing.T) {
 				Madd:  "cat",
 			},
 			files: []string{"record1"},
+		}, {
+			description: "A tag remapping case with a pointer to the value.",
+			opts: []Option{
+				AddValue("record1", Root, &st3{
+					Dog:  "Mr. Blue Sky",
+					Blue: "jay",
+					Madd: "cat",
+				}),
+			},
+			key:    "Hello",
+			want:   "string",
+			expect: "Mr. Blue Sky",
+			files:  []string{"record1"},
 		}, {
 			description: "A normal case with values and remapping.",
 			opts: []Option{
@@ -574,7 +594,7 @@ func TestCompile(t *testing.T) {
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				require.NotNil(cfg)
-				err = cfg.Unmarshal(Root, &tc.want)
+				err = cfg.Unmarshal(tc.key, &tc.want)
 				require.NoError(err)
 
 				assert.Empty(cmp.Diff(tc.expect, tc.want,
