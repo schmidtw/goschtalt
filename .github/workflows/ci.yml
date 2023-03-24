@@ -21,9 +21,5 @@ permissions:
 
 jobs:
   ci:
-<<<<<<< Updated upstream
-    uses: goschtalt/.github/.github/workflows/ci.yml@b3178a73d3a293d7ec99607a1bd0ad46c9d3e552 # v1.0.1
-=======
     uses: goschtalt/.github/.github/workflows/ci.yml@b3178a73d3a293d7ec99607a1bd0ad46c9d3e552 # v1.0.5
->>>>>>> Stashed changes
     secrets: inherit
