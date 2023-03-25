@@ -17,9 +17,5 @@ permissions:
 
 jobs:
   codeql:
-<<<<<<< Updated upstream
-    uses: goschtalt/.github/.github/workflows/codeql.yml@b3178a73d3a293d7ec99607a1bd0ad46c9d3e552
-=======
     uses: goschtalt/.github/.github/workflows/codeql.yml@b3178a73d3a293d7ec99607a1bd0ad46c9d3e552 # v1.0.5
->>>>>>> Stashed changes
     secrets: inherit
