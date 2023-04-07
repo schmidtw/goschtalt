@@ -230,7 +230,7 @@ func TestUnmarshal(t *testing.T) {
 			want:        simple{},
 			expectedErr: unknownErr,
 		}, {
-			description: "Verify the WithValidator(fn) behavior works.",
+			description: "Verify the WithValidator(func) behavior works.",
 			input:       `{"Foo":"bar"}`,
 			opts:        []UnmarshalOption{WithValidator(func(any) error { return nil })},
 			want:        simple{},
@@ -294,10 +294,10 @@ func TestUnmarshal(t *testing.T) {
 				Delta: "tree val",
 			},
 		}, {
-			description: "Verify the KeymapFn() works",
+			description: "Verify the KeymapFunc() works",
 			input:       `{"foo":"bar"}`,
 			opts: []UnmarshalOption{
-				KeymapFn(func(s string) string {
+				KeymapFunc(func(s string) string {
 					return strings.ToLower(s)
 				}),
 			},
@@ -306,7 +306,7 @@ func TestUnmarshal(t *testing.T) {
 				Foo: "bar",
 			},
 		}, {
-			description: "Verify the WithValidator(fn) failure mode works.",
+			description: "Verify the WithValidator(func) failure mode works.",
 			input:       `{"Foo":"bar"}`,
 			opts: []UnmarshalOption{
 				WithValidator(func(any) error { return unknownErr }),
@@ -416,7 +416,7 @@ func TestUnmarshal(t *testing.T) {
 	}
 }
 
-func TestUnmarshalFn(t *testing.T) {
+func TestUnmarshalFunc(t *testing.T) {
 	type sub struct {
 		Foo string
 	}
@@ -466,10 +466,10 @@ func TestUnmarshalFn(t *testing.T) {
 				}
 			}
 
-			fn := UnmarshalFn[sub](tc.key, tc.opts...)
-			require.NotNil(fn)
+			resultingFunc := UnmarshalFunc[sub](tc.key, tc.opts...)
+			require.NotNil(resultingFunc)
 
-			got, err := fn(g)
+			got, err := resultingFunc(g)
 
 			if tc.expectedErr == false {
 				assert.NoError(err)

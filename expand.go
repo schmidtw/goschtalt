@@ -74,7 +74,7 @@ func Expand(mapper func(string) string, opts ...ExpandOption) Option {
 	}
 
 	exp.text = print.P("Expand",
-		print.Fn(mapper),
+		print.Func(mapper),
 		print.Literal("..."),
 		print.Yields(
 			print.String(exp.start, "start"),

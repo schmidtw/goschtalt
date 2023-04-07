@@ -11,11 +11,11 @@ import (
 )
 
 const (
-	nilFnName    = "nil"
+	nilFuncName  = "nil"
 	nilBytesName = "nil"
 	nilErrorName = "nil"
 
-	notNilFnName    = "custom"
+	notNilFuncName  = "custom"
 	notNilBytesName = "[]byte"
 )
 
@@ -139,37 +139,37 @@ func Error(e error, label ...string) Option {
 	return labeledSimpleOption(txt, label...)
 }
 
-// isFnNil is a helper function for determining if a function is nil.
-// Comparing the fn via an interface can't be done with just a comparison to
+// isFuncNil is a helper function for determining if a function is nil.
+// Comparing the f via an interface can't be done with just a comparison to
 // nil.  The inner value of the func must be checked if the outer interface
 // is not nil.
-func isFnNil(fn any) bool {
-	return fn == nil || reflect.ValueOf(fn).IsNil()
+func isFuncNil(f any) bool {
+	return f == nil || reflect.ValueOf(f).IsNil()
 }
 
-// Fn takes a func with optional label and renders them consistently.
-func Fn(fn any, label ...string) Option {
-	txt := nilFnName
-	if !isFnNil(fn) {
-		txt = notNilFnName
+// Func takes a func with optional label and renders them consistently.
+func Func(f any, label ...string) Option {
+	txt := nilFuncName
+	if !isFuncNil(f) {
+		txt = notNilFuncName
 	}
 	return labeledSimpleOption(txt, label...)
 }
 
-// FnAltNil renders the function like Fn() except the alt string is used for when
+// FuncAltNil renders the function like Func() except the alt string is used for when
 // the function is nil.
-func FnAltNil(fn any, alt string, label ...string) Option {
-	if !isFnNil(fn) {
-		alt = notNilFnName
+func FuncAltNil(f any, alt string, label ...string) Option {
+	if !isFuncNil(f) {
+		alt = notNilFuncName
 	}
 	return labeledSimpleOption(alt, label...)
 }
 
-// FnAltNotNil renders the function like Fn() except the alt string is used for
+// FuncAltNotNil renders the function like Func() except the alt string is used for
 // when the function is not nil.
-func FnAltNotNil(fn any, alt string, label ...string) Option {
-	if isFnNil(fn) {
-		alt = nilFnName
+func FuncAltNotNil(f any, alt string, label ...string) Option {
+	if isFuncNil(f) {
+		alt = nilFuncName
 	}
 	return labeledSimpleOption(alt, label...)
 }

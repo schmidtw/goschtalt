@@ -205,12 +205,12 @@ func (c *Config) compile() error { //nolint:funlen
 				return err
 			}
 		}
-		unmarshalFn := func(key string, result any, opts ...UnmarshalOption) error {
+		unmarshalFunc := func(key string, result any, opts ...UnmarshalOption) error {
 			// Pass in the merged value from this context and stage of processing.
 			return c.unmarshal(key, result, incremental, opts...)
 		}
 
-		if err = cfg.fetch(c.opts.keyDelimiter, unmarshalFn, c.opts.decoders, c.opts.valueOptions); err != nil {
+		if err = cfg.fetch(c.opts.keyDelimiter, unmarshalFunc, c.opts.decoders, c.opts.valueOptions); err != nil {
 			fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 			return err
 		}

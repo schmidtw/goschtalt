@@ -302,7 +302,7 @@ func (s setKeyDelimiterOption) String() string {
 	return print.P("SetKeyDelimiter", print.String(string(s)))
 }
 
-// SortRecordsCustomFn provides a way to specify how you want the files sorted
+// SortRecordsCustomFunc provides a way to specify how you want the files sorted
 // prior to their merge.  This function provides a way to provide a completely
 // custom sorting algorithm.
 //
@@ -311,24 +311,24 @@ func (s setKeyDelimiterOption) String() string {
 // # Default
 //
 // The default is [SortRecordsNaturally].
-func SortRecordsCustomFn(less func(a, b string) bool) Option {
-	return &sortRecordsCustomFnOption{
-		text: print.P("SortRecordsCustomFn", print.Fn(less)),
-		fn:   less,
+func SortRecordsCustomFunc(less func(a, b string) bool) Option {
+	return &sortRecordsCustomFuncOption{
+		text:   print.P("SortRecordsCustomFunc", print.Func(less)),
+		sorter: less,
 	}
 }
 
 // SortRecordsLexically provides a built in sorter based on lexical order.
 //
-// See also: [SortRecordsCustomFn], [SortRecordsNaturally]
+// See also: [SortRecordsCustomFunc], [SortRecordsNaturally]
 //
 // # Default
 //
 // The default is [SortRecordsNaturally].
 func SortRecordsLexically() Option {
-	return &sortRecordsCustomFnOption{
+	return &sortRecordsCustomFuncOption{
 		text: print.P("SortRecordsLexically"),
-		fn: func(a, b string) bool {
+		sorter: func(a, b string) bool {
 			return a < b
 		},
 	}
@@ -354,34 +354,34 @@ func SortRecordsLexically() Option {
 //	99_mine.yml
 //	100_alpha.yml
 //
-// See also: [SortRecordsCustomFn], [SortRecordsLexically]
+// See also: [SortRecordsCustomFunc], [SortRecordsLexically]
 //
 // # Default
 //
 // The default is [SortRecordsNaturally].
 func SortRecordsNaturally() Option {
-	return &sortRecordsCustomFnOption{
-		text: print.P("SortRecordsNaturally"),
-		fn:   natsort.Compare,
+	return &sortRecordsCustomFuncOption{
+		text:   print.P("SortRecordsNaturally"),
+		sorter: natsort.Compare,
 	}
 }
 
-type sortRecordsCustomFnOption struct {
-	text string
-	fn   func(a, b string) bool
+type sortRecordsCustomFuncOption struct {
+	text   string
+	sorter func(a, b string) bool
 }
 
-func (s sortRecordsCustomFnOption) apply(opts *options) error {
-	if s.fn == nil {
+func (s sortRecordsCustomFuncOption) apply(opts *options) error {
+	if s.sorter == nil {
 		return fmt.Errorf("%w: a SortRecords function/option must be specified", ErrInvalidInput)
 	}
 
-	opts.sorter = s.fn
+	opts.sorter = s.sorter
 	return nil
 }
 
-func (_ sortRecordsCustomFnOption) ignoreDefaults() bool { return false }
-func (s sortRecordsCustomFnOption) String() string       { return s.text }
+func (_ sortRecordsCustomFuncOption) ignoreDefaults() bool { return false }
+func (s sortRecordsCustomFuncOption) String() string       { return s.text }
 
 // WithDecoder registers a Decoder for the specific file extensions provided.
 // Attempting to register a duplicate extension is not supported.
@@ -521,7 +521,7 @@ func (d defaultUnmarshalOption) String() string {
 }
 
 // DefaultValueOptions allows customization of the desired options for all
-// invocations of the [AddValue]() and [AddValueFn]() functions.  This should
+// invocations of the [AddValue]() and [AddValueFunc]() functions.  This should
 // make consistent use use of these functions easier.
 //
 // Valid Option Types:

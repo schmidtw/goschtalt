@@ -84,40 +84,40 @@ func TestP(t *testing.T) {
 			opt:    Error(errors.New("test"), "label"),
 			expect: "Foo( label: 'test' )",
 		}, {
-			opt:    Fn(nil),
+			opt:    Func(nil),
 			expect: "Foo( nil )",
 		}, {
-			opt:    Fn(nil, "label"),
+			opt:    Func(nil, "label"),
 			expect: "Foo( label: nil )",
 		}, {
-			opt:    Fn(func() {}),
+			opt:    Func(func() {}),
 			expect: "Foo( custom )",
 		}, {
-			opt:    Fn(func() {}, "label"),
+			opt:    Func(func() {}, "label"),
 			expect: "Foo( label: custom )",
 		}, {
-			opt:    FnAltNil(nil, "empty"),
+			opt:    FuncAltNil(nil, "empty"),
 			expect: "Foo( empty )",
 		}, {
-			opt:    FnAltNil(nil, "empty", "label"),
+			opt:    FuncAltNil(nil, "empty", "label"),
 			expect: "Foo( label: empty )",
 		}, {
-			opt:    FnAltNil(func() {}, "empty"),
+			opt:    FuncAltNil(func() {}, "empty"),
 			expect: "Foo( custom )",
 		}, {
-			opt:    FnAltNil(func() {}, "empty", "label"),
+			opt:    FuncAltNil(func() {}, "empty", "label"),
 			expect: "Foo( label: custom )",
 		}, {
-			opt:    FnAltNotNil(nil, "something"),
+			opt:    FuncAltNotNil(nil, "something"),
 			expect: "Foo( nil )",
 		}, {
-			opt:    FnAltNotNil(nil, "something", "label"),
+			opt:    FuncAltNotNil(nil, "something", "label"),
 			expect: "Foo( label: nil )",
 		}, {
-			opt:    FnAltNotNil(func() {}, "something"),
+			opt:    FuncAltNotNil(func() {}, "something"),
 			expect: "Foo( something )",
 		}, {
-			opt:    FnAltNotNil(func() {}, "something", "label"),
+			opt:    FuncAltNotNil(func() {}, "something", "label"),
 			expect: "Foo( label: something )",
 		}, {
 			opt:    Int(5),
@@ -191,20 +191,20 @@ func TestP(t *testing.T) {
 			expect: "Foo( label: map[1] )",
 		}, {
 			opts: []Option{
-				Bool(true), Fn(nil, "label"), Literal("abs"),
+				Bool(true), Func(nil, "label"), Literal("abs"),
 			},
 			expect: "Foo( true, label: nil, abs )",
 		}, {
 			opts: []Option{
-				Bool(true), nil, Fn(nil, "label"), Literal("abs"),
+				Bool(true), nil, Func(nil, "label"), Literal("abs"),
 				Yields(
-					Bool(true, "a"), nil, Fn(nil, "b"), Literal("abs", "c"),
+					Bool(true, "a"), nil, Func(nil, "b"), Literal("abs", "c"),
 				),
 			},
 			expect: "Foo( true, label: nil, abs ) --> a: true, b: nil, c: abs",
 		}, {
 			opts: []Option{
-				Bool(true, "label"), Fn(nil), Literal("abs"), SubOpt(),
+				Bool(true, "label"), Func(nil), Literal("abs"), SubOpt(),
 			},
 			expect: "Foo(label: true, nil, abs)",
 		},

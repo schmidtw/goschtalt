@@ -1581,7 +1581,7 @@ func TestOrigin_OriginString(t *testing.T) {
 }
 
 func TestIsSerializable(t *testing.T) {
-	fn := func() {}
+	testFunc := func() {}
 	ch := make(chan string)
 
 	tests := []struct {
@@ -1602,13 +1602,13 @@ func TestIsSerializable(t *testing.T) {
 			description: "functions can't be serialized",
 			expected:    false,
 			thing: Object{
-				Value: fn,
+				Value: testFunc,
 			},
 		}, {
 			description: "pointers to functions can't be serialized",
 			expected:    false,
 			thing: Object{
-				Value: &fn,
+				Value: &testFunc,
 			},
 		}, {
 			description: "channels can't be serialized",
@@ -1771,7 +1771,7 @@ func TestAdaptToRaw(t *testing.T) {
 	tests := []struct {
 		description string
 		thing       Object
-		fn          func(from, to reflect.Value) (any, error)
+		adapter     func(from, to reflect.Value) (any, error)
 		expected    Object
 		expectedErr error
 	}{
@@ -1782,7 +1782,7 @@ func TestAdaptToRaw(t *testing.T) {
 		}, {
 			description: "duration adapter",
 			thing:       common,
-			fn: func(from, to reflect.Value) (any, error) {
+			adapter: func(from, to reflect.Value) (any, error) {
 				if from.Type() == reflect.TypeOf(time.Second) &&
 					to.Type() == reflect.TypeOf("string") {
 					return from.Interface().(time.Duration).String(), nil
@@ -1824,7 +1824,7 @@ func TestAdaptToRaw(t *testing.T) {
 		}, {
 			description: "time adapter",
 			thing:       common,
-			fn: func(from, to reflect.Value) (any, error) {
+			adapter: func(from, to reflect.Value) (any, error) {
 				if from.Type() == reflect.TypeOf(time.Time{}) &&
 					to.Type() == reflect.TypeOf("string") {
 					return from.Interface().(time.Time).Format("2006"), nil
@@ -1866,7 +1866,7 @@ func TestAdaptToRaw(t *testing.T) {
 		}, {
 			description: "return an error for the 'other' string field",
 			thing:       common,
-			fn: func(from, to reflect.Value) (any, error) {
+			adapter: func(from, to reflect.Value) (any, error) {
 				if from.Type() == reflect.TypeOf("string") {
 					return nil, unknownErr
 				}
@@ -1879,7 +1879,7 @@ func TestAdaptToRaw(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 
-			got, err := tc.thing.AdaptToRaw(tc.fn)
+			got, err := tc.thing.AdaptToRaw(tc.adapter)
 
 			assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
 			if tc.expectedErr == nil {

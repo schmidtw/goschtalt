@@ -204,7 +204,7 @@ func TestCompile(t *testing.T) {
 			opts: []Option{
 				AddBuffer("3.json", []byte(`{"Madd": "cat"}`)),
 				AddBuffer("2.json", []byte(`{"Blue": "${thing}"}`)),
-				AddBufferFn("1.json", func(_ string, _ UnmarshalFunc) ([]byte, error) {
+				AddBufferFunc("1.json", func(_ string, _ Unmarshaller) ([]byte, error) {
 					return []byte(`{"Hello": "Mr. Blue Sky"}`), nil
 				}),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -221,12 +221,12 @@ func TestCompile(t *testing.T) {
 			description: "A case with an encoded buffer function that looks up something from the tree.",
 			opts: []Option{
 				AddBuffer("1.json", []byte(`{"Madd": "cat"}`)),
-				AddBufferFn("2.json", func(_ string, un UnmarshalFunc) ([]byte, error) {
+				AddBufferFunc("2.json", func(_ string, un Unmarshaller) ([]byte, error) {
 					var s string
 					_ = un("Madd", &s)
 					return []byte(fmt.Sprintf(`{"Blue": "%s"}`, s)), nil
 				}),
-				AddBufferFn("3.json", func(_ string, un UnmarshalFunc) ([]byte, error) {
+				AddBufferFunc("3.json", func(_ string, un Unmarshaller) ([]byte, error) {
 					var s string
 					_ = un("Blue", &s)
 					return []byte(fmt.Sprintf(`{"Hello": "%s"}`, s)), nil
@@ -268,23 +268,23 @@ func TestCompile(t *testing.T) {
 			},
 			expectedErr: testErr,
 		}, {
-			description:   "A case with an encoded buffer fn that returns an error",
+			description:   "A case with an encoded buffer function that returns an error",
 			compileOption: true,
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
-				AddBufferFn("3.json", func(_ string, _ UnmarshalFunc) ([]byte, error) {
+				AddBufferFunc("3.json", func(_ string, _ Unmarshaller) ([]byte, error) {
 					return nil, unknownErr
 				}),
 			},
 			expectedErr: unknownErr,
 		}, {
-			description:   "A case with an encoded buffer fn that returns an invalidly formatted buffer",
+			description:   "A case with an encoded buffer function that returns an invalidly formatted buffer",
 			compileOption: true,
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
-				AddBufferFn("3.json", func(_ string, _ UnmarshalFunc) ([]byte, error) {
+				AddBufferFunc("3.json", func(_ string, _ Unmarshaller) ([]byte, error) {
 					return []byte(`invalid`), nil
 				}),
 			},
@@ -342,12 +342,12 @@ func TestCompile(t *testing.T) {
 					Blue:  "jay",
 					Madd:  "cat",
 				},
-					KeymapFn(func(s string) string {
+					KeymapFunc(func(s string) string {
 						return strings.ToLower(s)
 					}),
 				),
 				DefaultUnmarshalOptions(
-					KeymapFn(func(s string) string {
+					KeymapFunc(func(s string) string {
 						return strings.ToLower(s)
 					}),
 				),
@@ -528,8 +528,8 @@ func TestCompile(t *testing.T) {
 			description: "A case where the value function returns an error.",
 			opts: []Option{
 				AutoCompile(),
-				AddValueFn("record", Root,
-					func(string, UnmarshalFunc) (any, error) {
+				AddValueFunc("record", Root,
+					func(string, Unmarshaller) (any, error) {
 						return nil, testErr
 					},
 				),

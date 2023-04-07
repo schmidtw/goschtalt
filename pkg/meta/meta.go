@@ -346,14 +346,14 @@ func (obj Object) ToRedacted() Object {
 // to the final instance.  The max value is used to prevent recursive substitutions
 // from never returning.  Instead the process is stopped and an error is returned.
 // The resulting tree is returned.
-func (obj Object) ToExpanded(max int, origin, start, end string, fn func(string) string) (Object, error) {
+func (obj Object) ToExpanded(max int, origin, start, end string, expander func(string) string) (Object, error) {
 	var err error
 
 	switch obj.Kind() {
 	case Array:
 		array := make([]Object, len(obj.Array))
 		for i, val := range obj.Array {
-			array[i], err = val.ToExpanded(max, origin, start, end, fn)
+			array[i], err = val.ToExpanded(max, origin, start, end, expander)
 			if err != nil {
 				return Object{}, err
 			}
@@ -363,7 +363,7 @@ func (obj Object) ToExpanded(max int, origin, start, end string, fn func(string)
 		m := make(map[string]Object)
 
 		for key, val := range obj.Map {
-			m[key], err = val.ToExpanded(max, origin, start, end, fn)
+			m[key], err = val.ToExpanded(max, origin, start, end, expander)
 			if err != nil {
 				return Object{}, err
 			}
@@ -372,7 +372,7 @@ func (obj Object) ToExpanded(max int, origin, start, end string, fn func(string)
 	case Value:
 		switch v := obj.Value.(type) {
 		case string:
-			val, changed, err := expand(max, v, start, end, fn)
+			val, changed, err := expand(max, v, start, end, expander)
 			if err != nil {
 				return Object{}, err
 			}
@@ -808,15 +808,15 @@ func (o Object) isEmpty() bool {
 // list.
 //
 // # Note
-// The fn must return the original object, and an error of nil if no
+// The adapter must return the original object, and an error of nil if no
 // transformation took place.
-func (obj Object) AdaptToRaw(fn func(from, to reflect.Value) (any, error)) (Object, error) {
+func (obj Object) AdaptToRaw(adapter func(from, to reflect.Value) (any, error)) (Object, error) {
 	switch obj.Kind() {
 	case Array:
 		var err error
 		array := make([]Object, len(obj.Array))
 		for i, val := range obj.Array {
-			array[i], err = val.AdaptToRaw(fn)
+			array[i], err = val.AdaptToRaw(adapter)
 			if err != nil {
 				return Object{}, err
 			}
@@ -827,7 +827,7 @@ func (obj Object) AdaptToRaw(fn func(from, to reflect.Value) (any, error)) (Obje
 		m := make(map[string]Object)
 
 		for key, val := range obj.Map {
-			target, err := val.AdaptToRaw(fn)
+			target, err := val.AdaptToRaw(adapter)
 			if err != nil {
 				return Object{}, err
 			}
@@ -837,8 +837,8 @@ func (obj Object) AdaptToRaw(fn func(from, to reflect.Value) (any, error)) (Obje
 		return obj, nil
 	}
 
-	if fn != nil && obj.Value != nil {
-		v, err := fn(reflect.ValueOf(obj.Value), reflect.ValueOf("ignored"))
+	if adapter != nil && obj.Value != nil {
+		v, err := adapter(reflect.ValueOf(obj.Value), reflect.ValueOf("ignored"))
 		if err != nil {
 			return Object{}, err
 		}
