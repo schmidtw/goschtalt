@@ -29,7 +29,7 @@ func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 		text:       "AddValue",
 		recordName: recordName,
 		key:        key,
-		fn: func(_ string, _ UnmarshalFunc) (any, error) {
+		getter: func(_ string, _ Unmarshaller) (any, error) {
 			return val, nil
 		},
 		opts: opts,
@@ -37,9 +37,9 @@ func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 }
 
 // AddValues provides a simple way to set additional configuration values at
-// runtime via a function call.  Note that the provided fn will be called each
-// time the configuration is compiled, allowing the value returned to change if
-// desired.
+// runtime via a function call.  Note that the provided function f will be
+// called each time the configuration is compiled, allowing the value returned
+// to change if desired.
 //
 // To place the configuration at the root use `goschtalt.Root` ([Root]) instead
 // of "" for more clarity.
@@ -49,12 +49,12 @@ func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 //   - [GlobalOption]
 //   - [ValueOption]
 //   - [UnmarshalValueOption]
-func AddValueFn(recordName, key string, fn func(recordName string, unmarshal UnmarshalFunc) (any, error), opts ...ValueOption) Option {
+func AddValueFunc(recordName, key string, f func(recordName string, u Unmarshaller) (any, error), opts ...ValueOption) Option {
 	return &value{
-		text:       "AddValueFn",
+		text:       "AddValueFunc",
 		recordName: recordName,
 		key:        key,
-		fn:         fn,
+		getter:     f,
 		opts:       opts,
 	}
 }
@@ -69,8 +69,8 @@ type value struct {
 	// The key to set the value at.
 	key string
 
-	// The fn to use to get the value.
-	fn func(recordName string, unmarshal UnmarshalFunc) (any, error)
+	// The function to use to get the value.
+	getter func(recordName string, u Unmarshaller) (any, error)
 
 	// Options that configure how to process the Value provided.
 	// These options are in addition to any default settings set with
@@ -80,7 +80,7 @@ type value struct {
 
 // toTree does the work of converting from a structure of some sort to the
 // normalized object tree goschtalt uses.
-func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOption) (meta.Object, error) {
+func (v value) toTree(delimiter string, u Unmarshaller, defaultOpts ...ValueOption) (meta.Object, error) {
 	cfg := valueOptions{
 		tagName: defaultTag,
 	}
@@ -92,7 +92,7 @@ func (v value) toTree(delimiter string, um UnmarshalFunc, defaultOpts ...ValueOp
 		}
 	}
 
-	data, err := v.fn(v.recordName, um)
+	data, err := v.getter(v.recordName, u)
 	if err != nil {
 		return meta.Object{}, err
 	}
@@ -171,15 +171,15 @@ func (v value) String() string {
 		s = append(s, "none")
 	}
 
-	fn := ""
-	if v.text == "AddValueFn" {
-		fn = "'', "
-		if v.fn != nil {
-			fn = "custom, "
+	getter := ""
+	if v.text == "AddValueFunc" {
+		getter = "'', "
+		if v.getter != nil {
+			getter = "custom, "
 		}
 	}
 	return fmt.Sprintf("%s( '%s', '%s', %s%s )",
-		v.text, v.recordName, v.key, fn, strings.Join(s, ", "))
+		v.text, v.recordName, v.key, getter, strings.Join(s, ", "))
 }
 
 // -- ValueOption options follow -----------------------------------------------
@@ -262,23 +262,23 @@ func (e failOnNonSerializableOption) String() string {
 // Best.  The returned type should match the type retrieved from the
 // configuration decoder.  This generally will be a built in type like string,
 // int or bool.
-func AdaptToCfg(fn func(from reflect.Value) (any, error), label ...string) ValueOption {
+func AdaptToCfg(f func(from reflect.Value) (any, error), label ...string) ValueOption {
 	label = append(label, "")
 	return &adaptToCfgOption{
 		label: label[0],
-		fn: func(from, to reflect.Value) (any, error) {
-			return fn(from)
+		adapterFunc: func(from, to reflect.Value) (any, error) {
+			return f(from)
 		},
 	}
 }
 
 type adaptToCfgOption struct {
-	label string
-	fn    adapter
+	label       string
+	adapterFunc adapter
 }
 
 func (a adaptToCfgOption) valueApply(opts *valueOptions) error {
-	opts.adapters = append(opts.adapters, a.fn)
+	opts.adapters = append(opts.adapters, a.adapterFunc)
 	return nil
 }
 
@@ -287,5 +287,5 @@ func (a adaptToCfgOption) String() string {
 	if len(a.label) > 0 {
 		labels = append(labels, a.label)
 	}
-	return print.P("AdaptToCfg", print.Fn(a.fn, labels...), print.SubOpt())
+	return print.P("AdaptToCfg", print.Func(a.adapterFunc, labels...), print.SubOpt())
 }

@@ -15,12 +15,12 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// UnmarshalFunc provides a special use [Unmarshal]() function during [AddBufferFn]()
-// and [AddValueFn]() option provided callbacks.  This pattern allows the specified
+// Unmarshaller provides a special use [Unmarshal]() function during [AddBufferFunc]()
+// and [AddValueFunc]() option provided callbacks.  This pattern allows the specified
 // function access to the configuration values up to this point.  Expansion of
 // any [Expand]() or [ExpandEnv]() options is also applied to the configuration tree
 // provided.
-type UnmarshalFunc func(key string, result any, opts ...UnmarshalOption) error
+type Unmarshaller func(key string, result any, opts ...UnmarshalOption) error
 
 // Unmarshal provides a generics based strict typed approach to fetching parts
 // of the configuration tree.
@@ -43,7 +43,7 @@ func Unmarshal[T any](c *Config, key string, opts ...UnmarshalOption) (T, error)
 	return rv, nil
 }
 
-// UnmarshalFn returns a function that takes a goschtalt Config structure and
+// UnmarshalFunc returns a function that takes a goschtalt Config structure and
 // returns a function that allows for unmarshalling of a portion of the tree
 // specified by the key into a zero value type.
 //
@@ -55,7 +55,7 @@ func Unmarshal[T any](c *Config, key string, opts ...UnmarshalOption) (T, error)
 //
 //	app := fx.New(
 //		fx.Provide(
-//			goschtalt.UnmarshalFn[myStruct]("conf"),
+//			goschtalt.UnmarshalFunc[myStruct]("conf"),
 //		),
 //	)
 //
@@ -66,7 +66,7 @@ func Unmarshal[T any](c *Config, key string, opts ...UnmarshalOption) (T, error)
 //   - [GlobalOption]
 //   - [UnmarshalOption]
 //   - [UnmarshalValueOption]
-func UnmarshalFn[T any](key string, opts ...UnmarshalOption) func(*Config) (T, error) {
+func UnmarshalFunc[T any](key string, opts ...UnmarshalOption) func(*Config) (T, error) {
 	return func(cfg *Config) (T, error) {
 		return Unmarshal[T](cfg, key, opts...)
 	}
@@ -289,27 +289,27 @@ func (o optionalOption) String() string {
 // # Default
 //
 // The default behavior is to not validate.
-func WithValidator(fn func(any) error) UnmarshalOption {
+func WithValidator(v func(any) error) UnmarshalOption {
 	return &validatorOption{
-		fn: fn,
+		validator: v,
 	}
 }
 
 type validatorOption struct {
-	fn func(any) error
+	validator func(any) error
 }
 
 func (v validatorOption) unmarshalApply(opts *unmarshalOptions) error {
-	opts.validator = v.fn
+	opts.validator = v.validator
 	return nil
 }
 
 func (v validatorOption) String() string {
-	return print.P("WithValidator", print.Fn(v.fn), print.SubOpt())
+	return print.P("WithValidator", print.Func(v.validator), print.SubOpt())
 }
 
 // AdaptFromCfg converts a value from one form to another if possible.  The resulting
-// form is returned if adapted.  If the combination of f and t are unknown
+// form is returned if adapted.  If the combination of from and to are unknown
 // or unsupported return ErrNotApplicable as the error with a nil value.
 //
 // If ErrNotApplicable is returned the value returned will be ignored.
@@ -329,21 +329,21 @@ func (v validatorOption) String() string {
 // Best.  The returned type should match the type retrieved from the
 // configuration decoder.  This generally will be a built in type like string,
 // int or bool.
-func AdaptFromCfg(fn func(from, to reflect.Value) (any, error), label ...string) UnmarshalOption {
+func AdaptFromCfg(adapter func(from, to reflect.Value) (any, error), label ...string) UnmarshalOption {
 	label = append(label, "")
 	return &adaptFromCfgOption{
-		label: label[0],
-		fn:    fn,
+		label:       label[0],
+		adapterFunc: adapter,
 	}
 }
 
 type adaptFromCfgOption struct {
-	label string
-	fn    adapter
+	label       string
+	adapterFunc adapter
 }
 
 func (a adaptFromCfgOption) unmarshalApply(opts *unmarshalOptions) error {
-	opts.adapters = append(opts.adapters, a.fn)
+	opts.adapters = append(opts.adapters, a.adapterFunc)
 	return nil
 }
 
@@ -352,7 +352,7 @@ func (a adaptFromCfgOption) String() string {
 	if len(a.label) > 0 {
 		labels = append(labels, a.label)
 	}
-	return print.P("AdaptFromCfg", print.Fn(a.fn, labels...), print.SubOpt())
+	return print.P("AdaptFromCfg", print.Func(a.adapterFunc, labels...), print.SubOpt())
 }
 
 // A Level represents a specific degree in which a configuration matches a

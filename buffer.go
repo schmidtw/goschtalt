@@ -26,18 +26,18 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 	return &buffer{
 		text:       print.P("AddBuffer", print.String(recordName), print.Bytes(in), print.LiteralStringers(opts)),
 		recordName: recordName,
-		fn: func(_ string, _ UnmarshalFunc) ([]byte, error) {
+		getter: func(_ string, _ Unmarshaller) ([]byte, error) {
 			return in, nil
 		},
 		opts: opts,
 	}
 }
 
-// AddBufferFn adds a function that is called during compile time of the
-// configuration.  The recordName of this record is passed into the fn function
-// that is called as well as an UnmarshalFunc that represents the existing state
-// of the merged configuration prior to adding the buffer that results in the
-// call to fn.
+// AddBufferFunc adds a function that is called during compile time of the
+// configuration.  The recordName of this record is passed into the getter
+// function that is called as well as an Unmarshaller that represents the
+// existing state of the merged configuration prior to adding the buffer that
+// results in the call to getter.
 //
 // The format of the bytes is determined by the extension of the recordName field.
 // The recordName field is also used for sorting this configuration value relative
@@ -47,16 +47,16 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 //   - [BufferOption]
 //   - [BufferValueOption]
 //   - [GlobalOption]
-func AddBufferFn(recordName string, fn func(recordName string, un UnmarshalFunc) ([]byte, error), opts ...BufferOption) Option {
+func AddBufferFunc(recordName string, getter func(recordName string, u Unmarshaller) ([]byte, error), opts ...BufferOption) Option {
 	rv := buffer{
-		text:       print.P("AddBufferFn", print.String(recordName), print.Fn(fn), print.LiteralStringers(opts)),
+		text:       print.P("AddBufferFunc", print.String(recordName), print.Func(getter), print.LiteralStringers(opts)),
 		recordName: recordName,
 		opts:       opts,
 	}
 
-	if fn != nil {
-		rv.fn = func(name string, un UnmarshalFunc) ([]byte, error) {
-			return fn(name, un)
+	if getter != nil {
+		rv.getter = func(name string, u Unmarshaller) ([]byte, error) {
+			return getter(name, u)
 		}
 	}
 
@@ -70,8 +70,8 @@ type buffer struct {
 	// The record name.
 	recordName string
 
-	// The fn to use to get the value.
-	fn func(recordName string, unmarshal UnmarshalFunc) ([]byte, error)
+	// The function to use to get the value.
+	getter func(string, Unmarshaller) ([]byte, error)
 
 	// Options that configure how this buffer is treated and processed.
 	// These options are in addition to any default settings set with
@@ -84,7 +84,7 @@ func (b buffer) apply(opts *options) error {
 		return fmt.Errorf("%w: a recordName with length > 0 must be specified.", ErrInvalidInput)
 	}
 
-	if b.fn == nil {
+	if b.getter == nil {
 		return fmt.Errorf("%w: a non-nil func must be specified.", ErrInvalidInput)
 	}
 
@@ -118,8 +118,8 @@ func (b buffer) String() string {
 
 // toTree converts an buffer into a meta.Object tree.  This will happen
 // during the compilation stage.
-func (b *buffer) toTree(delimiter string, umf UnmarshalFunc, decoders *codecRegistry[decoder.Decoder]) (meta.Object, error) {
-	data, err := b.fn(b.recordName, umf)
+func (b *buffer) toTree(delimiter string, u Unmarshaller, decoders *codecRegistry[decoder.Decoder]) (meta.Object, error) {
+	data, err := b.getter(b.recordName, u)
 	if err != nil {
 		return meta.Object{}, err
 	}

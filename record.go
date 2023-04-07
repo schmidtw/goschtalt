@@ -18,9 +18,9 @@ type record struct {
 }
 
 // fetch normalizes the calls to the val or encoded types of records.
-func (rec *record) fetch(delimiter string, umf UnmarshalFunc, decoders *codecRegistry[decoder.Decoder], defaultOpts []ValueOption) error {
+func (rec *record) fetch(delimiter string, u Unmarshaller, decoders *codecRegistry[decoder.Decoder], defaultOpts []ValueOption) error {
 	if rec.val != nil {
-		tree, err := rec.val.toTree(delimiter, umf, defaultOpts...)
+		tree, err := rec.val.toTree(delimiter, u, defaultOpts...)
 		if err != nil {
 			return err
 		}
@@ -28,7 +28,7 @@ func (rec *record) fetch(delimiter string, umf UnmarshalFunc, decoders *codecReg
 	}
 
 	if rec.buf != nil {
-		tree, err := rec.buf.toTree(delimiter, umf, decoders)
+		tree, err := rec.buf.toTree(delimiter, u, decoders)
 		if err != nil {
 			return err
 		}

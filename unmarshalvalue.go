@@ -83,16 +83,16 @@ func Keymap(m map[string]string) UnmarshalValueOption {
 	}
 }
 
-// KeymapFn takes a Mapper function and adds it to the existing chain of
+// KeymapFunc takes a Mapper function and adds it to the existing chain of
 // mappers, in the front of the list.
 //
 // This allows for multiple mappers to be specified instead of requiring a
 // single mapper with full knowledge of how to map everything. This makes it
 // easy to add logic to remap full keys without needing to re-implement the
 // underlying converters.
-func KeymapFn(mapper Mapper) UnmarshalValueOption {
+func KeymapFunc(mapper Mapper) UnmarshalValueOption {
 	return &keymapOption{
-		text: print.P("KeymapFn", print.Fn(mapper), print.SubOpt()),
+		text: print.P("KeymapFunc", print.Func(mapper), print.SubOpt()),
 		m:    mapper,
 	}
 }

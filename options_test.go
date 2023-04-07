@@ -31,7 +31,7 @@ func TestOptions(t *testing.T) {
 	list := []string{"zeta", "alpha", "19beta", "19alpha", "4tango",
 		"1alpha", "7alpha", "bravo", "7alpha10", "7alpha2", "7alpha0"}
 
-	retBuf := func(name string, un UnmarshalFunc) ([]byte, error) {
+	retBuf := func(name string, un Unmarshaller) ([]byte, error) {
 		return []byte(name), nil
 	}
 
@@ -234,16 +234,16 @@ func TestOptions(t *testing.T) {
 			str:         "SetKeyDelimiter( '' )",
 			expectErr:   ErrInvalidInput,
 		}, {
-			description: "SortRecordsCustomFn( nil )",
-			opt:         SortRecordsCustomFn(nil),
-			str:         "SortRecordsCustomFn( nil )",
+			description: "SortRecordsCustomFunc( nil )",
+			opt:         SortRecordsCustomFunc(nil),
+			str:         "SortRecordsCustomFunc( nil )",
 			expectErr:   ErrInvalidInput,
 		}, {
-			description: "SortRecordsCustomFn( '(reverse)' )",
-			opt: SortRecordsCustomFn(func(a, b string) bool {
+			description: "SortRecordsCustomFunc( '(reverse)' )",
+			opt: SortRecordsCustomFunc(func(a, b string) bool {
 				return a > b
 			}),
-			str: "SortRecordsCustomFn( custom )",
+			str: "SortRecordsCustomFunc( custom )",
 			check: func(cfg *options) bool {
 				return sortCheck(cfg, []string{
 					"zeta",
@@ -494,7 +494,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "filename.ext" {
-						if cfg.values[0].buf.fn != nil {
+						if cfg.values[0].buf.getter != nil {
 							return true
 						}
 					}
@@ -508,7 +508,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "filename.ext" {
-						if cfg.values[0].buf.fn != nil {
+						if cfg.values[0].buf.getter != nil {
 							return true
 						}
 					}
@@ -521,18 +521,18 @@ func TestOptions(t *testing.T) {
 			str:         "AddBuffer( '', []byte )",
 			expectErr:   unknown,
 		}, {
-			description: "AddBufferFn( filename.ext, nil )",
-			opt:         AddBufferFn("filename.ext", nil),
-			str:         "AddBufferFn( 'filename.ext', nil )",
+			description: "AddBufferFunc( filename.ext, nil )",
+			opt:         AddBufferFunc("filename.ext", nil),
+			str:         "AddBufferFunc( 'filename.ext', nil )",
 			expectErr:   unknown,
 		}, {
-			description: "AddBufferFn( filename.ext, bytes )",
-			opt:         AddBufferFn("filename.ext", retBuf),
-			str:         "AddBufferFn( 'filename.ext', custom )",
+			description: "AddBufferFunc( filename.ext, bytes )",
+			opt:         AddBufferFunc("filename.ext", retBuf),
+			str:         "AddBufferFunc( 'filename.ext', custom )",
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "filename.ext" {
-						if cfg.values[0].buf.fn != nil {
+						if cfg.values[0].buf.getter != nil {
 							return true
 						}
 					}
@@ -540,13 +540,13 @@ func TestOptions(t *testing.T) {
 				return false
 			},
 		}, {
-			description: "AddValueFn( record1, '', func )",
-			opt:         AddValueFn("record1", Root, func(_ string, un UnmarshalFunc) (any, error) { return nil, nil }),
-			str:         "AddValueFn( 'record1', '', custom, none )",
+			description: "AddValueFunc( record1, '', func )",
+			opt:         AddValueFunc("record1", Root, func(_ string, un Unmarshaller) (any, error) { return nil, nil }),
+			str:         "AddValueFunc( 'record1', '', custom, none )",
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "record1" {
-						if cfg.values[0].val.fn != nil {
+						if cfg.values[0].val.getter != nil {
 							return true
 						}
 					}
@@ -554,13 +554,13 @@ func TestOptions(t *testing.T) {
 				return false
 			},
 		}, {
-			description: "AddValueFn( record1, 'key', nil )",
-			opt:         AddValueFn("record1", "key", nil),
-			str:         "AddValueFn( 'record1', 'key', '', none )",
+			description: "AddValueFunc( record1, 'key', nil )",
+			opt:         AddValueFunc("record1", "key", nil),
+			str:         "AddValueFunc( 'record1', 'key', '', none )",
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "record1" {
-						if cfg.values[0].val.fn == nil {
+						if cfg.values[0].val.getter == nil {
 							return true
 						}
 					}
@@ -574,7 +574,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "record1" {
-						if cfg.values[0].val.fn != nil {
+						if cfg.values[0].val.getter != nil {
 							return true
 						}
 					}
@@ -588,7 +588,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.defaults) == 1 {
 					if cfg.defaults[0].name == "record1" {
-						if cfg.defaults[0].val.fn != nil {
+						if cfg.defaults[0].val.getter != nil {
 							return true
 						}
 					}
@@ -602,7 +602,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "record1" {
-						if cfg.values[0].val.fn != nil {
+						if cfg.values[0].val.getter != nil {
 							return true
 						}
 					}
@@ -621,7 +621,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.defaults) == 1 {
 					if cfg.defaults[0].name == "filename.ext" {
-						if cfg.defaults[0].buf.fn != nil {
+						if cfg.defaults[0].buf.getter != nil {
 							return true
 						}
 					}
@@ -635,7 +635,7 @@ func TestOptions(t *testing.T) {
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "filename.ext" {
-						if cfg.values[0].buf.fn != nil {
+						if cfg.values[0].buf.getter != nil {
 							return true
 						}
 					}
