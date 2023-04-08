@@ -29,7 +29,7 @@ func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 		text:       "AddValue",
 		recordName: recordName,
 		key:        key,
-		getter: func(_ string, _ Unmarshaller) (any, error) {
+		getter: func(_ string, _ Unmarshaler) (any, error) {
 			return val, nil
 		},
 		opts: opts,
@@ -49,7 +49,7 @@ func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 //   - [GlobalOption]
 //   - [ValueOption]
 //   - [UnmarshalValueOption]
-func AddValueFunc(recordName, key string, f func(recordName string, u Unmarshaller) (any, error), opts ...ValueOption) Option {
+func AddValueFunc(recordName, key string, f func(recordName string, u Unmarshaler) (any, error), opts ...ValueOption) Option {
 	return &value{
 		text:       "AddValueFunc",
 		recordName: recordName,
@@ -70,7 +70,7 @@ type value struct {
 	key string
 
 	// The function to use to get the value.
-	getter func(recordName string, u Unmarshaller) (any, error)
+	getter func(recordName string, u Unmarshaler) (any, error)
 
 	// Options that configure how to process the Value provided.
 	// These options are in addition to any default settings set with
@@ -80,7 +80,7 @@ type value struct {
 
 // toTree does the work of converting from a structure of some sort to the
 // normalized object tree goschtalt uses.
-func (v value) toTree(delimiter string, u Unmarshaller, defaultOpts ...ValueOption) (meta.Object, error) {
+func (v value) toTree(delimiter string, u Unmarshaler, defaultOpts ...ValueOption) (meta.Object, error) {
 	cfg := valueOptions{
 		tagName: defaultTag,
 	}

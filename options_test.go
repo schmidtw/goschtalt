@@ -31,7 +31,7 @@ func TestOptions(t *testing.T) {
 	list := []string{"zeta", "alpha", "19beta", "19alpha", "4tango",
 		"1alpha", "7alpha", "bravo", "7alpha10", "7alpha2", "7alpha0"}
 
-	retBuf := func(name string, un Unmarshaller) ([]byte, error) {
+	retBuf := func(name string, un Unmarshaler) ([]byte, error) {
 		return []byte(name), nil
 	}
 
@@ -541,7 +541,7 @@ func TestOptions(t *testing.T) {
 			},
 		}, {
 			description: "AddValueFunc( record1, '', func )",
-			opt:         AddValueFunc("record1", Root, func(_ string, un Unmarshaller) (any, error) { return nil, nil }),
+			opt:         AddValueFunc("record1", Root, func(_ string, un Unmarshaler) (any, error) { return nil, nil }),
 			str:         "AddValueFunc( 'record1', '', custom, none )",
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
