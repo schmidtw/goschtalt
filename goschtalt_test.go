@@ -204,7 +204,7 @@ func TestCompile(t *testing.T) {
 			opts: []Option{
 				AddBuffer("3.json", []byte(`{"Madd": "cat"}`)),
 				AddBuffer("2.json", []byte(`{"Blue": "${thing}"}`)),
-				AddBufferFunc("1.json", func(_ string, _ Unmarshaller) ([]byte, error) {
+				AddBufferFunc("1.json", func(_ string, _ Unmarshaler) ([]byte, error) {
 					return []byte(`{"Hello": "Mr. Blue Sky"}`), nil
 				}),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -221,12 +221,12 @@ func TestCompile(t *testing.T) {
 			description: "A case with an encoded buffer function that looks up something from the tree.",
 			opts: []Option{
 				AddBuffer("1.json", []byte(`{"Madd": "cat"}`)),
-				AddBufferFunc("2.json", func(_ string, un Unmarshaller) ([]byte, error) {
+				AddBufferFunc("2.json", func(_ string, un Unmarshaler) ([]byte, error) {
 					var s string
 					_ = un("Madd", &s)
 					return []byte(fmt.Sprintf(`{"Blue": "%s"}`, s)), nil
 				}),
-				AddBufferFunc("3.json", func(_ string, un Unmarshaller) ([]byte, error) {
+				AddBufferFunc("3.json", func(_ string, un Unmarshaler) ([]byte, error) {
 					var s string
 					_ = un("Blue", &s)
 					return []byte(fmt.Sprintf(`{"Hello": "%s"}`, s)), nil
@@ -273,7 +273,7 @@ func TestCompile(t *testing.T) {
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
-				AddBufferFunc("3.json", func(_ string, _ Unmarshaller) ([]byte, error) {
+				AddBufferFunc("3.json", func(_ string, _ Unmarshaler) ([]byte, error) {
 					return nil, unknownErr
 				}),
 			},
@@ -284,7 +284,7 @@ func TestCompile(t *testing.T) {
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
-				AddBufferFunc("3.json", func(_ string, _ Unmarshaller) ([]byte, error) {
+				AddBufferFunc("3.json", func(_ string, _ Unmarshaler) ([]byte, error) {
 					return []byte(`invalid`), nil
 				}),
 			},
@@ -529,7 +529,7 @@ func TestCompile(t *testing.T) {
 			opts: []Option{
 				AutoCompile(),
 				AddValueFunc("record", Root,
-					func(string, Unmarshaller) (any, error) {
+					func(string, Unmarshaler) (any, error) {
 						return nil, testErr
 					},
 				),

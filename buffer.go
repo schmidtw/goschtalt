@@ -26,7 +26,7 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 	return &buffer{
 		text:       print.P("AddBuffer", print.String(recordName), print.Bytes(in), print.LiteralStringers(opts)),
 		recordName: recordName,
-		getter: func(_ string, _ Unmarshaller) ([]byte, error) {
+		getter: func(_ string, _ Unmarshaler) ([]byte, error) {
 			return in, nil
 		},
 		opts: opts,
@@ -35,7 +35,7 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 
 // AddBufferFunc adds a function that is called during compile time of the
 // configuration.  The recordName of this record is passed into the getter
-// function that is called as well as an Unmarshaller that represents the
+// function that is called as well as an Unmarshaler that represents the
 // existing state of the merged configuration prior to adding the buffer that
 // results in the call to getter.
 //
@@ -47,7 +47,7 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 //   - [BufferOption]
 //   - [BufferValueOption]
 //   - [GlobalOption]
-func AddBufferFunc(recordName string, getter func(recordName string, u Unmarshaller) ([]byte, error), opts ...BufferOption) Option {
+func AddBufferFunc(recordName string, getter func(recordName string, u Unmarshaler) ([]byte, error), opts ...BufferOption) Option {
 	rv := buffer{
 		text:       print.P("AddBufferFunc", print.String(recordName), print.Func(getter), print.LiteralStringers(opts)),
 		recordName: recordName,
@@ -55,7 +55,7 @@ func AddBufferFunc(recordName string, getter func(recordName string, u Unmarshal
 	}
 
 	if getter != nil {
-		rv.getter = func(name string, u Unmarshaller) ([]byte, error) {
+		rv.getter = func(name string, u Unmarshaler) ([]byte, error) {
 			return getter(name, u)
 		}
 	}
@@ -71,7 +71,7 @@ type buffer struct {
 	recordName string
 
 	// The function to use to get the value.
-	getter func(string, Unmarshaller) ([]byte, error)
+	getter func(string, Unmarshaler) ([]byte, error)
 
 	// Options that configure how this buffer is treated and processed.
 	// These options are in addition to any default settings set with
@@ -118,7 +118,7 @@ func (b buffer) String() string {
 
 // toTree converts an buffer into a meta.Object tree.  This will happen
 // during the compilation stage.
-func (b *buffer) toTree(delimiter string, u Unmarshaller, decoders *codecRegistry[decoder.Decoder]) (meta.Object, error) {
+func (b *buffer) toTree(delimiter string, u Unmarshaler, decoders *codecRegistry[decoder.Decoder]) (meta.Object, error) {
 	data, err := b.getter(b.recordName, u)
 	if err != nil {
 		return meta.Object{}, err

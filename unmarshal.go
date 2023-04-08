@@ -15,12 +15,12 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-// Unmarshaller provides a special use [Unmarshal]() function during [AddBufferFunc]()
+// Unmarshaler provides a special use [Unmarshal]() function during [AddBufferFunc]()
 // and [AddValueFunc]() option provided callbacks.  This pattern allows the specified
 // function access to the configuration values up to this point.  Expansion of
 // any [Expand]() or [ExpandEnv]() options is also applied to the configuration tree
 // provided.
-type Unmarshaller func(key string, result any, opts ...UnmarshalOption) error
+type Unmarshaler func(key string, result any, opts ...UnmarshalOption) error
 
 // Unmarshal provides a generics based strict typed approach to fetching parts
 // of the configuration tree.
@@ -44,7 +44,7 @@ func Unmarshal[T any](c *Config, key string, opts ...UnmarshalOption) (T, error)
 }
 
 // UnmarshalFunc returns a function that takes a goschtalt Config structure and
-// returns a function that allows for unmarshalling of a portion of the tree
+// returns a function that allows for unmarshaling of a portion of the tree
 // specified by the key into a zero value type.
 //
 // This function is specifically helpful with DI frameworks like Uber's fx
