@@ -63,6 +63,15 @@ func TestUnmarshalAdapterInternals(t *testing.T) {
 			fn:          stringToDuration,
 			expect:      time.Second,
 		}, {
+			description: "stringToDuration ptr",
+			from:        "1s",
+			to:          new(time.Duration),
+			fn:          stringToDuration,
+			expect: func() *time.Duration {
+				d := time.Duration(time.Second)
+				return &d
+			}(),
+		}, {
 			description: "stringToDuration - fail",
 			from:        "dogs",
 			to:          time.Duration(1),
@@ -78,19 +87,19 @@ func TestUnmarshalAdapterInternals(t *testing.T) {
 			description: "stringToIP",
 			from:        "127.0.0.1",
 			to:          net.IP{},
-			fn:          stringToIP,
+			fn:          withTextUnmarshal(All),
 			expect:      net.ParseIP("127.0.0.1"),
 		}, {
 			description: "stringToIP - fail",
 			from:        "dogs",
 			to:          net.IP{},
-			fn:          stringToIP,
+			fn:          withTextUnmarshal(All),
 			expectErr:   unknownErr,
 		}, {
 			description: "stringToIP - didn't match",
 			from:        "dogs",
 			to:          time.Time{},
-			fn:          stringToIP,
+			fn:          withTextUnmarshal(All),
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
 			description: "stringToTime",
@@ -114,49 +123,43 @@ func TestUnmarshalAdapterInternals(t *testing.T) {
 			description: "withTextUnmarshal ptr",
 			from:        "dogs 10",
 			to:          &TestObj{},
-			fn:          withTextUnmarshal(all{}),
+			fn:          withTextUnmarshal(All),
 			expect:      &TestObj{Name: "dogs", Value: 10},
 		}, {
 			description: "withTextUnmarshal",
 			from:        "dogs 10",
 			to:          TestObj{},
-			fn:          withTextUnmarshal(all{}),
+			fn:          withTextUnmarshal(All),
 			expect:      TestObj{Name: "dogs", Value: 10},
 		}, {
 			description: "withTextUnmarshal ptr specific type",
 			from:        "dogs 10",
 			to:          &TestObj{},
-			fn:          withTextUnmarshal(&TestObj{}),
+			fn:          withTextUnmarshal(All),
 			expect:      &TestObj{Name: "dogs", Value: 10},
 		}, {
 			description: "withTextUnmarshal specific type",
 			from:        "dogs 10",
 			to:          TestObj{},
-			fn:          withTextUnmarshal(TestObj{}),
+			fn:          withTextUnmarshal(All),
 			expect:      TestObj{Name: "dogs", Value: 10},
-		}, {
-			description: "withTextUnmarshal, mismatched types",
-			from:        "dogs 10",
-			to:          TestObj{},
-			fn:          withTextUnmarshal(&TestObj{}),
-			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
 			description: "withTextUnmarshal, not a string",
 			from:        12,
 			to:          TestObj{},
-			fn:          withTextUnmarshal(all{}),
+			fn:          withTextUnmarshal(All),
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
 			description: "withTextUnmarshal, obj doesn't implement the interface",
 			from:        "dogs 10",
 			to:          "string",
-			fn:          withTextUnmarshal(all{}),
+			fn:          withTextUnmarshal(All),
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
 			description: "withTextUnmarshal, invalid string",
 			from:        "dogs_10",
 			to:          TestObj{},
-			fn:          withTextUnmarshal(all{}),
+			fn:          withTextUnmarshal(All),
 			expectErr:   unknownErr,
 		},
 	}
@@ -185,7 +188,7 @@ func TestUnmarshalAdapterInternals(t *testing.T) {
 				return
 			}
 
-			assert.Equal(tc.expect, got)
+			assert.EqualValues(tc.expect, got)
 			assert.NoError(err)
 		})
 	}
@@ -213,12 +216,12 @@ func TestValueAdapterInternals(t *testing.T) {
 		}, {
 			description: "ipToCfg",
 			from:        net.ParseIP("127.0.0.1"),
-			fn:          ipToCfg,
+			fn:          withMarshalText(All),
 			expect:      "127.0.0.1",
 		}, {
 			description: "ipToCfg - didn't match",
 			from:        "dogs",
-			fn:          ipToCfg,
+			fn:          withMarshalText(All),
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
 			description: "timeToCfg",
@@ -233,32 +236,32 @@ func TestValueAdapterInternals(t *testing.T) {
 		}, {
 			description: "withMarshalTextptr",
 			from:        &TestObj{"hi", 99},
-			fn:          withMarshalText(all{}),
+			fn:          withMarshalText(All),
 			expect:      "hi 99",
 		}, {
 			description: "withMarshalText",
 			from:        TestObj{"hi", 99},
-			fn:          withMarshalText(all{}),
+			fn:          withMarshalText(All),
 			expect:      "hi 99",
 		}, {
 			description: "withMarshalText only TestObj",
 			from:        TestObj{"hi", 99},
-			fn:          withMarshalText(TestObj{}),
+			fn:          withMarshalText(All),
 			expect:      "hi 99",
 		}, {
 			description: "withMarshalText only TestObj, fail",
 			from:        "invalid",
-			fn:          withMarshalText(TestObj{}),
+			fn:          withMarshalText(All),
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
 			description: "withMarshalText, wrong interface",
 			from:        "invalid",
-			fn:          withMarshalText(all{}),
+			fn:          withMarshalText(All),
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
 			description: "withMarshalText, wrong interface",
 			from:        TestObj{"error", 99},
-			fn:          withMarshalText(all{}),
+			fn:          withMarshalText(All),
 			expectErr:   unknownErr,
 		},
 	}
@@ -310,28 +313,28 @@ func TestEndToEnd(t *testing.T) {
 		{
 			description: "String <-> time.Duration",
 			from:        all{D: time.Second},
-			unmarshal:   []goschtalt.UnmarshalOption{StringToDuration()},
-			value:       []goschtalt.ValueOption{DurationToCfg()},
+			unmarshal:   []goschtalt.UnmarshalOption{DurationUnmarshal()},
+			value:       []goschtalt.ValueOption{MarshalDuration()},
 		}, {
 			description: "String <-> time.Time",
 			from:        all{T: time.Date(2022, time.August, 15, 11, 10, 9, 0, time.UTC)},
-			unmarshal:   []goschtalt.UnmarshalOption{StringToTime(time.RFC3339)},
-			value:       []goschtalt.ValueOption{TimeToCfg(time.RFC3339)},
+			unmarshal:   []goschtalt.UnmarshalOption{TimeUnmarshal(time.RFC3339)},
+			value:       []goschtalt.ValueOption{MarshalTime(time.RFC3339)},
 		}, {
 			description: "String <-> net.IP",
 			from:        all{IP: net.ParseIP("127.0.0.1")},
-			unmarshal:   []goschtalt.UnmarshalOption{StringToIP()},
-			value:       []goschtalt.ValueOption{IPToCfg()},
+			unmarshal:   []goschtalt.UnmarshalOption{TextUnmarshal(All)},
+			value:       []goschtalt.ValueOption{MarshalText(All)},
 		}, {
 			description: "String <-> TestObj (all)",
 			from:        all{Obj: TestObj{Name: "dog", Value: 12}},
-			unmarshal:   []goschtalt.UnmarshalOption{AnyTextUnmarshal()},
-			value:       []goschtalt.ValueOption{AnyMarshalText()},
+			unmarshal:   []goschtalt.UnmarshalOption{TextUnmarshal(All)},
+			value:       []goschtalt.ValueOption{MarshalText(All)},
 		}, {
 			description: "String <-> TestObj (limited)",
 			from:        all{Obj: TestObj{Name: "dog", Value: 12}},
-			unmarshal:   []goschtalt.UnmarshalOption{LimitedTextUnmarshal(TestObj{})},
-			value:       []goschtalt.ValueOption{LimitedMarshalText(TestObj{})},
+			unmarshal:   []goschtalt.UnmarshalOption{TextUnmarshal(All)},
+			value:       []goschtalt.ValueOption{MarshalText(All)},
 		}, {
 			description: "String <-> all",
 			from: all{
@@ -340,14 +343,14 @@ func TestEndToEnd(t *testing.T) {
 				IP: net.ParseIP("192.168.1.1"),
 			},
 			unmarshal: []goschtalt.UnmarshalOption{
-				StringToDuration(),
-				StringToTime("2006-01-02"),
-				StringToIP(),
+				DurationUnmarshal(),
+				TextUnmarshal(AllButTime),
+				TimeUnmarshal("2006-01-02"),
 			},
 			value: []goschtalt.ValueOption{
-				DurationToCfg(),
-				TimeToCfg("2006-01-02"),
-				IPToCfg(),
+				MarshalDuration(),
+				MarshalText(AllButTime),
+				MarshalTime("2006-01-02"),
 			},
 		},
 	}
