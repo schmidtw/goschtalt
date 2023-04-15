@@ -68,7 +68,7 @@ func TestUnmarshalAdapterInternals(t *testing.T) {
 			to:          new(time.Duration),
 			fn:          stringToDuration,
 			expect: func() *time.Duration {
-				d := time.Duration(time.Second)
+				d := time.Second
 				return &d
 			}(),
 		}, {
