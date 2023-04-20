@@ -5,7 +5,6 @@ package goschtalt
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/mitchellh/mapstructure"
@@ -75,9 +74,10 @@ func TestValueOptions(t *testing.T) {
 			err := tc.opt.valueApply(&opts)
 
 			if tc.expectedErr == nil {
-				assert.True(reflect.DeepEqual(tc.want, opts))
+				assert.Equal(tc.want, opts)
 				assert.Equal(tc.asDefault, opts.isDefault)
 			} else {
+				assert.Equal(tc.want, opts)
 				assert.ErrorIs(err, tc.expectedErr)
 			}
 		})

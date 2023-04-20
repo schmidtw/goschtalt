@@ -7,21 +7,18 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"reflect"
 	"sort"
 	"testing"
 	"testing/fstest"
 
 	"github.com/goschtalt/goschtalt/pkg/decoder"
 	"github.com/goschtalt/goschtalt/pkg/encoder"
-	"github.com/k0kubun/pp/v3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestOptions(t *testing.T) {
-	unknown := errors.New("unknown")
-
+	unknownErr := errors.New("unknown err")
 	testErr := errors.New("test err")
 	fs := fstest.MapFS{}
 	abs := fstest.MapFS{}
@@ -50,7 +47,7 @@ func TestOptions(t *testing.T) {
 
 		sorter(got)
 
-		return reflect.DeepEqual(got, want)
+		return assert.Equal(t, got, want)
 	}
 
 	tests := []struct {
@@ -303,7 +300,7 @@ func TestOptions(t *testing.T) {
 			str:         "WithEncoder( 'json', 'yml' )",
 			initCodecs:  true,
 			check: func(cfg *options) bool {
-				return reflect.DeepEqual([]string{"json", "yml"},
+				return assert.Equal(t, []string{"json", "yml"},
 					cfg.encoders.extensions())
 			},
 		}, {
@@ -312,7 +309,7 @@ func TestOptions(t *testing.T) {
 			str:         "WithEncoder( 'foo' )",
 			initCodecs:  true,
 			check: func(cfg *options) bool {
-				return reflect.DeepEqual([]string{"foo"},
+				return assert.Equal(t, []string{"foo"},
 					cfg.encoders.extensions())
 			},
 		}, {
@@ -325,7 +322,7 @@ func TestOptions(t *testing.T) {
 			str:         "WithDecoder( 'json', 'yml' )",
 			initCodecs:  true,
 			check: func(cfg *options) bool {
-				return reflect.DeepEqual([]string{"json", "yml"},
+				return assert.Equal(t, []string{"json", "yml"},
 					cfg.decoders.extensions())
 			},
 		}, {
@@ -334,7 +331,7 @@ func TestOptions(t *testing.T) {
 			str:         "WithDecoder( 'foo' )",
 			initCodecs:  true,
 			check: func(cfg *options) bool {
-				return reflect.DeepEqual([]string{"foo"},
+				return assert.Equal(t, []string{"foo"},
 					cfg.decoders.extensions())
 			},
 		}, {
@@ -519,12 +516,12 @@ func TestOptions(t *testing.T) {
 			description: "AddBuffer( '', bytes )",
 			opt:         AddBuffer("", []byte("bytes")),
 			str:         "AddBuffer( '', []byte )",
-			expectErr:   unknown,
+			expectErr:   unknownErr,
 		}, {
 			description: "AddBufferFunc( filename.ext, nil )",
 			opt:         AddBufferFunc("filename.ext", nil),
 			str:         "AddBufferFunc( 'filename.ext', nil )",
-			expectErr:   unknown,
+			expectErr:   unknownErr,
 		}, {
 			description: "AddBufferFunc( filename.ext, bytes )",
 			opt:         AddBufferFunc("filename.ext", retBuf),
@@ -694,16 +691,12 @@ func TestOptions(t *testing.T) {
 				if tc.check != nil {
 					assert.True(tc.check(&cfg))
 				} else {
-					assert.True(reflect.DeepEqual(tc.goal, cfg))
-					if !reflect.DeepEqual(tc.goal, cfg) {
-						pp.Printf("Want:\n%s\n", tc.goal)
-						pp.Printf("Got:\n%s\n", cfg)
-					}
+					assert.Equal(tc.goal, cfg)
 				}
 				return
 			}
 
-			if !errors.Is(unknown, tc.expectErr) {
+			if !errors.Is(unknownErr, tc.expectErr) {
 				assert.ErrorIs(err, tc.expectErr)
 				return
 			}

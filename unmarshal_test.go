@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/goschtalt/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -404,7 +403,7 @@ func TestUnmarshal(t *testing.T) {
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
-				assert.Empty(cmp.Diff(tc.expected, tc.want))
+				assert.Equal(tc.expected, tc.want)
 				return
 			}
 

@@ -5,7 +5,6 @@ package goschtalt
 
 import (
 	"errors"
-	"reflect"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -96,7 +95,7 @@ func TestExpand(t *testing.T) {
 					c.opts.expansions[0].mapper = nil
 					c.opts.expansions[0].text = ""
 
-					assert.True(reflect.DeepEqual(tc.want, c.opts.expansions[0]))
+					assert.Equal(tc.want, c.opts.expansions[0])
 				}
 			}
 

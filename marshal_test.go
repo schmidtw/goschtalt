@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/goschtalt/goschtalt/pkg/encoder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -106,7 +105,7 @@ func TestMarshal(t *testing.T) {
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
-				assert.Empty(cmp.Diff(tc.expected, string(got)))
+				assert.Equal(tc.expected, string(got))
 				return
 			}
 

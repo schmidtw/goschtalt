@@ -11,7 +11,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/goschtalt/goschtalt"
 	"github.com/stretchr/testify/assert"
 )
@@ -377,7 +376,7 @@ func TestEndToEnd(t *testing.T) {
 				return
 			}
 
-			assert.Empty(cmp.Diff(tc.from, got))
+			assert.Equal(tc.from, got)
 			assert.NoError(err)
 		})
 	}
