@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -74,7 +72,7 @@ func TestObjectFromRawWithOrigin(t *testing.T) {
 
 			got := ObjectFromRawWithOrigin(tc.thing, tc.where, tc.at...)
 
-			assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+			assert.Equal(tc.expected, got)
 		})
 	}
 }
@@ -182,7 +180,7 @@ func TestFetch(t *testing.T) {
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
-				assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+				assert.Equal(tc.expected, got)
 				return
 			}
 			assert.Error(err)
@@ -268,7 +266,7 @@ func TestToRaw(t *testing.T) {
 
 			got := tc.in.ToRaw()
 
-			assert.Empty(cmp.Diff(tc.expected, got))
+			assert.Equal(tc.expected, got)
 		})
 	}
 }
@@ -501,7 +499,7 @@ func TestAdd(t *testing.T) {
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
-				assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+				assert.Equal(tc.expected, got)
 				return
 			}
 
@@ -675,7 +673,7 @@ func TestConvertMapsToArrays(t *testing.T) {
 
 			got := start.ConvertMapsToArrays()
 
-			assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+			assert.Equal(tc.expected, got)
 		})
 	}
 }
@@ -829,7 +827,7 @@ func TestToRedacted(t *testing.T) {
 
 			got := tc.in.ToRedacted()
 
-			assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+			assert.Equal(tc.expected, got)
 		})
 	}
 }
@@ -1002,7 +1000,7 @@ func TestToExpanded(t *testing.T) {
 			})
 
 			if tc.expectedErr == nil {
-				assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+				assert.Equal(tc.expected, got)
 				return
 			}
 
@@ -1126,7 +1124,7 @@ func TestAlterKeyCase(t *testing.T) {
 
 			got := in.AlterKeyCase(tc.mapper)
 
-			assert.Empty(cmp.Diff(expected, got, cmpopts.IgnoreUnexported(Object{})))
+			assert.Equal(expected, got)
 		})
 	}
 }
@@ -1202,7 +1200,7 @@ func TestResolveCommands(t *testing.T) {
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
-				assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+				assert.Equal(tc.expected, got)
 				return
 			}
 
@@ -1515,7 +1513,7 @@ func TestMerge(t *testing.T) {
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
-				assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+				assert.Equal(tc.expected, got)
 				return
 			}
 
@@ -1683,7 +1681,7 @@ func TestFilterNonSerializable(t *testing.T) {
 			want := ObjectFromRawWithOrigin(tc.expected, []Origin{origin})
 			got := obj.FilterNonSerializable()
 
-			assert.Empty(cmp.Diff(want, got, cmpopts.IgnoreUnexported(Object{})))
+			assert.Equal(want, got)
 		})
 	}
 }
@@ -1881,7 +1879,7 @@ func TestAdaptToRaw(t *testing.T) {
 
 			got, err := tc.thing.AdaptToRaw(tc.adapter)
 
-			assert.Empty(cmp.Diff(tc.expected, got, cmpopts.IgnoreUnexported(Object{})))
+			assert.Equal(tc.expected, got)
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				return
@@ -1951,7 +1949,7 @@ func TestClone(t *testing.T) {
 
 			got := tc.in.Clone()
 
-			assert.Empty(cmp.Diff(tc.in, got, cmpopts.IgnoreUnexported(Object{})))
+			assert.Equal(tc.in, got)
 		})
 	}
 }

@@ -7,13 +7,11 @@
 package natsort
 
 import (
-	"fmt"
 	"math/rand"
 	"sort"
 	"testing"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gonum.org/v1/gonum/stat/combin"
@@ -215,15 +213,7 @@ func run(assert *assert.Assertions, require *require.Assertions, list, want []st
 
 	Sort(list)
 
-	if !cmp.Equal(list, want) {
-		fmt.Println("List order resulted in a failure:")
-		for _, item := range start {
-			fmt.Printf("  %s\n", item)
-		}
-		require.Empty(cmp.Diff(list, want))
-	} else {
-		assert.Empty(cmp.Diff(list, want))
-	}
+	assert.Equal(list, want)
 }
 
 func BenchmarkSort1(b *testing.B) {

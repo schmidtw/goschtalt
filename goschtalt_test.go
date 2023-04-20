@@ -12,7 +12,6 @@ import (
 	"testing/fstest"
 	"time"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/goschtalt/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -167,6 +166,7 @@ func TestCompile(t *testing.T) {
 		expect        any
 		files         []string
 		expectedErr   error
+		compare       func(assert *assert.Assertions, a, b any) bool
 	}{
 		{
 			description: "A normal case with options.",
@@ -444,6 +444,24 @@ func TestCompile(t *testing.T) {
 				Func:     strings.ToUpper,
 			},
 			files: []string{"record1"},
+			compare: func(assert *assert.Assertions, z, y any) bool {
+				a := z.(withAll)
+				b := y.(withAll)
+
+				if a.Func != nil {
+					if !assert.NotNil(b.Func) {
+						return false
+					}
+					str := "Random334 String"
+					if !assert.Equal(a.Func(str), b.Func(str)) {
+						return false
+					}
+				}
+
+				return assert.Equal(a.Foo, b.Foo) &&
+					assert.Equal(a.Duration, b.Duration) &&
+					assert.Equal(a.T, b.T)
+			},
 		}, {
 
 			description: "An empty case.",
@@ -597,19 +615,16 @@ func TestCompile(t *testing.T) {
 				err = cfg.Unmarshal(tc.key, &tc.want)
 				require.NoError(err)
 
-				assert.Empty(cmp.Diff(tc.expect, tc.want,
-					cmp.Comparer(
-						func(a, b func(string) string) bool {
-							test := "TestString"
-							return a(test) == b(test)
-						},
-					),
-				))
+				if tc.compare != nil {
+					assert.True(tc.compare(assert, tc.expect, tc.want))
+				} else {
+					assert.Equal(tc.expect, tc.want)
+				}
 
 				// check the file order
 				got, err := cfg.ShowOrder()
 				require.NoError(err)
-				assert.Empty(cmp.Diff(tc.files, got))
+				assert.Equal(tc.files, got)
 
 				assert.NotEmpty(tell)
 				return
@@ -666,7 +681,7 @@ func TestOrderList(t *testing.T) {
 
 			got := cfg.OrderList(tc.in)
 
-			assert.Empty(cmp.Diff(tc.expect, got))
+			assert.Equal(tc.expect, got)
 		})
 	}
 }
@@ -697,7 +712,7 @@ func TestExtensions(t *testing.T) {
 
 			got := cfg.Extensions()
 
-			assert.Empty(cmp.Diff(tc.expect, got))
+			assert.Equal(tc.expect, got)
 		})
 	}
 }

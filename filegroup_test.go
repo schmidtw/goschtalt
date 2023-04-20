@@ -96,7 +96,7 @@ func TestWalk(t *testing.T) {
 			},
 			expectedErr: iofs.ErrInvalid,
 		}, {
-			description: "No file or directory with this patth.",
+			description: "No file or directory with this path.",
 			grp: filegroup{
 				paths: []string{"invalid"},
 			},
