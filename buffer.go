@@ -48,19 +48,12 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 //   - [BufferValueOption]
 //   - [GlobalOption]
 func AddBufferFunc(recordName string, getter func(recordName string, u Unmarshaler) ([]byte, error), opts ...BufferOption) Option {
-	rv := buffer{
+	return &buffer{
 		text:       print.P("AddBufferFunc", print.String(recordName), print.Func(getter), print.LiteralStringers(opts)),
 		recordName: recordName,
 		opts:       opts,
+		getter:     getter,
 	}
-
-	if getter != nil {
-		rv.getter = func(name string, u Unmarshaler) ([]byte, error) {
-			return getter(name, u)
-		}
-	}
-
-	return &rv
 }
 
 type buffer struct {
