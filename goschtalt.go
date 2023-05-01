@@ -199,7 +199,14 @@ func (c *Config) compile() error { //nolint:funlen
 		incremental := merged
 		for _, exp := range c.opts.expansions {
 			var err error
-			incremental, err = incremental.ToExpanded(exp.maximum, exp.origin, exp.start, exp.end, exp.mapper)
+			incremental, err = incremental.ToExpanded(
+				exp.maximum,
+				exp.origin,
+				exp.start,
+				exp.end,
+				func(s string) string { return exp.expander.Expand(s) },
+			)
+
 			if err != nil {
 				fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 				return err
@@ -230,7 +237,13 @@ func (c *Config) compile() error { //nolint:funlen
 		fmt.Fprintf(&c.explainCompile, "  %d. %s\n", i+1, exp.String())
 
 		var err error
-		merged, err = merged.ToExpanded(exp.maximum, exp.origin, exp.start, exp.end, exp.mapper)
+		merged, err = merged.ToExpanded(
+			exp.maximum,
+			exp.origin,
+			exp.start,
+			exp.end,
+			func(s string) string { return exp.expander.Expand(s) },
+		)
 		if err != nil {
 			fmt.Fprintf(&c.explainCompile, "Error: %s\n", err)
 			return err
@@ -258,7 +271,7 @@ done:
 func (c *Config) getSorter() func([]record) {
 	return func(a []record) {
 		sort.SliceStable(a, func(i, j int) bool {
-			return c.opts.sorter(a[i].name, a[j].name)
+			return c.opts.sorter.Less(a[i].name, a[j].name)
 		})
 	}
 }

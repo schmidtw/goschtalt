@@ -12,65 +12,64 @@ import (
 
 func TestExpand(t *testing.T) {
 	testErr := errors.New("test error")
-	expander := func(_ string) string {
-		return ""
+	expander := mockExpander{
+		f: func(_ string) string {
+			return ""
+		},
 	}
+
 	tests := []struct {
 		description string
 		str         string
 		in          Option
-		want        expand
-		count       int
-		nilFunc     bool
+		want        []expand
 		expectErr   error
 	}{
 		{
 			description: "Simple success",
-			in:          Expand(expander),
-			str:         "Expand( custom, ... ) --> start: '${', end: '}', origin: '', maximum: 0",
-			count:       1,
-			want: expand{
-				start:   "${",
-				end:     "}",
-				maximum: 10000,
-			},
+			in:          Expand(&expander),
+			str:         "Expand( *goschtalt.mockExpander, ... ) --> start: '${', end: '}', origin: '', maximum: 0",
+			want: []expand{{
+				start:    "${",
+				end:      "}",
+				expander: &expander,
+				maximum:  10000,
+			}},
 		}, {
 			description: "Empty expand",
 			in:          Expand(nil),
 			str:         "Expand( nil, ... ) --> start: '${', end: '}', origin: '', maximum: 0",
 		}, {
 			description: "Fully defined",
-			in:          Expand(expander, WithOrigin("origin"), WithDelimiters("${{", "}}"), WithMaximum(10)),
-			str:         "Expand( custom, ... ) --> start: '${{', end: '}}', origin: 'origin', maximum: 10",
-			count:       1,
-			want: expand{
-				origin:  "origin",
-				start:   "${{",
-				end:     "}}",
-				maximum: 10,
-			},
+			in:          Expand(&expander, WithOrigin("origin"), WithDelimiters("${{", "}}"), WithMaximum(10)),
+			str:         "Expand( *goschtalt.mockExpander, ... ) --> start: '${{', end: '}}', origin: 'origin', maximum: 10",
+			want: []expand{{
+				origin:   "origin",
+				start:    "${{",
+				end:      "}}",
+				expander: &expander,
+				maximum:  10,
+			}},
 		}, {
-			description: "Fully defined",
+			description: "Env, fully defined",
 			in:          ExpandEnv(WithOrigin("origin"), WithDelimiters("${{", "}}"), WithMaximum(-1)),
 			str:         "ExpandEnv( ... ) --> start: '${{', end: '}}', origin: 'origin', maximum: -1",
-			count:       1,
-			want: expand{
-				origin:  "origin",
-				start:   "${{",
-				end:     "}}",
-				maximum: 10000,
-			},
+			want: []expand{{
+				origin:   "origin",
+				start:    "${{",
+				end:      "}}",
+				expander: envExpander{},
+				maximum:  10000,
+			}},
 		}, {
 			description: "Handle an error",
 			in:          ExpandEnv(WithError(testErr)),
 			str:         "WithError( 'ExpandEnv() err: test error' )",
-			count:       0,
 			expectErr:   testErr,
 		}, {
 			description: "Handle an error in Expand()",
 			in:          Expand(nil, WithError(testErr)),
 			str:         "WithError( 'Expand() err: test error' )",
-			count:       0,
 			expectErr:   testErr,
 		},
 	}
@@ -87,16 +86,11 @@ func TestExpand(t *testing.T) {
 			if tc.expectErr == nil {
 				assert.NoError(err)
 
-				assert.Equal(tc.count, len(c.opts.expansions))
-				if tc.count == 1 {
-					if tc.nilFunc {
-						assert.Nil(c.opts.expansions[0].mapper)
-					}
-					c.opts.expansions[0].mapper = nil
-					c.opts.expansions[0].text = ""
-
-					assert.Equal(tc.want, c.opts.expansions[0])
+				// Don't compare the text
+				for i := range c.opts.expansions {
+					c.opts.expansions[i].text = ""
 				}
+				assert.Equal(tc.want, c.opts.expansions)
 			}
 
 			assert.ErrorIs(err, tc.expectErr)

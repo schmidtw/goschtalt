@@ -231,8 +231,10 @@ func TestUnmarshal(t *testing.T) {
 		}, {
 			description: "Verify the WithValidator(func) behavior works.",
 			input:       `{"Foo":"bar"}`,
-			opts:        []UnmarshalOption{WithValidator(func(any) error { return nil })},
-			want:        simple{},
+			opts: []UnmarshalOption{
+				WithValidator(mockValidator{f: func(any) error { return nil }}),
+			},
+			want: simple{},
 			expected: simple{
 				Foo: "bar",
 			},
@@ -240,7 +242,7 @@ func TestUnmarshal(t *testing.T) {
 			description: "Verify the WithValidator(nil) behavior works.",
 			input:       `{"Foo":"bar"}`,
 			opts: []UnmarshalOption{
-				WithValidator(func(any) error { return unknownErr }),
+				WithValidator(mockValidator{f: func(any) error { return unknownErr }}),
 				WithValidator(nil),
 			},
 			want: simple{},
@@ -293,11 +295,13 @@ func TestUnmarshal(t *testing.T) {
 				Delta: "tree val",
 			},
 		}, {
-			description: "Verify the KeymapFunc() works",
+			description: "Verify the KeymapMapper() works",
 			input:       `{"foo":"bar"}`,
 			opts: []UnmarshalOption{
-				KeymapFunc(func(s string) string {
-					return strings.ToLower(s)
+				KeymapMapper(mockMapper{
+					f: func(s string) string {
+						return strings.ToLower(s)
+					},
 				}),
 			},
 			want: simple{},
@@ -308,7 +312,7 @@ func TestUnmarshal(t *testing.T) {
 			description: "Verify the WithValidator(func) failure mode works.",
 			input:       `{"Foo":"bar"}`,
 			opts: []UnmarshalOption{
-				WithValidator(func(any) error { return unknownErr }),
+				WithValidator(mockValidator{f: func(any) error { return unknownErr }}),
 			},
 			want:        simple{},
 			expectedErr: unknownErr,
@@ -351,11 +355,13 @@ func TestUnmarshal(t *testing.T) {
 			key:         "Foo",
 			want:        time.Time{},
 			opts: []UnmarshalOption{
-				AdaptFromCfg(func(f, t reflect.Value) (any, error) {
-					if f.Kind() != reflect.String {
-						return f.Interface(), nil
-					}
-					return time.Parse("2006-01-02", f.Interface().(string))
+				AdaptFromCfg(mockAdapterFromCfg{
+					f: func(f, t reflect.Value) (any, error) {
+						if f.Kind() != reflect.String {
+							return f.Interface(), nil
+						}
+						return time.Parse("2006-01-02", f.Interface().(string))
+					},
 				}),
 			},
 			expected: time.Date(2022, time.May, 1, 0, 0, 0, 0, time.UTC),

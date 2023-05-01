@@ -28,8 +28,10 @@ func TestOptions(t *testing.T) {
 	list := []string{"zeta", "alpha", "19beta", "19alpha", "4tango",
 		"1alpha", "7alpha", "bravo", "7alpha10", "7alpha2", "7alpha0"}
 
-	retBuf := func(name string, un Unmarshaler) ([]byte, error) {
-		return []byte(name), nil
+	retBuf := mockBufferGetter{
+		f: func(name string, un Unmarshaler) ([]byte, error) {
+			return []byte(name), nil
+		},
 	}
 
 	sortCheck := func(cfg *options, want []string) bool {
@@ -41,7 +43,7 @@ func TestOptions(t *testing.T) {
 
 		sorter := func(a []string) {
 			sort.SliceStable(a, func(i, j int) bool {
-				return cfg.sorter(a[i], a[j])
+				return cfg.sorter.Less(a[i], a[j])
 			})
 		}
 
@@ -231,16 +233,18 @@ func TestOptions(t *testing.T) {
 			str:         "SetKeyDelimiter( '' )",
 			expectErr:   ErrInvalidInput,
 		}, {
-			description: "SortRecordsCustomFunc( nil )",
-			opt:         SortRecordsCustomFunc(nil),
-			str:         "SortRecordsCustomFunc( nil )",
+			description: "SortRecords( nil )",
+			opt:         SortRecords(nil),
+			str:         "SortRecords( nil )",
 			expectErr:   ErrInvalidInput,
 		}, {
-			description: "SortRecordsCustomFunc( '(reverse)' )",
-			opt: SortRecordsCustomFunc(func(a, b string) bool {
-				return a > b
+			description: "SortRecords( '(reverse)' )",
+			opt: SortRecords(mockRecordSorter{
+				f: func(a, b string) bool {
+					return a > b
+				},
 			}),
-			str: "SortRecordsCustomFunc( custom )",
+			str: "SortRecords( goschtalt.mockRecordSorter )",
 			check: func(cfg *options) bool {
 				return sortCheck(cfg, []string{
 					"zeta",
@@ -518,14 +522,14 @@ func TestOptions(t *testing.T) {
 			str:         "AddBuffer( '', []byte )",
 			expectErr:   unknownErr,
 		}, {
-			description: "AddBufferFunc( filename.ext, nil )",
-			opt:         AddBufferFunc("filename.ext", nil),
-			str:         "AddBufferFunc( 'filename.ext', nil )",
+			description: "AddBufferGetter( filename.ext, nil )",
+			opt:         AddBufferGetter("filename.ext", nil),
+			str:         "AddBufferGetter( 'filename.ext', nil )",
 			expectErr:   unknownErr,
 		}, {
-			description: "AddBufferFunc( filename.ext, bytes )",
-			opt:         AddBufferFunc("filename.ext", retBuf),
-			str:         "AddBufferFunc( 'filename.ext', custom )",
+			description: "AddBufferGetter( filename.ext, bytes )",
+			opt:         AddBufferGetter("filename.ext", retBuf),
+			str:         "AddBufferGetter( 'filename.ext', goschtalt.mockBufferGetter )",
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "filename.ext" {
@@ -537,9 +541,13 @@ func TestOptions(t *testing.T) {
 				return false
 			},
 		}, {
-			description: "AddValueFunc( record1, '', func )",
-			opt:         AddValueFunc("record1", Root, func(_ string, un Unmarshaler) (any, error) { return nil, nil }),
-			str:         "AddValueFunc( 'record1', '', custom, none )",
+			description: "AddValueGetter( record1, '', func )",
+			opt: AddValueGetter("record1", Root,
+				mockValueGetter{
+					f: func(_ string, un Unmarshaler) (any, error) { return nil, nil },
+				},
+			),
+			str: "AddValueGetter( 'record1', '', goschtalt.mockValueGetter )",
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "record1" {
@@ -551,9 +559,9 @@ func TestOptions(t *testing.T) {
 				return false
 			},
 		}, {
-			description: "AddValueFunc( record1, 'key', nil )",
-			opt:         AddValueFunc("record1", "key", nil),
-			str:         "AddValueFunc( 'record1', 'key', '', none )",
+			description: "AddValueGetter( record1, 'key', nil )",
+			opt:         AddValueGetter("record1", "key", nil),
+			str:         "AddValueGetter( 'record1', 'key', nil )",
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "record1" {
@@ -567,7 +575,7 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "AddValue( record1, 'key', nil )",
 			opt:         AddValue("record1", "key", nil),
-			str:         "AddValue( 'record1', 'key', none )",
+			str:         "AddValue( 'record1', 'key', nil )",
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "record1" {
@@ -581,7 +589,7 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "AddValue( record1, key, nil, AsDefault )",
 			opt:         AddValue("record1", "key", nil, AsDefault()),
-			str:         "AddValue( 'record1', 'key', AsDefault() )",
+			str:         "AddValue( 'record1', 'key', nil, AsDefault() )",
 			check: func(cfg *options) bool {
 				if len(cfg.defaults) == 1 {
 					if cfg.defaults[0].name == "record1" {
@@ -595,7 +603,7 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "AddValue( record1, key, nil, AsDefault(false) )",
 			opt:         AddValue("record1", "key", nil, AsDefault(false)),
-			str:         "AddValue( 'record1', 'key', AsDefault(false) )",
+			str:         "AddValue( 'record1', 'key', nil, AsDefault(false) )",
 			check: func(cfg *options) bool {
 				if len(cfg.values) == 1 {
 					if cfg.values[0].name == "record1" {
@@ -609,7 +617,7 @@ func TestOptions(t *testing.T) {
 		}, {
 			description: "AddValue( record1, key, nil, WithError(testErr) )",
 			opt:         AddValue("record1", "key", nil, WithError(testErr)),
-			str:         "AddValue( 'record1', 'key', WithError( 'test err' ) )",
+			str:         "AddValue( 'record1', 'key', nil, WithError( 'test err' ) )",
 			expectErr:   testErr,
 		}, {
 			description: "AddBuffer( filename.ext, bytes, AsDefault )",
