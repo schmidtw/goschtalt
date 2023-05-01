@@ -144,6 +144,15 @@ func TestP(t *testing.T) {
 			opt:    LiteralStringers([]fmt.Stringer{Literal("one"), Literal("two")}, "label"),
 			expect: "Foo( label: one, two )",
 		}, {
+			opt:    Obj(nil),
+			expect: "Foo( nil )",
+		}, {
+			opt:    Obj("foo"),
+			expect: "Foo( string )",
+		}, {
+			opt:    Obj(list{}),
+			expect: "Foo( print.list )",
+		}, {
 			opt:    String("foo"),
 			expect: "Foo( 'foo' )",
 		}, {

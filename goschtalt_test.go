@@ -12,6 +12,7 @@ import (
 	"testing/fstest"
 	"time"
 
+	"github.com/goschtalt/goschtalt/pkg/debug"
 	"github.com/goschtalt/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -62,6 +63,7 @@ func TestNew(t *testing.T) {
 func TestCompile(t *testing.T) {
 	unknownErr := fmt.Errorf("unknown err")
 	testErr := fmt.Errorf("test err")
+	remappings := debug.Collect{}
 
 	fs1 := fstest.MapFS{
 		"a/1.json": &fstest.MapFile{
@@ -158,15 +160,16 @@ func TestCompile(t *testing.T) {
 	}
 
 	tests := []struct {
-		description   string
-		compileOption bool
-		opts          []Option
-		want          any
-		key           string
-		expect        any
-		files         []string
-		expectedErr   error
-		compare       func(assert *assert.Assertions, a, b any) bool
+		description    string
+		compileOption  bool
+		opts           []Option
+		want           any
+		key            string
+		expect         any
+		files          []string
+		expectedRemaps map[string]string
+		expectedErr    error
+		compare        func(assert *assert.Assertions, a, b any) bool
 	}{
 		{
 			description: "A normal case with options.",
@@ -345,11 +348,13 @@ func TestCompile(t *testing.T) {
 					KeymapFunc(func(s string) string {
 						return strings.ToLower(s)
 					}),
+					KeymapReport(&remappings),
 				),
 				DefaultUnmarshalOptions(
 					KeymapFunc(func(s string) string {
 						return strings.ToLower(s)
 					}),
+					KeymapReport(&remappings),
 				),
 			},
 			want: st1{},
@@ -357,6 +362,11 @@ func TestCompile(t *testing.T) {
 				Hello: "Mr. Blue Sky",
 				Blue:  "jay",
 				Madd:  "cat",
+			},
+			expectedRemaps: map[string]string{
+				"Blue":  "blue",
+				"Hello": "hello",
+				"Madd":  "madd",
 			},
 			files: []string{"record1"},
 		}, {
@@ -597,6 +607,8 @@ func TestCompile(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
+			remappings.Mapping = make(map[string]string)
+
 			cfg, err := New(tc.opts...)
 
 			if !tc.compileOption {
@@ -627,6 +639,12 @@ func TestCompile(t *testing.T) {
 				assert.Equal(tc.files, got)
 
 				assert.NotEmpty(tell)
+
+				if tc.expectedRemaps == nil {
+					assert.Empty(remappings.Mapping)
+				} else {
+					assert.Equal(tc.expectedRemaps, remappings.Mapping)
+				}
 				return
 			}
 

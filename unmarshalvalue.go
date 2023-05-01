@@ -119,3 +119,45 @@ func (k keymapOption) valueApply(opts *valueOptions) error {
 func (k keymapOption) String() string {
 	return k.text
 }
+
+// KeymapReporter is the interface that provides a way to report what was mapped
+// to what.  This is designed to help make debugging mapping mistakes easier.
+//
+// The [github.com/goschtalt/goschtalt/pkg/debug/Collect] package implements
+// KeymapReporter for easy use.
+type KeymapReporter interface {
+	// Report is called with the `from` and `to` strings when a key mapping
+	// takes place.
+	Report(from, to string)
+}
+
+// KeymapReport takes an object that implements a KeymapReporter interface and
+// adds it to the existing chain of reporters.  A KeymapReporter provides a way
+// to report on how the keys were actually mapped.
+func KeymapReport(r KeymapReporter) UnmarshalValueOption {
+	return &keymapReportOption{
+		r: r,
+	}
+}
+
+type keymapReportOption struct {
+	r KeymapReporter
+}
+
+func (k keymapReportOption) unmarshalApply(opts *unmarshalOptions) error {
+	if k.r != nil {
+		opts.reporters = append(opts.reporters, k.r)
+	}
+	return nil
+}
+
+func (k keymapReportOption) valueApply(opts *valueOptions) error {
+	if k.r != nil {
+		opts.reporters = append(opts.reporters, k.r)
+	}
+	return nil
+}
+
+func (k keymapReportOption) String() string {
+	return print.P("KeymapReporter", print.Obj(k.r), print.SubOpt())
+}

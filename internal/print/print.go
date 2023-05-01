@@ -200,6 +200,14 @@ func LiteralStringers[T fmt.Stringer](list []T, label ...string) Option {
 	return LiteralStrings(s, label...)
 }
 
+// Obj takes an object with optional label and renders them consistently.
+func Obj(o any, label ...string) Option {
+	if o == nil {
+		return labeledSimpleOption("nil", label...)
+	}
+	return labeledSimpleOption(reflect.TypeOf(o).String(), label...)
+}
+
 // String takes a string parameter with optional label and renders them consistently.
 func String(txt string, label ...string) Option {
 	return labeledSimpleOption("'"+txt+"'", label...)
