@@ -208,6 +208,7 @@ type unmarshalOptions struct {
 	optional  bool
 	mappers   []Mapper
 	adapters  []adapter
+	reporters []KeymapReporter
 	decoder   mapstructure.DecoderConfig
 	validator func(any) error
 }
@@ -215,12 +216,16 @@ type unmarshalOptions struct {
 // mapper is a helper function that applies the mapper function behavior
 // uniformly.
 func (u unmarshalOptions) mapper(s string) string {
+	in := s
 	for _, m := range u.mappers {
 		if rv := m(s); rv != "" {
 			s = rv
 		}
 	}
 
+	for _, r := range u.reporters {
+		r.Report(in, s)
+	}
 	return s
 }
 

@@ -199,6 +199,7 @@ type valueOptions struct {
 	tagName               string
 	mappers               []Mapper
 	adapters              []adapter
+	reporters             []KeymapReporter
 	failOnNonSerializable bool
 	isDefault             bool
 }
@@ -206,12 +207,16 @@ type valueOptions struct {
 // mapper is a simple helper that does the mapping based on the specified
 // options.
 func (v valueOptions) mapper(s string) string {
+	in := s
 	for _, m := range v.mappers {
 		if rv := m(s); rv != "" {
 			s = rv
 		}
 	}
 
+	for _, r := range v.reporters {
+		r.Report(in, s)
+	}
 	return s
 }
 
