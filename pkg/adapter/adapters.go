@@ -23,65 +23,65 @@ func All(t any) bool {
 // the matcher function allows.  The only configuration value type allowed is a
 // string.
 func TextUnmarshal(m Matcher) goschtalt.UnmarshalOption {
-	return goschtalt.AdaptFromCfg(withTextUnmarshal(m), "TextUnmarshal")
-}
-
-func withTextUnmarshal(m Matcher) func(reflect.Value, reflect.Value) (any, error) {
-	return func(from, to reflect.Value) (any, error) {
-		if from.Kind() != reflect.String || !m(reflect.TypeOf(to)) {
-			return nil, goschtalt.ErrNotApplicable
-		}
-
-		// Always make a writable pointer to the object version
-		result := reflect.New(reflect.Indirect(to).Type()).Interface()
-
-		u, ok := result.(encoding.TextUnmarshaler)
-		if !ok {
-			return nil, goschtalt.ErrNotApplicable
-		}
-
-		if err := u.UnmarshalText([]byte(from.Interface().(string))); err != nil {
-			return nil, goschtalt.ErrNotApplicable
-		}
-
-		// Return the same type passed in.  Since we may have been passed a
-		// non-pointer based value, dereference the point before return it in
-		// those cases.
-		if to.Type() != reflect.TypeOf(result) {
-			result = reflect.Indirect(reflect.ValueOf(result)).Interface()
-		}
-		return result, nil
-	}
+	return goschtalt.AdaptFromCfg(textMarshaler{matcher: m}, "TextUnmarshal")
 }
 
 // MarshalText uses the TextUnmarshaler() method if present for an object if the
 // matcher function allows.  The only configuration value type allowed is a string.
 func MarshalText(m Matcher) goschtalt.ValueOption {
-	return goschtalt.AdaptToCfg(withMarshalText(m), "MarshalText")
+	return goschtalt.AdaptToCfg(textMarshaler{matcher: m}, "MarshalText")
 }
 
-func withMarshalText(m Matcher) func(reflect.Value) (any, error) {
-	return func(from reflect.Value) (any, error) {
-		if !m(from.Type()) {
-			return nil, goschtalt.ErrNotApplicable
-		}
+type textMarshaler struct {
+	matcher Matcher
+}
 
-		if from.Kind() != reflect.Pointer {
-			tmp := reflect.New(from.Type())
-			tmp.Elem().Set(from)
-			from = tmp
-		}
-
-		m, ok := from.Interface().(encoding.TextMarshaler)
-		if !ok {
-			return nil, goschtalt.ErrNotApplicable
-		}
-
-		b, err := m.MarshalText()
-		if err != nil {
-			return nil, err
-		}
-
-		return string(b), nil
+func (t textMarshaler) From(from, to reflect.Value) (any, error) {
+	if from.Kind() != reflect.String || !t.matcher(reflect.TypeOf(to)) {
+		return nil, goschtalt.ErrNotApplicable
 	}
+
+	// Always make a writable pointer to the object version
+	result := reflect.New(reflect.Indirect(to).Type()).Interface()
+
+	u, ok := result.(encoding.TextUnmarshaler)
+	if !ok {
+		return nil, goschtalt.ErrNotApplicable
+	}
+
+	if err := u.UnmarshalText([]byte(from.Interface().(string))); err != nil {
+		return nil, goschtalt.ErrNotApplicable
+	}
+
+	// Return the same type passed in.  Since we may have been passed a
+	// non-pointer based value, dereference the point before return it in
+	// those cases.
+	if to.Type() != reflect.TypeOf(result) {
+		result = reflect.Indirect(reflect.ValueOf(result)).Interface()
+	}
+	return result, nil
+}
+
+func (t textMarshaler) To(from reflect.Value) (any, error) {
+	if !t.matcher(from.Type()) {
+		return nil, goschtalt.ErrNotApplicable
+	}
+
+	if from.Kind() != reflect.Pointer {
+		tmp := reflect.New(from.Type())
+		tmp.Elem().Set(from)
+		from = tmp
+	}
+
+	marshaler, ok := from.Interface().(encoding.TextMarshaler)
+	if !ok {
+		return nil, goschtalt.ErrNotApplicable
+	}
+
+	b, err := marshaler.MarshalText()
+	if err != nil {
+		return nil, err
+	}
+
+	return string(b), nil
 }

@@ -13,6 +13,23 @@ import (
 	"github.com/goschtalt/goschtalt/pkg/meta"
 )
 
+// ValueGetter provides the methods needed to get the value.
+type ValueGetter interface {
+	// Get is called each time the configuration is compiled.  The recordName
+	// and an Unmarshaler with the present stage of configuration and expanded
+	// variables are provided to assist.  A data structure (object, string, int, etc)
+	// or an error is returned.
+	Get(recordName string, u Unmarshaler) (any, error)
+}
+
+type valueGetter struct {
+	val any
+}
+
+func (v valueGetter) Get(_ string, _ Unmarshaler) (any, error) {
+	return v.val, nil
+}
+
 // AddValues provides a simple way to set additional configuration values at
 // runtime.
 //
@@ -26,18 +43,16 @@ import (
 //   - [UnmarshalValueOption]
 func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 	return &value{
-		text:       "AddValue",
+		text:       print.P("AddValue", print.String(recordName), print.String(key), print.Obj(val), print.LiteralStringers(opts)),
 		recordName: recordName,
 		key:        key,
-		getter: func(_ string, _ Unmarshaler) (any, error) {
-			return val, nil
-		},
-		opts: opts,
+		getter:     valueGetter{val: val},
+		opts:       opts,
 	}
 }
 
-// AddValues provides a simple way to set additional configuration values at
-// runtime via a function call.  Note that the provided function f will be
+// AddValueGetter provides a simple way to set additional configuration values
+// at runtime via a function call.  Note that the provided ValueGetter will be
 // called each time the configuration is compiled, allowing the value returned
 // to change if desired.
 //
@@ -49,12 +64,12 @@ func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 //   - [GlobalOption]
 //   - [ValueOption]
 //   - [UnmarshalValueOption]
-func AddValueFunc(recordName, key string, f func(recordName string, u Unmarshaler) (any, error), opts ...ValueOption) Option {
+func AddValueGetter(recordName, key string, getter ValueGetter, opts ...ValueOption) Option {
 	return &value{
-		text:       "AddValueFunc",
+		text:       print.P("AddValueGetter", print.String(recordName), print.String(key), print.Obj(getter), print.LiteralStringers(opts)),
 		recordName: recordName,
 		key:        key,
-		getter:     f,
+		getter:     getter,
 		opts:       opts,
 	}
 }
@@ -69,8 +84,8 @@ type value struct {
 	// The key to set the value at.
 	key string
 
-	// The function to use to get the value.
-	getter func(recordName string, u Unmarshaler) (any, error)
+	// The getter to use to get the value.
+	getter ValueGetter
 
 	// Options that configure how to process the Value provided.
 	// These options are in addition to any default settings set with
@@ -92,7 +107,7 @@ func (v value) toTree(delimiter string, u Unmarshaler, defaultOpts ...ValueOptio
 		}
 	}
 
-	data, err := v.getter(v.recordName, u)
+	data, err := v.getter.Get(v.recordName, u)
 	if err != nil {
 		return meta.Object{}, err
 	}
@@ -162,24 +177,7 @@ func (_ value) ignoreDefaults() bool {
 }
 
 func (v value) String() string {
-	s := make([]string, len(v.opts))
-	for i, opt := range v.opts {
-		s[i] = opt.String()
-	}
-
-	if len(s) == 0 {
-		s = append(s, "none")
-	}
-
-	getter := ""
-	if v.text == "AddValueFunc" {
-		getter = "'', "
-		if v.getter != nil {
-			getter = "custom, "
-		}
-	}
-	return fmt.Sprintf("%s( '%s', '%s', %s%s )",
-		v.text, v.recordName, v.key, getter, strings.Join(s, ", "))
+	return v.text
 }
 
 // -- ValueOption options follow -----------------------------------------------
@@ -209,7 +207,7 @@ type valueOptions struct {
 func (v valueOptions) mapper(s string) string {
 	in := s
 	for _, m := range v.mappers {
-		if rv := m(s); rv != "" {
+		if rv := m.Map(s); rv != "" {
 			s = rv
 		}
 	}
@@ -246,44 +244,43 @@ func (e failOnNonSerializableOption) String() string {
 	return print.P("FailOnNonSerializable", print.BoolSilentTrue(bool(e)), print.SubOpt())
 }
 
-// AdaptToCfg converts a value from one form to another if possible.  The resulting
-// form is returned if adapted.  If the combination of f and t are unknown
-// or unsupported return ErrNotApplicable as the error with a nil value.
+// AdapterToCfg provides a method that maps a golang struct object into the
+// configuration form.  It assumed that the converter knows best what that is.
+//
+// If the mapping is not applicable, the ErrNotApplicable error is returned.
+// Any other non-nil error fails the operation entirely.
+type AdapterToCfg interface {
+	To(from reflect.Value) (any, error)
+}
+
+// AdaptToCfg converts a value a golang struct object into the configuration
+// form.  It assumed that the converter knows best what the form should be.
+//
+// If the combination of from and t are unknown or unsupported return
+// ErrNotApplicable as the error with a nil value.
 //
 // If ErrNotApplicable is returned the value returned will be ignored.
 //
 // The optional label parameter allows you to provide the function name of the
 // adapter so it is more clear which adapters are registered.
-//
-// All functions provided to Adapt() are called in the order provided until one
-// returns no error or the end of the list is encountered.
-//
-// When used as an option for an Unmarshal() operation, the value of f will
-// be the form in the configuration (string, int, etc) and the value of t will
-// represent the desired form in the target structure.
-//
-// When used as an option for a Value() operation, the value of f will be the
-// form present in the source structure and the t value will always be the type
-// Best.  The returned type should match the type retrieved from the
-// configuration decoder.  This generally will be a built in type like string,
-// int or bool.
-func AdaptToCfg(f func(from reflect.Value) (any, error), label ...string) ValueOption {
+func AdaptToCfg(adapter AdapterToCfg, label ...string) ValueOption {
 	label = append(label, "")
 	return &adaptToCfgOption{
-		label: label[0],
-		adapterFunc: func(from, to reflect.Value) (any, error) {
-			return f(from)
-		},
+		label:   label[0],
+		adapter: adapter,
 	}
 }
 
 type adaptToCfgOption struct {
-	label       string
-	adapterFunc adapter
+	label   string
+	adapter AdapterToCfg
 }
 
 func (a adaptToCfgOption) valueApply(opts *valueOptions) error {
-	opts.adapters = append(opts.adapters, a.adapterFunc)
+	opts.adapters = append(opts.adapters,
+		func(from, to reflect.Value) (any, error) {
+			return a.adapter.To(from)
+		})
 	return nil
 }
 
@@ -292,5 +289,5 @@ func (a adaptToCfgOption) String() string {
 	if len(a.label) > 0 {
 		labels = append(labels, a.label)
 	}
-	return print.P("AdaptToCfg", print.Func(a.adapterFunc, labels...), print.SubOpt())
+	return print.P("AdaptToCfg", print.Obj(a.adapter, labels...), print.SubOpt())
 }

@@ -13,6 +13,23 @@ import (
 	"github.com/goschtalt/goschtalt/pkg/meta"
 )
 
+// BufferGetter provides the methods needed to get the buffer of bytes.
+type BufferGetter interface {
+	// Get is called each time the configuration is compiled.  The recordName
+	// and an Unmarshaler with the present stage of configuration and expanded
+	// variables are provided to assist.  A slice of bytes or an error is
+	// returned.
+	Get(recordName string, u Unmarshaler) ([]byte, error)
+}
+
+type bufferGetter struct {
+	in []byte
+}
+
+func (b bufferGetter) Get(_ string, _ Unmarshaler) ([]byte, error) {
+	return b.in, nil
+}
+
 // AddBuffer adds a buffer of bytes for inclusion when compiling the configuration.
 // The format of the bytes is determined by the extension of the recordName field.
 // The recordName field is also used for sorting this configuration value relative
@@ -26,17 +43,17 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 	return &buffer{
 		text:       print.P("AddBuffer", print.String(recordName), print.Bytes(in), print.LiteralStringers(opts)),
 		recordName: recordName,
-		getter: func(_ string, _ Unmarshaler) ([]byte, error) {
-			return in, nil
+		getter: bufferGetter{
+			in: in,
 		},
 		opts: opts,
 	}
 }
 
-// AddBufferFunc adds a function that is called during compile time of the
-// configuration.  The recordName of this record is passed into the getter
-// function that is called as well as an Unmarshaler that represents the
-// existing state of the merged configuration prior to adding the buffer that
+// AddBufferGetter adds a function that is called during compile time of the
+// configuration.  The recordName of this record is passed into the getter,
+// as well as an Unmarshaler that represents the existing state of the merged
+// configuration prior to adding the buffer that
 // results in the call to getter.
 //
 // The format of the bytes is determined by the extension of the recordName field.
@@ -47,9 +64,9 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 //   - [BufferOption]
 //   - [BufferValueOption]
 //   - [GlobalOption]
-func AddBufferFunc(recordName string, getter func(recordName string, u Unmarshaler) ([]byte, error), opts ...BufferOption) Option {
+func AddBufferGetter(recordName string, getter BufferGetter, opts ...BufferOption) Option {
 	return &buffer{
-		text:       print.P("AddBufferFunc", print.String(recordName), print.Func(getter), print.LiteralStringers(opts)),
+		text:       print.P("AddBufferGetter", print.String(recordName), print.Obj(getter), print.LiteralStringers(opts)),
 		recordName: recordName,
 		opts:       opts,
 		getter:     getter,
@@ -63,8 +80,8 @@ type buffer struct {
 	// The record name.
 	recordName string
 
-	// The function to use to get the value.
-	getter func(string, Unmarshaler) ([]byte, error)
+	// The getter to use to get the value.
+	getter BufferGetter
 
 	// Options that configure how this buffer is treated and processed.
 	// These options are in addition to any default settings set with
@@ -78,7 +95,7 @@ func (b buffer) apply(opts *options) error {
 	}
 
 	if b.getter == nil {
-		return fmt.Errorf("%w: a non-nil func must be specified.", ErrInvalidInput)
+		return fmt.Errorf("%w: a non-nil BufferGetter must be specified.", ErrInvalidInput)
 	}
 
 	r := record{
@@ -112,7 +129,7 @@ func (b buffer) String() string {
 // toTree converts an buffer into a meta.Object tree.  This will happen
 // during the compilation stage.
 func (b *buffer) toTree(delimiter string, u Unmarshaler, decoders *codecRegistry[decoder.Decoder]) (meta.Object, error) {
-	data, err := b.getter(b.recordName, u)
+	data, err := b.getter.Get(b.recordName, u)
 	if err != nil {
 		return meta.Object{}, err
 	}

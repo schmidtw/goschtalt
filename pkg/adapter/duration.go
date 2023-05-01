@@ -13,10 +13,18 @@ import (
 // DurationUnmarshal converts a string to a time.Duration or *time.Duration if
 // possible, or returns an error indicating the failure.
 func DurationUnmarshal() goschtalt.UnmarshalOption {
-	return goschtalt.AdaptFromCfg(stringToDuration, "DurationUnmarshal")
+	return goschtalt.AdaptFromCfg(marshalDuration{}, "DurationUnmarshal")
 }
 
-func stringToDuration(from, to reflect.Value) (any, error) {
+// MarshalDuration converts a time.Duration into its configuration form.  The
+// configuration form is a string.
+func MarshalDuration() goschtalt.ValueOption {
+	return goschtalt.AdaptToCfg(marshalDuration{}, "MarshalDuration")
+}
+
+type marshalDuration struct{}
+
+func (marshalDuration) From(from, to reflect.Value) (any, error) {
 	if from.Kind() != reflect.String {
 		return nil, goschtalt.ErrNotApplicable
 	}
@@ -41,13 +49,7 @@ func stringToDuration(from, to reflect.Value) (any, error) {
 	return d, nil
 }
 
-// MarshalDuration converts a time.Duration into its configuration form.  The
-// configuration form is a string.
-func MarshalDuration() goschtalt.ValueOption {
-	return goschtalt.AdaptToCfg(durationToCfg, "MarshalDuration")
-}
-
-func durationToCfg(from reflect.Value) (any, error) {
+func (marshalDuration) To(from reflect.Value) (any, error) {
 	if from.Type() == reflect.TypeOf(time.Duration(1)) {
 		return from.Interface().(time.Duration).String(), nil
 	}

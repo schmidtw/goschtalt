@@ -42,7 +42,7 @@ type options struct {
 	// Settings where there are one.
 	autoCompile  bool
 	keyDelimiter string
-	sorter       func(a, b string) bool
+	sorter       RecordSorter
 
 	// Codecs where there can be many.
 	decoders *codecRegistry[decoder.Decoder]
@@ -302,7 +302,21 @@ func (s setKeyDelimiterOption) String() string {
 	return print.P("SetKeyDelimiter", print.String(string(s)))
 }
 
-// SortRecordsCustomFunc provides a way to specify how you want the files sorted
+// RecordSorter provides the methods needed to sort records.
+type RecordSorter interface {
+	// Less reports whether a is before b.
+	Less(a, b string) bool
+}
+
+type recordSorter struct {
+	f func(a, b string) bool
+}
+
+func (r recordSorter) Less(a, b string) bool {
+	return r.f(a, b)
+}
+
+// SortRecords provides a way to specify how you want the files sorted
 // prior to their merge.  This function provides a way to provide a completely
 // custom sorting algorithm.
 //
@@ -311,25 +325,27 @@ func (s setKeyDelimiterOption) String() string {
 // # Default
 //
 // The default is [SortRecordsNaturally].
-func SortRecordsCustomFunc(less func(a, b string) bool) Option {
-	return &sortRecordsCustomFuncOption{
-		text:   print.P("SortRecordsCustomFunc", print.Func(less)),
-		sorter: less,
+func SortRecords(sorter RecordSorter) Option {
+	return &sortRecordsOption{
+		text:   print.P("SortRecords", print.Obj(sorter)),
+		sorter: sorter,
 	}
 }
 
 // SortRecordsLexically provides a built in sorter based on lexical order.
 //
-// See also: [SortRecordsCustomFunc], [SortRecordsNaturally]
+// See also: [SortRecords], [SortRecordsNaturally]
 //
 // # Default
 //
 // The default is [SortRecordsNaturally].
 func SortRecordsLexically() Option {
-	return &sortRecordsCustomFuncOption{
+	return &sortRecordsOption{
 		text: print.P("SortRecordsLexically"),
-		sorter: func(a, b string) bool {
-			return a < b
+		sorter: recordSorter{
+			f: func(a, b string) bool {
+				return a < b
+			},
 		},
 	}
 }
@@ -354,24 +370,26 @@ func SortRecordsLexically() Option {
 //	99_mine.yml
 //	100_alpha.yml
 //
-// See also: [SortRecordsCustomFunc], [SortRecordsLexically]
+// See also: [SortRecords], [SortRecordsLexically]
 //
 // # Default
 //
 // The default is [SortRecordsNaturally].
 func SortRecordsNaturally() Option {
-	return &sortRecordsCustomFuncOption{
-		text:   print.P("SortRecordsNaturally"),
-		sorter: natsort.Compare,
+	return &sortRecordsOption{
+		text: print.P("SortRecordsNaturally"),
+		sorter: recordSorter{
+			f: natsort.Compare,
+		},
 	}
 }
 
-type sortRecordsCustomFuncOption struct {
+type sortRecordsOption struct {
 	text   string
-	sorter func(a, b string) bool
+	sorter RecordSorter
 }
 
-func (s sortRecordsCustomFuncOption) apply(opts *options) error {
+func (s sortRecordsOption) apply(opts *options) error {
 	if s.sorter == nil {
 		return fmt.Errorf("%w: a SortRecords function/option must be specified", ErrInvalidInput)
 	}
@@ -380,8 +398,8 @@ func (s sortRecordsCustomFuncOption) apply(opts *options) error {
 	return nil
 }
 
-func (_ sortRecordsCustomFuncOption) ignoreDefaults() bool { return false }
-func (s sortRecordsCustomFuncOption) String() string       { return s.text }
+func (_ sortRecordsOption) ignoreDefaults() bool { return false }
+func (s sortRecordsOption) String() string       { return s.text }
 
 // WithDecoder registers a Decoder for the specific file extensions provided.
 // Attempting to register a duplicate extension is not supported.

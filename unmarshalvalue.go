@@ -53,13 +53,28 @@ func (val tagNameOption) String() string {
 	return print.P("TagName", print.String(string(val)), print.SubOpt())
 }
 
-// Mapper takes a golang structure field string and outputs a goschtalt
-// configuration tree name string that is one of the following:
-//   - "" indicating this mapper was unable to perform the remapping, continue
-//     calling mappers in the chain
-//   - "-"  indicating this value should be dropped entirely
-//   - anything else indicates the new full name
-type Mapper func(s string) string
+// Mapper provides a method that can map from a golang structure field name to a
+// goschtalt configuration tree name.
+type Mapper interface {
+	// Map takes a golang structure field string and outputs a goschtalt
+	// configuration tree name string that is one of the following:
+	//   - "" indicating this mapper was unable to perform the remapping, continue
+	//     calling mappers in the chain
+	//   - "-"  indicating this value should be dropped entirely
+	//   - anything else indicates the new full name
+	Map(s string) string
+}
+
+type wrapMap struct {
+	m map[string]string
+}
+
+func (w wrapMap) Map(s string) string {
+	if val, found := w.m[s]; found {
+		return val
+	}
+	return s
+}
 
 // Keymap takes a map of strings to strings and adds it to the existing
 // chain of keymaps. The key of the map is the golang structure field name and
@@ -74,25 +89,22 @@ type Mapper func(s string) string
 func Keymap(m map[string]string) UnmarshalValueOption {
 	return &keymapOption{
 		text: print.P("Keymap", print.StringMap(m), print.SubOpt()),
-		m: func(s string) string {
-			if val, found := m[s]; found {
-				return val
-			}
-			return s
+		m: wrapMap{
+			m: m,
 		},
 	}
 }
 
-// KeymapFunc takes a Mapper function and adds it to the existing chain of
+// KeymapMapper takes a Mapper function and adds it to the existing chain of
 // mappers, in the front of the list.
 //
 // This allows for multiple mappers to be specified instead of requiring a
 // single mapper with full knowledge of how to map everything. This makes it
 // easy to add logic to remap full keys without needing to re-implement the
 // underlying converters.
-func KeymapFunc(mapper Mapper) UnmarshalValueOption {
+func KeymapMapper(mapper Mapper) UnmarshalValueOption {
 	return &keymapOption{
-		text: print.P("KeymapFunc", print.Func(mapper), print.SubOpt()),
+		text: print.P("KeymapMapper", print.Obj(mapper), print.SubOpt()),
 		m:    mapper,
 	}
 }

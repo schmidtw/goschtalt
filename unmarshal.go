@@ -25,7 +25,7 @@ type Unmarshaler func(key string, result any, opts ...UnmarshalOption) error
 // Unmarshal provides a generics based strict typed approach to fetching parts
 // of the configuration tree.
 //
-// To read the entire configuration tree, use `goschtalt.Root` [Root] instead of
+// To read the entire configuration tree, use goschtalt.Root [Root] instead of
 // "" for more clarity.
 //
 // Valid Option Types:
@@ -59,7 +59,7 @@ func Unmarshal[T any](c *Config, key string, opts ...UnmarshalOption) (T, error)
 //		),
 //	)
 //
-// To read the entire configuration tree, use `goschtalt.Root` [Root] instead of
+// To read the entire configuration tree, use goschtalt.Root [Root] instead of
 // "" for more clarity.
 //
 // Valid Option Types:
@@ -76,7 +76,7 @@ func UnmarshalFunc[T any](key string, opts ...UnmarshalOption) func(*Config) (T,
 // and decoding the tree into the result.  Additional options can be specified
 // to adjust the behavior.
 //
-// To read the entire configuration tree, use `goschtalt.Root` [Root] instead of
+// To read the entire configuration tree, use goschtalt.Root [Root] instead of
 // "" for more clarity.
 //
 // Valid Option Types:
@@ -97,15 +97,15 @@ func (c *Config) Unmarshal(key string, result any, opts ...UnmarshalOption) erro
 // adapter is a function that maps a value from one form (from) to a different
 // form (to) if possible.  Generally they are short, simple functions.  The
 // result is returned with no error, or a nil result is returned with
-// ErrNotApplicable, or nil/zero is returned with an error.
+// [ErrNotApplicable], or nil/zero is returned with an error.
 type adapter func(from, to reflect.Value) (any, error)
 
 // adapterIterator takes an array of adapters and applies them one at a time
 // until one of the following happens:
 //   - an adapter succeeds
-//   - all adapters are executed & there are error(s) (excluding ErrNotApplicable)
+//   - all adapters are executed & there are error(s) (excluding [ErrNotApplicable])
 //     resulting in an overall error
-//   - all adapters are executed & there are no error(s) (excluding ErrNotApplicable)
+//   - all adapters are executed & there are no error(s) (excluding [ErrNotApplicable])
 //     resulting in the from value being returned
 func adapterIterator(ff []adapter) func(reflect.Value, reflect.Value) (any, error) {
 	return func(from, to reflect.Value) (any, error) {
@@ -186,7 +186,7 @@ func (c *Config) unmarshal(key string, result any, tree meta.Object, opts ...Unm
 		return err
 	}
 	if options.validator != nil {
-		if err := options.validator(result); err != nil {
+		if err := options.validator.Validate(result); err != nil {
 			return err
 		}
 	}
@@ -210,7 +210,7 @@ type unmarshalOptions struct {
 	adapters  []adapter
 	reporters []KeymapReporter
 	decoder   mapstructure.DecoderConfig
-	validator func(any) error
+	validator Validator
 }
 
 // mapper is a helper function that applies the mapper function behavior
@@ -218,7 +218,7 @@ type unmarshalOptions struct {
 func (u unmarshalOptions) mapper(s string) string {
 	in := s
 	for _, m := range u.mappers {
-		if rv := m(s); rv != "" {
+		if rv := m.Map(s); rv != "" {
 			s = rv
 		}
 	}
@@ -232,8 +232,8 @@ func (u unmarshalOptions) mapper(s string) string {
 // Optional provides a way to allow the requested configuration to not be present
 // and return an empty structure without an error instead of failing.
 //
-// The optional bool value is optional & assumed to be `true` if omitted.  The
-// first specified value is used if provided.  A value of `false` disables the
+// The optional bool value is optional & assumed to be true if omitted.  The
+// first specified value is used if provided.  A value of false disables the
 // option.
 //
 // See also: [Required]
@@ -252,8 +252,8 @@ func Optional(optional ...bool) UnmarshalOption {
 // Required provides a way to allow the requested configuration to be required
 // and return an error if it is missing.
 //
-// The required bool value is optional & assumed to be `true` if omitted.  The
-// first specified value is used if provided.  A value of `false` disables the
+// The required bool value is optional & assumed to be true if omitted.  The
+// first specified value is used if provided.  A value of false disables the
 // option.
 //
 // See also: [Optional]
@@ -283,6 +283,12 @@ func (o optionalOption) String() string {
 	return o.text
 }
 
+// Validator provides a method that validates an arbitrary data object and
+// returns an error if one is detected.
+type Validator interface {
+	Validate(any) error
+}
+
 // WithValidator provides a way to specify a validator to use after a structure
 // has been unmarshaled, but prior to returning the data.  This allows for an
 // easy way to consistently validate configuration as it is being consumed.  If
@@ -294,14 +300,14 @@ func (o optionalOption) String() string {
 // # Default
 //
 // The default behavior is to not validate.
-func WithValidator(v func(any) error) UnmarshalOption {
+func WithValidator(v Validator) UnmarshalOption {
 	return &validatorOption{
 		validator: v,
 	}
 }
 
 type validatorOption struct {
-	validator func(any) error
+	validator Validator
 }
 
 func (v validatorOption) unmarshalApply(opts *unmarshalOptions) error {
@@ -310,45 +316,49 @@ func (v validatorOption) unmarshalApply(opts *unmarshalOptions) error {
 }
 
 func (v validatorOption) String() string {
-	return print.P("WithValidator", print.Func(v.validator), print.SubOpt())
+	return print.P("WithValidator", print.Obj(v.validator), print.SubOpt())
 }
 
-// AdaptFromCfg converts a value from one form to another if possible.  The resulting
-// form is returned if adapted.  If the combination of from and to are unknown
-// or unsupported return ErrNotApplicable as the error with a nil value.
+// AdapterFromCfg provides a method that maps a value from the form stored in
+// the configuration tree (and the configuration files) to the golang structure.
+// If the mapping is not applicable, the ErrNotApplicable error is returned.
+// Any other non-nil error fails the operation entirely.
+type AdapterFromCfg interface {
+	From(from, to reflect.Value) (any, error)
+}
+
+// AdaptFromCfg converts a value from the configuration form into the golang
+// form if possible.
 //
-// If ErrNotApplicable is returned the value returned will be ignored.
+// If the combination of from and to are unknown or unsupported return
+// [ErrNotApplicable] as the error with a nil value.
+//
+// If [ErrNotApplicable] is returned the value returned will be ignored.
 //
 // The optional label parameter allows you to provide the function name of the
 // adapter so it is more clear which adapters are registered.
 //
-// All functions provided to Adapt() are called in the order provided until one
-// returns no error or the end of the list is encountered.
-//
-// When used as an option for an Unmarshal() operation, the value of f will
-// be the form in the configuration (string, int, etc) and the value of t will
-// represent the desired form in the target structure.
-//
-// When used as an option for a Value() operation, the value of f will be the
-// form present in the source structure and the t value will always be the type
-// Best.  The returned type should match the type retrieved from the
-// configuration decoder.  This generally will be a built in type like string,
-// int or bool.
-func AdaptFromCfg(adapter func(from, to reflect.Value) (any, error), label ...string) UnmarshalOption {
+// All AdapterFromCfg provided are called in the order provided until
+// one returns no error or the end of the list is encountered.
+func AdaptFromCfg(adapter AdapterFromCfg, label ...string) UnmarshalOption {
 	label = append(label, "")
 	return &adaptFromCfgOption{
-		label:       label[0],
-		adapterFunc: adapter,
+		label:   label[0],
+		adapter: adapter,
 	}
 }
 
 type adaptFromCfgOption struct {
-	label       string
-	adapterFunc adapter
+	label   string
+	adapter AdapterFromCfg
 }
 
 func (a adaptFromCfgOption) unmarshalApply(opts *unmarshalOptions) error {
-	opts.adapters = append(opts.adapters, a.adapterFunc)
+	opts.adapters = append(opts.adapters,
+		func(from, to reflect.Value) (any, error) {
+			return a.adapter.From(from, to)
+		},
+	)
 	return nil
 }
 
@@ -357,7 +367,7 @@ func (a adaptFromCfgOption) String() string {
 	if len(a.label) > 0 {
 		labels = append(labels, a.label)
 	}
-	return print.P("AdaptFromCfg", print.Func(a.adapterFunc, labels...), print.SubOpt())
+	return print.P("AdaptFromCfg", print.Obj(a.adapter, labels...), print.SubOpt())
 }
 
 // A Level represents a specific degree in which a configuration matches a

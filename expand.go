@@ -10,6 +10,18 @@ import (
 	"github.com/goschtalt/goschtalt/internal/print"
 )
 
+// Expander provides a method that can expand variables in values.
+type Expander interface {
+	// Expand is expected to work just like os.Getenv.
+	Expand(string) string
+}
+
+type envExpander struct{}
+
+func (envExpander) Expand(s string) string {
+	return os.Getenv(s)
+}
+
 // ExpandEnv is a simple way to add automatic environment variable expansion
 // after the configuration has been compiled.
 //
@@ -20,10 +32,10 @@ import (
 //   - [GlobalOption]
 func ExpandEnv(opts ...ExpandOption) Option {
 	exp := expand{
-		origin: "environment",
-		mapper: os.Getenv,
-		start:  "${",
-		end:    "}",
+		origin:   "environment",
+		expander: envExpander{},
+		start:    "${",
+		end:      "}",
 	}
 
 	for _, opt := range opts {
@@ -60,11 +72,11 @@ func ExpandEnv(opts ...ExpandOption) Option {
 // Valid Option Types:
 //   - [ExpandOption]
 //   - [GlobalOption]
-func Expand(mapper func(string) string, opts ...ExpandOption) Option {
+func Expand(expander Expander, opts ...ExpandOption) Option {
 	exp := expand{
-		mapper: mapper,
-		start:  "${",
-		end:    "}",
+		expander: expander,
+		start:    "${",
+		end:      "}",
 	}
 
 	for _, opt := range opts {
@@ -74,7 +86,7 @@ func Expand(mapper func(string) string, opts ...ExpandOption) Option {
 	}
 
 	exp.text = print.P("Expand",
-		print.Func(mapper),
+		print.Obj(expander),
 		print.Literal("..."),
 		print.Yields(
 			print.String(exp.start, "start"),
@@ -105,7 +117,7 @@ type expand struct {
 
 	// The string to string mapping function.
 	// Mapping request ignored if nil.
-	mapper func(string) string
+	expander Expander
 
 	// The maximum expansions of a value before a recursion error is returned.
 	// Defaults to 10000 if set to less than 1.
@@ -116,7 +128,7 @@ func (exp expand) apply(opts *options) error {
 	if exp.maximum < 1 {
 		exp.maximum = 10000
 	}
-	if exp.mapper != nil {
+	if exp.expander != nil {
 		opts.expansions = append(opts.expansions, exp)
 	}
 

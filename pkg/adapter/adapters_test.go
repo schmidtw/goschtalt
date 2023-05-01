@@ -45,120 +45,128 @@ func (t *TestObj) MarshalText() ([]byte, error) {
 	return []byte(s), nil
 }
 
+type adapterToCfg interface {
+	To(from reflect.Value) (any, error)
+}
+
+type adapterFromCfg interface {
+	From(from, to reflect.Value) (any, error)
+}
+
 func TestUnmarshalAdapterInternals(t *testing.T) {
 	unknownErr := errors.New("unknownErr")
 	tests := []struct {
 		description string
 		from        any
 		to          any
-		fn          func(reflect.Value, reflect.Value) (any, error)
+		obj         adapterFromCfg
 		expect      any
 		expectErr   error
 	}{
 		{
-			description: "stringToDuration",
+			description: "marshalDuration",
 			from:        "1s",
 			to:          time.Duration(1),
-			fn:          stringToDuration,
+			obj:         marshalDuration{},
 			expect:      time.Second,
 		}, {
-			description: "stringToDuration ptr",
+			description: "marshalDuration ptr",
 			from:        "1s",
 			to:          new(time.Duration),
-			fn:          stringToDuration,
+			obj:         marshalDuration{},
 			expect: func() *time.Duration {
 				d := time.Second
 				return &d
 			}(),
 		}, {
-			description: "stringToDuration - fail",
+			description: "marshalDuration - fail",
 			from:        "dogs",
 			to:          time.Duration(1),
-			fn:          stringToDuration,
+			obj:         marshalDuration{},
 			expectErr:   unknownErr,
 		}, {
-			description: "stringToDuration - didn't match",
+			description: "marshalDuration - didn't match",
 			from:        "dogs",
 			to:          time.Time{},
-			fn:          stringToDuration,
+			obj:         marshalDuration{},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
 			description: "stringToIP",
 			from:        "127.0.0.1",
 			to:          net.IP{},
-			fn:          withTextUnmarshal(All),
+			obj:         textMarshaler{matcher: All},
 			expect:      net.ParseIP("127.0.0.1"),
 		}, {
 			description: "stringToIP - fail",
 			from:        "dogs",
 			to:          net.IP{},
-			fn:          withTextUnmarshal(All),
+			obj:         textMarshaler{matcher: All},
 			expectErr:   unknownErr,
 		}, {
 			description: "stringToIP - didn't match",
 			from:        "dogs",
 			to:          time.Time{},
-			fn:          withTextUnmarshal(All),
+			obj:         textMarshaler{matcher: All},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
-			description: "stringToTime",
+			description: "marshalTime",
 			from:        "2022-01-30",
 			to:          time.Time{},
-			fn:          stringToTime("2006-01-02"),
+			obj:         marshalTime{layout: "2006-01-02"},
 			expect:      time.Date(2022, time.January, 30, 0, 0, 0, 0, time.UTC),
 		}, {
-			description: "stringToTime - fail",
+			description: "marshalTime - fail",
 			from:        "dogs",
 			to:          time.Time{},
-			fn:          stringToTime("2006-01-02"),
+			obj:         marshalTime{layout: "2006-01-02"},
 			expectErr:   unknownErr,
 		}, {
-			description: "stringToTime - didn't match",
+			description: "marshalTime - didn't match",
 			from:        "dogs",
 			to:          net.IP{},
-			fn:          stringToTime("2006-01-02"),
+			obj:         marshalTime{layout: "2006-01-02"},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
-			description: "withTextUnmarshal ptr",
+			description: "textMarshaler ptr",
 			from:        "dogs 10",
 			to:          &TestObj{},
-			fn:          withTextUnmarshal(All),
+			obj:         textMarshaler{matcher: All},
 			expect:      &TestObj{Name: "dogs", Value: 10},
 		}, {
-			description: "withTextUnmarshal",
+			description: "textMarshaler",
 			from:        "dogs 10",
 			to:          TestObj{},
-			fn:          withTextUnmarshal(All),
+			obj:         textMarshaler{matcher: All},
 			expect:      TestObj{Name: "dogs", Value: 10},
 		}, {
-			description: "withTextUnmarshal ptr specific type",
+			description: "textMarshaler ptr specific type",
 			from:        "dogs 10",
 			to:          &TestObj{},
-			fn:          withTextUnmarshal(All),
+			obj:         textMarshaler{matcher: All},
 			expect:      &TestObj{Name: "dogs", Value: 10},
 		}, {
-			description: "withTextUnmarshal specific type",
+			description: "textMarshaler specific type",
 			from:        "dogs 10",
 			to:          TestObj{},
-			fn:          withTextUnmarshal(All),
+			obj:         textMarshaler{matcher: All},
 			expect:      TestObj{Name: "dogs", Value: 10},
 		}, {
-			description: "withTextUnmarshal, not a string",
+			description: "textMarshaler, not a string",
 			from:        12,
 			to:          TestObj{},
-			fn:          withTextUnmarshal(All),
+			obj:         textMarshaler{matcher: All},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
-			description: "withTextUnmarshal, obj doesn't implement the interface",
+			description: "textMarshaler, obj doesn't implement the interface",
 			from:        "dogs 10",
 			to:          "string",
-			fn:          withTextUnmarshal(All),
+			obj:         textMarshaler{matcher: All},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
-			description: "withTextUnmarshal, invalid string",
+			description: "textMarshaler, invalid string",
 			from:        "dogs_10",
 			to:          TestObj{},
-			fn:          withTextUnmarshal(All),
+			obj:         textMarshaler{matcher: All},
 			expectErr:   unknownErr,
 		},
 	}
@@ -167,7 +175,7 @@ func TestUnmarshalAdapterInternals(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 
-			got, err := tc.fn(reflect.ValueOf(tc.from), reflect.ValueOf(tc.to))
+			got, err := tc.obj.From(reflect.ValueOf(tc.from), reflect.ValueOf(tc.to))
 
 			if errors.Is(unknownErr, tc.expectErr) {
 				// Accept nil, or the zero value of the type
@@ -198,69 +206,69 @@ func TestValueAdapterInternals(t *testing.T) {
 	tests := []struct {
 		description string
 		from        any
-		fn          func(reflect.Value) (any, error)
+		obj         adapterToCfg
 		expect      any
 		expectErr   error
 	}{
 		{
-			description: "durationToCfg",
+			description: "marshalDuration",
 			from:        time.Second,
-			fn:          durationToCfg,
+			obj:         marshalDuration{},
 			expect:      "1s",
 		}, {
-			description: "durationToCfg - didn't match",
+			description: "marshalDuration - didn't match",
 			from:        time.Time{},
-			fn:          durationToCfg,
+			obj:         marshalDuration{},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
 			description: "ipToCfg",
 			from:        net.ParseIP("127.0.0.1"),
-			fn:          withMarshalText(All),
+			obj:         textMarshaler{matcher: All},
 			expect:      "127.0.0.1",
 		}, {
 			description: "ipToCfg - didn't match",
 			from:        "dogs",
-			fn:          withMarshalText(All),
+			obj:         textMarshaler{matcher: All},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
-			description: "timeToCfg",
+			description: "marshalTime",
 			from:        time.Date(2022, time.January, 30, 0, 0, 0, 0, time.UTC),
-			fn:          timeToCfg("2006-01-02"),
+			obj:         marshalTime{layout: "2006-01-02"},
 			expect:      "2022-01-30",
 		}, {
-			description: "timeToCfg - didn't match",
+			description: "marshalTime - didn't match",
 			from:        net.IP{127, 0, 0, 1},
-			fn:          timeToCfg("2006-01-02"),
+			obj:         marshalTime{layout: "2006-01-02"},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
 			description: "withMarshalTextptr",
 			from:        &TestObj{"hi", 99},
-			fn:          withMarshalText(All),
+			obj:         textMarshaler{matcher: All},
 			expect:      "hi 99",
 		}, {
-			description: "withMarshalText",
+			description: "textMarshaler",
 			from:        TestObj{"hi", 99},
-			fn:          withMarshalText(All),
+			obj:         textMarshaler{matcher: All},
 			expect:      "hi 99",
 		}, {
-			description: "withMarshalText only TestObj",
+			description: "textMarshaler only TestObj",
 			from:        TestObj{"hi", 99},
-			fn:          withMarshalText(All),
+			obj:         textMarshaler{matcher: All},
 			expect:      "hi 99",
 		}, {
-			description: "withMarshalText only TestObj, fail",
+			description: "textMarshaler only TestObj, fail",
 			from:        "invalid",
-			fn:          withMarshalText(All),
+			obj:         textMarshaler{matcher: All},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
-			description: "withMarshalText, wrong interface",
+			description: "textMarshaler, wrong interface",
 			from:        "invalid",
-			fn:          withMarshalText(All),
+			obj:         textMarshaler{matcher: All},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
-			description: "withMarshalText, wrong interface",
+			description: "textMarshaler, wrong interface",
 			from:        TestObj{"error", 99},
-			fn:          withMarshalText(All),
+			obj:         textMarshaler{matcher: All},
 			expectErr:   unknownErr,
 		},
 	}
@@ -269,7 +277,7 @@ func TestValueAdapterInternals(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 
-			got, err := tc.fn(reflect.ValueOf(tc.from))
+			got, err := tc.obj.To(reflect.ValueOf(tc.from))
 
 			if errors.Is(unknownErr, tc.expectErr) {
 				// Accept nil, or the zero value of the type

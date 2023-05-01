@@ -101,36 +101,42 @@ func TestCompile(t *testing.T) {
 		},
 	}
 
-	mapper1 := func(m string) string {
-		switch m {
-		case "thing":
-			return "|bird|"
-		}
+	mapper1 := mockExpander{
+		f: func(m string) string {
+			switch m {
+			case "thing":
+				return "|bird|"
+			}
 
-		return ""
+			return ""
+		},
 	}
 
-	mapper2 := func(m string) string {
-		switch m {
-		case "bird":
-			return "jay"
-		}
+	mapper2 := mockExpander{
+		f: func(m string) string {
+			switch m {
+			case "bird":
+				return "jay"
+			}
 
-		return ""
+			return ""
+		},
 	}
 
 	// Causes infinite loop
-	mapper3 := func(m string) string {
-		switch m {
-		case "thing":
-			return ".${bird}"
-		case "bird":
-			return ".${jay}"
-		case "jay":
-			return ".${bird}"
-		}
+	mapper3 := mockExpander{
+		f: func(m string) string {
+			switch m {
+			case "thing":
+				return ".${bird}"
+			case "bird":
+				return ".${jay}"
+			case "jay":
+				return ".${bird}"
+			}
 
-		return ""
+			return ""
+		},
 	}
 
 	type st1 struct {
@@ -207,9 +213,12 @@ func TestCompile(t *testing.T) {
 			opts: []Option{
 				AddBuffer("3.json", []byte(`{"Madd": "cat"}`)),
 				AddBuffer("2.json", []byte(`{"Blue": "${thing}"}`)),
-				AddBufferFunc("1.json", func(_ string, _ Unmarshaler) ([]byte, error) {
-					return []byte(`{"Hello": "Mr. Blue Sky"}`), nil
-				}),
+				AddBufferGetter("1.json",
+					mockBufferGetter{
+						f: func(_ string, _ Unmarshaler) ([]byte, error) {
+							return []byte(`{"Hello": "Mr. Blue Sky"}`), nil
+						},
+					}),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 			},
@@ -224,16 +233,22 @@ func TestCompile(t *testing.T) {
 			description: "A case with an encoded buffer function that looks up something from the tree.",
 			opts: []Option{
 				AddBuffer("1.json", []byte(`{"Madd": "cat"}`)),
-				AddBufferFunc("2.json", func(_ string, un Unmarshaler) ([]byte, error) {
-					var s string
-					_ = un("Madd", &s)
-					return []byte(fmt.Sprintf(`{"Blue": "%s"}`, s)), nil
-				}),
-				AddBufferFunc("3.json", func(_ string, un Unmarshaler) ([]byte, error) {
-					var s string
-					_ = un("Blue", &s)
-					return []byte(fmt.Sprintf(`{"Hello": "%s"}`, s)), nil
-				}),
+				AddBufferGetter("2.json",
+					mockBufferGetter{
+						f: func(_ string, un Unmarshaler) ([]byte, error) {
+							var s string
+							_ = un("Madd", &s)
+							return []byte(fmt.Sprintf(`{"Blue": "%s"}`, s)), nil
+						},
+					}),
+				AddBufferGetter("3.json",
+					mockBufferGetter{
+						f: func(_ string, un Unmarshaler) ([]byte, error) {
+							var s string
+							_ = un("Blue", &s)
+							return []byte(fmt.Sprintf(`{"Hello": "%s"}`, s)), nil
+						},
+					}),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 			},
@@ -276,9 +291,12 @@ func TestCompile(t *testing.T) {
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
-				AddBufferFunc("3.json", func(_ string, _ Unmarshaler) ([]byte, error) {
-					return nil, unknownErr
-				}),
+				AddBufferGetter("3.json",
+					mockBufferGetter{
+						f: func(_ string, _ Unmarshaler) ([]byte, error) {
+							return nil, unknownErr
+						},
+					}),
 			},
 			expectedErr: unknownErr,
 		}, {
@@ -287,9 +305,12 @@ func TestCompile(t *testing.T) {
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
-				AddBufferFunc("3.json", func(_ string, _ Unmarshaler) ([]byte, error) {
-					return []byte(`invalid`), nil
-				}),
+				AddBufferGetter("3.json",
+					mockBufferGetter{
+						f: func(_ string, _ Unmarshaler) ([]byte, error) {
+							return []byte(`invalid`), nil
+						},
+					}),
 			},
 			expectedErr: unknownErr,
 		}, {
@@ -345,14 +366,18 @@ func TestCompile(t *testing.T) {
 					Blue:  "jay",
 					Madd:  "cat",
 				},
-					KeymapFunc(func(s string) string {
-						return strings.ToLower(s)
+					KeymapMapper(mockMapper{
+						f: func(s string) string {
+							return strings.ToLower(s)
+						},
 					}),
 					KeymapReport(&remappings),
 				),
 				DefaultUnmarshalOptions(
-					KeymapFunc(func(s string) string {
-						return strings.ToLower(s)
+					KeymapMapper(mockMapper{
+						f: func(s string) string {
+							return strings.ToLower(s)
+						},
 					}),
 					KeymapReport(&remappings),
 				),
@@ -530,7 +555,9 @@ func TestCompile(t *testing.T) {
 						Duration: time.Second,
 						T:        time.Date(2022, time.December, 30, 0, 0, 0, 0, time.UTC),
 					},
-					AdaptToCfg(func(reflect.Value) (any, error) { return nil, unknownErr }),
+					AdaptToCfg(mockAdapterToCfg{
+						f: func(reflect.Value) (any, error) { return nil, unknownErr },
+					}),
 					adaptTimeToCfg("2006-01-02"),
 					adaptDurationToCfg(),
 				),
@@ -556,9 +583,11 @@ func TestCompile(t *testing.T) {
 			description: "A case where the value function returns an error.",
 			opts: []Option{
 				AutoCompile(),
-				AddValueFunc("record", Root,
-					func(string, Unmarshaler) (any, error) {
-						return nil, testErr
+				AddValueGetter("record", Root,
+					mockValueGetter{
+						f: func(string, Unmarshaler) (any, error) {
+							return nil, testErr
+						},
 					},
 				),
 			},

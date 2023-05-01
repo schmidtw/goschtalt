@@ -17,6 +17,86 @@ import (
 	"github.com/goschtalt/goschtalt/pkg/meta"
 )
 
+// Mock Validator //////////////////////////////////////////////////////////////
+
+type mockValidator struct {
+	f func(any) error
+}
+
+func (m mockValidator) Validate(o any) error {
+	return m.f(o)
+}
+
+// Mock AdapterFromCfg /////////////////////////////////////////////////////////
+
+type mockAdapterFromCfg struct {
+	f func(from, to reflect.Value) (any, error)
+}
+
+func (m mockAdapterFromCfg) From(from, to reflect.Value) (any, error) {
+	return m.f(from, to)
+}
+
+// Mock AdapterToCfg ///////////////////////////////////////////////////////////
+
+type mockAdapterToCfg struct {
+	f func(reflect.Value) (any, error)
+}
+
+func (m mockAdapterToCfg) To(from reflect.Value) (any, error) {
+	return m.f(from)
+}
+
+// Mock ValueGetter ////////////////////////////////////////////////////////////
+
+type mockValueGetter struct {
+	f func(string, Unmarshaler) (any, error)
+}
+
+func (m mockValueGetter) Get(recordName string, u Unmarshaler) (any, error) {
+	return m.f(recordName, u)
+}
+
+// Mock BufferGetter ///////////////////////////////////////////////////////////
+
+type mockBufferGetter struct {
+	f func(string, Unmarshaler) ([]byte, error)
+}
+
+func (m mockBufferGetter) Get(recordName string, u Unmarshaler) ([]byte, error) {
+	return m.f(recordName, u)
+}
+
+// Mock RecordSorter ///////////////////////////////////////////////////////////
+
+type mockRecordSorter struct {
+	f func(a, b string) bool
+}
+
+func (m mockRecordSorter) Less(a, b string) bool {
+	return m.f(a, b)
+}
+
+// Mock Expander ///////////////////////////////////////////////////////////////
+
+type mockExpander struct {
+	f func(string) string
+}
+
+func (m mockExpander) Expand(s string) string {
+	return m.f(s)
+}
+
+// Mock Mapper /////////////////////////////////////////////////////////////////
+
+type mockMapper struct {
+	f func(string) string
+}
+
+func (m mockMapper) Map(s string) string {
+	return m.f(s)
+}
+
 // Test Decoder ////////////////////////////////////////////////////////////////
 
 var _ decoder.Decoder = (*testDecoder)(nil)
@@ -94,12 +174,14 @@ func (t *testEncoder) Extensions() []string {
 
 func adaptStringToDuration() UnmarshalOption {
 	return AdaptFromCfg(
-		func(from, to reflect.Value) (any, error) {
-			if from.Kind() == reflect.String && to.Type() == reflect.TypeOf(time.Duration(1)) {
-				return time.ParseDuration(from.Interface().(string))
-			}
+		mockAdapterFromCfg{
+			f: func(from, to reflect.Value) (any, error) {
+				if from.Kind() == reflect.String && to.Type() == reflect.TypeOf(time.Duration(1)) {
+					return time.ParseDuration(from.Interface().(string))
+				}
 
-			return nil, ErrNotApplicable
+				return nil, ErrNotApplicable
+			},
 		},
 		"adaptStringToDuration",
 	)
@@ -107,12 +189,14 @@ func adaptStringToDuration() UnmarshalOption {
 
 func adaptDurationToCfg() ValueOption {
 	return AdaptToCfg(
-		func(from reflect.Value) (any, error) {
-			if from.Type() == reflect.TypeOf(time.Duration(1)) {
-				return from.Interface().(time.Duration).String(), nil
-			}
+		mockAdapterToCfg{
+			f: func(from reflect.Value) (any, error) {
+				if from.Type() == reflect.TypeOf(time.Duration(1)) {
+					return from.Interface().(time.Duration).String(), nil
+				}
 
-			return nil, ErrNotApplicable
+				return nil, ErrNotApplicable
+			},
 		},
 		"adaptDurationToCfg",
 	)
@@ -120,12 +204,14 @@ func adaptDurationToCfg() ValueOption {
 
 func adaptStringToTime(layout string) UnmarshalOption {
 	return AdaptFromCfg(
-		func(from, to reflect.Value) (any, error) {
-			if from.Kind() == reflect.String && to.Type() == reflect.TypeOf(time.Time{}) {
-				return time.Parse(layout, from.Interface().(string))
-			}
+		mockAdapterFromCfg{
+			f: func(from, to reflect.Value) (any, error) {
+				if from.Kind() == reflect.String && to.Type() == reflect.TypeOf(time.Time{}) {
+					return time.Parse(layout, from.Interface().(string))
+				}
 
-			return nil, ErrNotApplicable
+				return nil, ErrNotApplicable
+			},
 		},
 		"adaptStringToTime",
 	)
@@ -133,12 +219,14 @@ func adaptStringToTime(layout string) UnmarshalOption {
 
 func adaptTimeToCfg(layout string) ValueOption {
 	return AdaptToCfg(
-		func(from reflect.Value) (any, error) {
-			if from.Type() == reflect.TypeOf(time.Time{}) {
-				return from.Interface().(time.Time).Format(layout), nil
-			}
+		mockAdapterToCfg{
+			f: func(from reflect.Value) (any, error) {
+				if from.Type() == reflect.TypeOf(time.Time{}) {
+					return from.Interface().(time.Time).Format(layout), nil
+				}
 
-			return nil, ErrNotApplicable
+				return nil, ErrNotApplicable
+			},
 		},
 		"adaptTimeToCfg",
 	)
@@ -146,19 +234,21 @@ func adaptTimeToCfg(layout string) ValueOption {
 
 func adaptStringToFunc() UnmarshalOption {
 	return AdaptFromCfg(
-		func(from, to reflect.Value) (any, error) {
-			if from.Kind() == reflect.String && to.Type() == reflect.TypeOf(strings.ToUpper) {
-				switch from.Interface().(string) {
-				case "upper":
-					return strings.ToUpper, nil
-				case "lower":
-					return strings.ToLower, nil
-				default:
+		mockAdapterFromCfg{
+			f: func(from, to reflect.Value) (any, error) {
+				if from.Kind() == reflect.String && to.Type() == reflect.TypeOf(strings.ToUpper) {
+					switch from.Interface().(string) {
+					case "upper":
+						return strings.ToUpper, nil
+					case "lower":
+						return strings.ToLower, nil
+					default:
+					}
+					return nil, errors.New("unsupported")
 				}
-				return nil, errors.New("unsupported")
-			}
 
-			return nil, ErrNotApplicable
+				return nil, ErrNotApplicable
+			},
 		},
 		"adaptStringToFunc",
 	)
@@ -166,20 +256,22 @@ func adaptStringToFunc() UnmarshalOption {
 
 func adaptFuncToCfg() ValueOption {
 	return AdaptToCfg(
-		func(from reflect.Value) (any, error) {
-			if from.Type() == reflect.TypeOf(strings.ToUpper) {
-				got := from.Call([]reflect.Value{reflect.ValueOf("TestString")})
-				switch got[0].Interface().(string) {
-				case "teststring":
-					return "lower", nil
-				case "TESTSTRING":
-					return "upper", nil
-				default:
+		mockAdapterToCfg{
+			f: func(from reflect.Value) (any, error) {
+				if from.Type() == reflect.TypeOf(strings.ToUpper) {
+					got := from.Call([]reflect.Value{reflect.ValueOf("TestString")})
+					switch got[0].Interface().(string) {
+					case "teststring":
+						return "lower", nil
+					case "TESTSTRING":
+						return "upper", nil
+					default:
+					}
+					return nil, errors.New("unsupported")
 				}
-				return nil, errors.New("unsupported")
-			}
 
-			return nil, ErrNotApplicable
+				return nil, ErrNotApplicable
+			},
 		},
 		"adaptFuncToCfg",
 	)
