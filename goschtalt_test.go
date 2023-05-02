@@ -330,6 +330,21 @@ func TestCompile(t *testing.T) {
 			},
 			files: []string{"1.json", "2.json", "3.json", "90.json"},
 		}, {
+			description: "A normal case with options including env expansion.",
+			opts: []Option{
+				AddTree(fs1, "."),
+				AddTree(fs2, "."),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				ExpandEnv(),
+			},
+			want: st1{},
+			expect: st1{
+				Hello: "Mr. Blue Sky",
+				Blue:  "ocean",
+				Madd:  "cat",
+			},
+			files: []string{"1.json", "2.json", "3.json", "90.json"},
+		}, {
 			description: "A normal case with values.",
 			opts: []Option{
 				AddValue("record1", Root, st1{
@@ -635,6 +650,7 @@ func TestCompile(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
+			t.Setenv("thing", "ocean")
 
 			remappings.Mapping = make(map[string]string)
 
