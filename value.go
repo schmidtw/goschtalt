@@ -22,13 +22,17 @@ type ValueGetter interface {
 	Get(recordName string, u Unmarshaler) (any, error)
 }
 
-type valueGetter struct {
-	val any
+// The ValueGetterFunc type is an adapter to allow the use of ordinary functions
+// as ValueGetters. If f is a function with the appropriate signature,
+// ValueGetterFunc(f) is a ValueGetter that calls f.
+type ValueGetterFunc func(string, Unmarshaler) (any, error)
+
+// Get calls f(rn, u)
+func (f ValueGetterFunc) Get(rn string, u Unmarshaler) (any, error) {
+	return f(rn, u)
 }
 
-func (v valueGetter) Get(_ string, _ Unmarshaler) (any, error) {
-	return v.val, nil
-}
+var _ ValueGetter = (*ValueGetterFunc)(nil)
 
 // AddValues provides a simple way to set additional configuration values at
 // runtime.
@@ -46,8 +50,11 @@ func AddValue(recordName, key string, val any, opts ...ValueOption) Option {
 		text:       print.P("AddValue", print.String(recordName), print.String(key), print.Obj(val), print.LiteralStringers(opts)),
 		recordName: recordName,
 		key:        key,
-		getter:     valueGetter{val: val},
-		opts:       opts,
+		getter: ValueGetterFunc(
+			func(_ string, _ Unmarshaler) (any, error) {
+				return val, nil
+			}),
+		opts: opts,
 	}
 }
 
@@ -252,6 +259,18 @@ func (e failOnNonSerializableOption) String() string {
 type AdapterToCfg interface {
 	To(from reflect.Value) (any, error)
 }
+
+// The AdapterToCfgFunc type is an adapter to allow the use of ordinary functions
+// as AdapterToCfgs. If f is a function with the appropriate signature,
+// AdapterToCfgFunc(f) is a AdapterToCfg that calls f.
+type AdapterToCfgFunc func(reflect.Value) (any, error)
+
+// Get calls f(rn, u)
+func (f AdapterToCfgFunc) To(from reflect.Value) (any, error) {
+	return f(from)
+}
+
+var _ AdapterToCfg = (*AdapterToCfgFunc)(nil)
 
 // AdaptToCfg converts a value a golang struct object into the configuration
 // form.  It assumed that the converter knows best what the form should be.

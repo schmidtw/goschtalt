@@ -22,13 +22,17 @@ type BufferGetter interface {
 	Get(recordName string, u Unmarshaler) ([]byte, error)
 }
 
-type bufferGetter struct {
-	in []byte
+// The BufferGetterFunc type is an adapter to allow the use of ordinary functions
+// as BufferGetters. If f is a function with the appropriate signature,
+// BufferGetterFunc(f) is a BufferGetter that calls f.
+type BufferGetterFunc func(string, Unmarshaler) ([]byte, error)
+
+// Get calls f(rn, u)
+func (f BufferGetterFunc) Get(rn string, u Unmarshaler) ([]byte, error) {
+	return f(rn, u)
 }
 
-func (b bufferGetter) Get(_ string, _ Unmarshaler) ([]byte, error) {
-	return b.in, nil
-}
+var _ BufferGetter = (*BufferGetterFunc)(nil)
 
 // AddBuffer adds a buffer of bytes for inclusion when compiling the configuration.
 // The format of the bytes is determined by the extension of the recordName field.
@@ -43,9 +47,10 @@ func AddBuffer(recordName string, in []byte, opts ...BufferOption) Option {
 	return &buffer{
 		text:       print.P("AddBuffer", print.String(recordName), print.Bytes(in), print.LiteralStringers(opts)),
 		recordName: recordName,
-		getter: bufferGetter{
-			in: in,
-		},
+		getter: BufferGetterFunc(
+			func(_ string, _ Unmarshaler) ([]byte, error) {
+				return in, nil
+			}),
 		opts: opts,
 	}
 }

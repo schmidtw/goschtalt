@@ -289,6 +289,18 @@ type Validator interface {
 	Validate(any) error
 }
 
+// The ValidatorFunc type is an adapter to allow the use of ordinary functions
+// as Validators. If f is a function with the appropriate signature,
+// ValidatorFunc(f) is a Validator that calls f.
+type ValidatorFunc func(any) error
+
+// Get calls f(a)
+func (f ValidatorFunc) Validate(a any) error {
+	return f(a)
+}
+
+var _ Validator = (*ValidatorFunc)(nil)
+
 // WithValidator provides a way to specify a validator to use after a structure
 // has been unmarshaled, but prior to returning the data.  This allows for an
 // easy way to consistently validate configuration as it is being consumed.  If
@@ -326,6 +338,18 @@ func (v validatorOption) String() string {
 type AdapterFromCfg interface {
 	From(from, to reflect.Value) (any, error)
 }
+
+// The AdapterFromCfgFunc type is an adapter to allow the use of ordinary functions
+// as AdapterFromCfgs. If f is a function with the appropriate signature,
+// AdapterFromCfgFunc(f) is a AdapterFromCfg that calls f.
+type AdapterFromCfgFunc func(from, to reflect.Value) (any, error)
+
+// Get calls f(from, to)
+func (f AdapterFromCfgFunc) From(from, to reflect.Value) (any, error) {
+	return f(from, to)
+}
+
+var _ AdapterFromCfg = (*AdapterFromCfgFunc)(nil)
 
 // AdaptFromCfg converts a value from the configuration form into the golang
 // form if possible.
