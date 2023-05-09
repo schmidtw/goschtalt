@@ -97,3 +97,28 @@ func TestExpand(t *testing.T) {
 		})
 	}
 }
+
+func TestExpandFunc(t *testing.T) {
+	tests := []struct {
+		want string
+	}{
+		{
+			want: "text",
+		}, {
+			want: "frogs",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.want, func(t *testing.T) {
+			assert := assert.New(t)
+			f := ExpanderFunc(
+				func(s string) string {
+					return s
+				})
+
+			assert.Equal(tc.want, f.Expand(tc.want))
+
+		})
+	}
+}

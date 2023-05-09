@@ -5,6 +5,7 @@ package goschtalt
 
 import (
 	"errors"
+	"reflect"
 	"testing"
 
 	"github.com/mitchellh/mapstructure"
@@ -80,6 +81,46 @@ func TestValueOptions(t *testing.T) {
 				assert.Equal(tc.want, opts)
 				assert.ErrorIs(err, tc.expectedErr)
 			}
+		})
+	}
+}
+
+func TestAdapterToCfgFunc(t *testing.T) {
+	tests := []struct {
+		from string
+		err  bool
+	}{
+		{
+			from: "no error",
+		},
+		{
+			from: "error",
+			err:  true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.from, func(t *testing.T) {
+			assert := assert.New(t)
+
+			f := AdapterToCfgFunc(
+				func(from reflect.Value) (any, error) {
+					if from.Interface().(string) == "no error" {
+						return from.Interface(), nil
+					}
+
+					return nil, errors.New("error")
+				})
+
+			got, err := f.To(reflect.ValueOf(tc.from))
+			if !tc.err {
+				assert.Equal(tc.from, got)
+				assert.NoError(err)
+				return
+			}
+
+			assert.Nil(got)
+			assert.Error(err)
 		})
 	}
 }

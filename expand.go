@@ -16,6 +16,18 @@ type Expander interface {
 	Expand(string) string
 }
 
+// The ExpanderFunc type is an adapter to allow the use of ordinary functions
+// as Expanders. If f is a function with the appropriate signature,
+// ExpanderFunc(f) is a Expander that calls f.
+type ExpanderFunc func(string) string
+
+// Get calls f(s)
+func (f ExpanderFunc) Expand(s string) string {
+	return f(s)
+}
+
+var _ Expander = (*ExpanderFunc)(nil)
+
 type envExpander struct{}
 
 func (envExpander) Expand(s string) string {

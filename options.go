@@ -308,13 +308,17 @@ type RecordSorter interface {
 	Less(a, b string) bool
 }
 
-type recordSorter struct {
-	f func(a, b string) bool
+// The RecordSorterFunc type is an adapter to allow the use of ordinary functions
+// as RecordSorters. If f is a function with the appropriate signature,
+// RecordSorterFunc(f) is a RecordSorter that calls f.
+type RecordSorterFunc func(string, string) bool
+
+// Get calls f(a, b)
+func (f RecordSorterFunc) Less(a, b string) bool {
+	return f(a, b)
 }
 
-func (r recordSorter) Less(a, b string) bool {
-	return r.f(a, b)
-}
+var _ RecordSorter = (*RecordSorterFunc)(nil)
 
 // SortRecords provides a way to specify how you want the files sorted
 // prior to their merge.  This function provides a way to provide a completely
@@ -342,11 +346,10 @@ func SortRecords(sorter RecordSorter) Option {
 func SortRecordsLexically() Option {
 	return &sortRecordsOption{
 		text: print.P("SortRecordsLexically"),
-		sorter: recordSorter{
-			f: func(a, b string) bool {
+		sorter: RecordSorterFunc(
+			func(a, b string) bool {
 				return a < b
-			},
-		},
+			}),
 	}
 }
 
@@ -377,10 +380,8 @@ func SortRecordsLexically() Option {
 // The default is [SortRecordsNaturally].
 func SortRecordsNaturally() Option {
 	return &sortRecordsOption{
-		text: print.P("SortRecordsNaturally"),
-		sorter: recordSorter{
-			f: natsort.Compare,
-		},
+		text:   print.P("SortRecordsNaturally"),
+		sorter: RecordSorterFunc(natsort.Compare),
 	}
 }
 

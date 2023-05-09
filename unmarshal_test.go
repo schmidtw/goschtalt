@@ -486,3 +486,78 @@ func TestUnmarshalFunc(t *testing.T) {
 		})
 	}
 }
+
+func TestValidatorFunc(t *testing.T) {
+	tests := []struct {
+		in  string
+		err bool
+	}{
+		{
+			in: "no error",
+		}, {
+			in:  "error",
+			err: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.in, func(t *testing.T) {
+			assert := assert.New(t)
+
+			f := ValidatorFunc(
+				func(a any) error {
+					if a.(string) == "no error" {
+						return nil
+					}
+					return errors.New("error")
+				})
+
+			if tc.err {
+				assert.Error(f.Validate(tc.in))
+			} else {
+				assert.NoError(f.Validate(tc.in))
+			}
+		})
+	}
+}
+
+func TestAdapterFromCfgFunc(t *testing.T) {
+	tests := []struct {
+		from string
+		to   string
+		want string
+		err  bool
+	}{
+		{
+			from: "no error",
+			want: "no error",
+		}, {
+			from: "error",
+			err:  true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.from, func(t *testing.T) {
+			assert := assert.New(t)
+
+			f := AdapterFromCfgFunc(
+				func(from, _ reflect.Value) (any, error) {
+					if from.Interface().(string) == "no error" {
+						return from.Interface(), nil
+					}
+					return nil, errors.New("error")
+				})
+
+			got, err := f.From(reflect.ValueOf(tc.from), reflect.ValueOf(tc.to))
+			if !tc.err {
+				assert.NoError(err)
+				assert.Equal(tc.want, got)
+				return
+			}
+			assert.Error(err)
+			assert.Nil(got)
+		})
+
+	}
+}
