@@ -529,6 +529,36 @@ func TestCompile(t *testing.T) {
 			want:   st1{},
 			expect: st1{},
 		}, {
+			description: "An glob of everything.",
+			opts: []Option{
+				AddFiles(fs1, "*"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+			want: st1{},
+			expect: st1{
+				Hello: "Mr. Blue Sky",
+				Blue:  "sky",
+			},
+			files: []string{"1.json", "2.json", "3.json"},
+		}, {
+			description: "An invalid file when one must be present.",
+			opts: []Option{
+				AddFile(fs1, "invalid.json"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: ErrFileMissing,
+		}, {
+			description: "AddFile doesn't accept globs since that's multiple files.",
+			opts: []Option{
+				AddFile(fs1, "*"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: ErrFileMissing,
+		}, {
 			description: "A merge failure case.",
 			opts: []Option{
 				AddTree(fs1, "."),
@@ -643,6 +673,58 @@ func TestCompile(t *testing.T) {
 			want:        st1{},
 			expect:      st1{},
 			expectedErr: meta.ErrNonSerializable,
+		}, {
+			description: "Make sure the AddFilesHalt doesn't stop if no files are found.",
+			opts: []Option{
+				AutoCompile(),
+				AddFilesHalt(fs1, "none.json"),
+				AddFiles(fs1, "2.json"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+			want: st1{},
+			expect: st1{
+				Blue: "sky",
+			},
+			files: []string{"2.json"},
+		}, {
+			description: "Make sure the AddFilesHalt stops if files are found.",
+			opts: []Option{
+				AutoCompile(),
+				AddFilesHalt(fs1, "2.json"),
+				AddFiles(fs1, "3.json"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+			want: st1{},
+			expect: st1{
+				Blue: "sky",
+			},
+			files: []string{"2.json"},
+		}, {
+			description: "Make sure the AddTreeHalt doesn't stop if no files are found.",
+			opts: []Option{
+				AutoCompile(),
+				AddTreeHalt(fs1, "none"),
+				AddFiles(fs1, "2.json"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+			want: st1{},
+			expect: st1{
+				Blue: "sky",
+			},
+			files: []string{"2.json"},
+		}, {
+			description: "Make sure the AddTreeHalt stops if files are found.",
+			opts: []Option{
+				AutoCompile(),
+				AddTreeHalt(fs1, "a"),
+				AddTree(fs1, "3.json"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+			want: st1{},
+			expect: st1{
+				Hello: "World",
+			},
+			files: []string{"1.json"},
 		},
 	}
 

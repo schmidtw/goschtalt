@@ -14,4 +14,5 @@ var (
 	ErrCodecNotFound = errors.New("encoder/decoder not found")
 	ErrInvalidInput  = errors.New("input is invalid")
 	ErrFileMissing   = errors.New("required file is missing")
+	ErrUnsupported   = errors.New("feature is unsupported")
 )

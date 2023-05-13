@@ -32,6 +32,10 @@ type filegroup struct {
 	// files found or it is considered a failure.  This is mainly to support the
 	// AddFile() use case where the file must be present or it is an error.
 	exactFile bool
+
+	// halt means processing should stop after this filegroup if any files were
+	// found.
+	halt bool
 }
 
 // toRecords walks the filegroup and finds all the records that are present and
@@ -114,12 +118,30 @@ func (g filegroup) toRecord(file, delimiter string, decoders *codecRegistry[deco
 func (g filegroup) enumerate() ([]string, error) {
 	var files []string
 
-	for _, p := range g.paths {
-		found, err := g.enumeratePath(path.Clean(p))
-		if err != nil {
-			return nil, err
+	for _, glob := range g.paths {
+		glob = path.Clean(glob)
+
+		// If it isn't a glob or if the glob didn't find anything, then return
+		// the original value as the array for uniform handling.
+		paths := []string{glob}
+		if !g.exactFile {
+			tmp, err := fs.Glob(g.fs, glob)
+			if err != nil {
+				return nil, err
+			}
+
+			if len(tmp) > 0 {
+				paths = tmp
+			}
 		}
-		files = append(files, found...)
+
+		for _, p := range paths {
+			found, err := g.enumeratePath(p)
+			if err != nil {
+				return nil, err
+			}
+			files = append(files, found...)
+		}
 	}
 	sort.Strings(files)
 
@@ -208,9 +230,19 @@ func filegroupsToRecords(delimiter string, filegroups []filegroup, decoders *cod
 	for _, grp := range filegroups {
 		tmp, err := grp.toRecords(delimiter, decoders)
 		if err != nil {
-			return nil, err
+			if grp.exactFile && errors.Is(err, fs.ErrNotExist) {
+				return nil, ErrFileMissing
+			}
+			if !errors.Is(err, fs.ErrNotExist) {
+				return nil, err
+			}
 		}
 		rv = append(rv, tmp...)
+
+		// Stop processing because we were told to & we found files.
+		if len(tmp) > 0 && grp.halt {
+			break
+		}
 	}
 
 	return rv, nil

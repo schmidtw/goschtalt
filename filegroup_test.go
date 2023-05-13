@@ -6,6 +6,7 @@ package goschtalt
 import (
 	"errors"
 	iofs "io/fs"
+	"path"
 	"sort"
 	"strings"
 	"testing"
@@ -83,6 +84,12 @@ func TestWalk(t *testing.T) {
 				`3.json`,
 				`4.json`,
 			},
+		}, {
+			description: "Invalid file glob.",
+			grp: filegroup{
+				paths: []string{"invalid["},
+			},
+			expectedErr: path.ErrBadPattern,
 		}, {
 			description: "Absolute path is not allowed.",
 			grp: filegroup{
