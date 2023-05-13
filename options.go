@@ -99,6 +99,26 @@ func AddFiles(fs fs.FS, filenames ...string) Option {
 	}
 }
 
+// AddFilesHalt adds any number of files to the list of files to be compiled
+// into a configuration and if any are added halts the process of adding more
+// file records.
+//
+// This option works the same as [AddFiles]() except no further files are
+// processed if this group added any files.
+//
+// This is generally going to be useful for configuring a set of paths to search
+// for configuration and stopping when it is found.
+func AddFilesHalt(fs fs.FS, filenames ...string) Option {
+	return &groupOption{
+		name: "AddFilesHalt",
+		grp: filegroup{
+			fs:    fs,
+			paths: filenames,
+			halt:  true,
+		},
+	}
+}
+
 // AddTree adds a directory tree (including all subdirectories) for inclusion
 // when compiling the configuration.  Any files that cannot be processed will be
 // ignored.  It is not an error if any files are missing, or if all the files
@@ -115,6 +135,27 @@ func AddTree(fs fs.FS, path string) Option {
 			fs:      fs,
 			paths:   []string{path},
 			recurse: true,
+		},
+	}
+}
+
+// AddTreeHalt adds a directory tree (including all subdirectories) for
+// inclusion when compiling the configuration, and if any are added halts the
+// process of adding more file records.
+//
+// This option works the same as [AddTree]() except no further files are
+// processed if this group added any files.
+//
+// This is generally going to be useful for configuring a set of paths to search
+// for configuration and stopping when it is found.
+func AddTreeHalt(fs fs.FS, path string) Option {
+	return &groupOption{
+		name: "AddTreeHalt",
+		grp: filegroup{
+			fs:      fs,
+			paths:   []string{path},
+			recurse: true,
+			halt:    true,
 		},
 	}
 }
@@ -177,7 +218,7 @@ func AddDirs(fs fs.FS, paths ...string) Option {
 	}
 }
 
-// AddJumbledFiles adds any number of files or directories (excluding all
+// AddJumbled adds any number of files or directories (excluding all
 // subdirectories) for inclusion when compiling the configuration.  The files
 // and directories are sorted into either a relative based filesystem or an
 // absolute path based filesystem.  Any files or directories that cannot be
@@ -191,6 +232,23 @@ func AddDirs(fs fs.FS, paths ...string) Option {
 // of needing to sort the files into two buckets, this option will handle that
 // for you.
 func AddJumbled(abs, rel fs.FS, paths ...string) Option {
+	return addJumbled("AddJumbled", abs, rel, paths, false)
+}
+
+// AddJumbledHalt adds any number of files or directories (excluding all
+// subdirectories) for inclusion when compiling the configurationm, and if any
+// are added halts the process of adding more file records.
+//
+// This option works the same as [AddJumbled]() except no further files are processed
+// if this group added any files.
+//
+// This is generally going to be useful for configuring a set of paths to search
+// for configuration and stopping when it is found.
+func AddJumbledHalt(abs, rel fs.FS, paths ...string) Option {
+	return addJumbled("AddJumbledHalt", abs, rel, paths, true)
+}
+
+func addJumbled(name string, abs, rel fs.FS, paths []string, halt bool) Option {
 	absPaths := make([]string, 0, len(paths))
 	relPaths := make([]string, 0, len(paths))
 
@@ -219,6 +277,7 @@ func AddJumbled(abs, rel fs.FS, paths ...string) Option {
 				grp: filegroup{
 					fs:    rel,
 					paths: relPaths,
+					halt:  halt,
 				},
 			},
 		},
@@ -572,8 +631,15 @@ func (d defaultValueOption) String() string {
 // Options provides a way to group multiple options together into an easy to
 // use Option.
 func Options(opts ...Option) Option {
+	return NamedOptions("Options", opts...)
+}
+
+// NamedOptions provides a way to group multiple options together into an
+// easy to use Option with a custom name in the output.  This is helps users
+// track down the actual option they called.
+func NamedOptions(name string, opts ...Option) Option {
 	return &optionsOption{
-		text: print.P("Options", print.LiteralStringers(opts)),
+		text: print.P(name, print.LiteralStringers(opts)),
 		opts: opts,
 	}
 }
@@ -607,6 +673,43 @@ func (m optionsOption) ignoreDefaults() bool {
 
 func (m optionsOption) String() string {
 	return m.text
+}
+
+// StdCfgLayout takes a fairly opinionated view of where configuration files are
+// typically found based on the operating system.
+//
+// # For non-windows implementations:
+//
+// The first individual configuration file or 'conf.d' directory found is used.
+// Once a set of configuration file(s) has been found any configuration files
+// included afterward are ignored.
+//
+// The order the files/directories are searched.
+//
+//  1. The provided files in the argument list.  If any are provided,
+//     configuration must be found exclusively here.
+//
+// 2. Any files matching this path (if it exists) and glob:
+//
+//   - $HOME/.<appName>/<appName>.*
+//
+// 3. Any files found in this directory (if it exists):
+//
+//   - $HOME/.<appName>/conf.d/
+//
+// 4. Any files matching this path (if it exists) and glob:
+//
+//   - /etc/<appName>/<appName>.*
+//
+// 5. Any files found in this directory (if it exists):
+//
+//   - /etc/<appName>/conf.d/
+//
+// # For windows implementations:
+//
+// StdCfgLayout doesn't support a shared windows layout today.  One is welcome.
+func StdCfgLayout(appName string, files ...string) Option {
+	return stdCfgLayout(appName, files)
 }
 
 // ---- Options related helper functions follow --------------------------------
