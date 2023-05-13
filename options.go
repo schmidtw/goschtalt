@@ -686,29 +686,28 @@ func (m optionsOption) String() string {
 //
 // The order the files/directories are searched.
 //
-// 1. The provided files in the argument list.  If any are provided,
-//    configuration must be found exclusively here.
+//  1. The provided files in the argument list.  If any are provided,
+//     configuration must be found exclusively here.
 //
 // 2. Any files matching this path (if it exists) and glob:
 //
-//    - $HOME/.<appName>/<appName>.*
+//   - $HOME/.<appName>/<appName>.*
 //
 // 3. Any files found in this directory (if it exists):
 //
-//    - $HOME/.<appName>/conf.d/
+//   - $HOME/.<appName>/conf.d/
 //
 // 4. Any files matching this path (if it exists) and glob:
 //
-//    - /etc/<appName>/<appName>.*
+//   - /etc/<appName>/<appName>.*
 //
 // 5. Any files found in this directory (if it exists):
 //
-//    - /etc/<appName>/conf.d/
+//   - /etc/<appName>/conf.d/
 //
 // # For windows implementations:
 //
 // StdCfgLayout doesn't support a shared windows layout today.  One is welcome.
-//
 func StdCfgLayout(appName string, files ...string) Option {
 	return stdCfgLayout(appName, files...)
 }
