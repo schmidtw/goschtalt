@@ -22,7 +22,7 @@ func TestStdCfgLayoutWin(t *testing.T) {
 func TestCompileWin(t *testing.T) {
 	assert := assert.New(t)
 
-	_, err := New(AutoCompile(), stdCfgLayout("name"))
+	_, err := New(AutoCompile(), stdCfgLayout("name", nil))
 
 	assert.Error(err)
 }
