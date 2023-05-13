@@ -14,7 +14,7 @@ import (
 
 const confDirName = "conf.d"
 
-func stdCfgLayout(appName string, files ...string) Option {
+func stdCfgLayout(appName string, files []string) Option {
 	var l stdLocations
 	l.Populate(appName)
 	return nonWinStdCfgLayout(appName, files, l)

@@ -709,7 +709,7 @@ func (m optionsOption) String() string {
 //
 // StdCfgLayout doesn't support a shared windows layout today.  One is welcome.
 func StdCfgLayout(appName string, files ...string) Option {
-	return stdCfgLayout(appName, files...)
+	return stdCfgLayout(appName, files)
 }
 
 // ---- Options related helper functions follow --------------------------------
