@@ -52,13 +52,10 @@ func TestPopulate(t *testing.T) {
 			assert.NotNil(s.root)
 			if tc.homeSet {
 				assert.NotNil(s.home)
-				assert.NotNil(s.homeTree)
 			} else {
 				assert.Nil(s.home)
-				assert.Nil(s.homeTree)
 			}
 			assert.NotNil(s.etc)
-			assert.NotNil(s.etcTree)
 		})
 	}
 }
@@ -78,6 +75,25 @@ func TestCompileNotWin(t *testing.T) {
 			Data: []byte(`{"Other": "local - wanted"}`),
 			Mode: 0755,
 		},
+		"example.json": &fstest.MapFile{
+			Data: []byte(`{"Status": "local - default name wanted"}`),
+			Mode: 0755,
+		},
+	}
+
+	localTree := fstest.MapFS{
+		"1.json": &fstest.MapFile{
+			Data: []byte(`{"Status": "local - wanted"}`),
+			Mode: 0755,
+		},
+		"dir/2.json": &fstest.MapFile{
+			Data: []byte(`{"Other": "local - wanted"}`),
+			Mode: 0755,
+		},
+		"conf.d/2.json": &fstest.MapFile{
+			Data: []byte(`{"Other": "local - default tree wanted"}`),
+			Mode: 0755,
+		},
 	}
 
 	home := fstest.MapFS{
@@ -88,15 +104,12 @@ func TestCompileNotWin(t *testing.T) {
 	}
 
 	homeTree := fstest.MapFS{
-		"example.json": &fstest.MapFile{
-			Data: []byte(`{"Status": "home - wanted"}`),
-			Mode: 0755,
-		},
 		"conf.d/2.json": &fstest.MapFile{
-			Data: []byte(`{"Other": "home - wanted"}`),
+			Data: []byte(`{"Other": "home - tree wanted"}`),
 			Mode: 0755,
 		},
 	}
+
 	etc := fstest.MapFS{
 		"example.json": &fstest.MapFile{
 			Data: []byte(`{"Status": "etc - wanted"}`),
@@ -105,12 +118,8 @@ func TestCompileNotWin(t *testing.T) {
 	}
 
 	etcTree := fstest.MapFS{
-		"example.json": &fstest.MapFile{
-			Data: []byte(`{"Status": "etc - wanted"}`),
-			Mode: 0755,
-		},
 		"conf.d/2.json": &fstest.MapFile{
-			Data: []byte(`{"Other": "etc - wanted"}`),
+			Data: []byte(`{"Other": "etc - tree wanted"}`),
 			Mode: 0755,
 		},
 	}
@@ -144,12 +153,10 @@ func TestCompileNotWin(t *testing.T) {
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				nonWinStdCfgLayout("example", []string{"./1.json"}, stdLocations{
-					local:    local,
-					root:     local,
-					home:     home,
-					homeTree: homeTree,
-					etc:      etc,
-					etcTree:  etcTree,
+					local: local,
+					root:  none,
+					home:  home,
+					etc:   etc,
 				}),
 				AddFile(never, "example.json"),
 			},
@@ -159,16 +166,31 @@ func TestCompileNotWin(t *testing.T) {
 			},
 			files: []string{"1.json"},
 		}, {
+			description: "local - default file",
+			opts: []Option{
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				nonWinStdCfgLayout("example", nil, stdLocations{
+					local: local,
+					root:  none,
+					home:  home,
+					etc:   etc,
+				}),
+				AddFile(never, "example.json"),
+			},
+			want: st{},
+			expect: st{
+				Status: "local - default name wanted",
+			},
+			files: []string{"example.json"},
+		}, {
 			description: "local - one dir in the list",
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				nonWinStdCfgLayout("example", []string{"./dir"}, stdLocations{
-					local:    local,
-					root:     local,
-					home:     home,
-					homeTree: homeTree,
-					etc:      etc,
-					etcTree:  etcTree,
+					local: localTree,
+					root:  none,
+					home:  home,
+					etc:   etc,
 				}),
 				AddFile(never, "example.json"),
 			},
@@ -182,12 +204,10 @@ func TestCompileNotWin(t *testing.T) {
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				nonWinStdCfgLayout("example", []string{"./dir", "./1.json"}, stdLocations{
-					local:    local,
-					root:     local,
-					home:     home,
-					homeTree: homeTree,
-					etc:      etc,
-					etcTree:  etcTree,
+					local: local,
+					root:  none,
+					home:  home,
+					etc:   etc,
 				}),
 				AddFile(never, "example.json"),
 			},
@@ -202,12 +222,10 @@ func TestCompileNotWin(t *testing.T) {
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				nonWinStdCfgLayout("example", nil, stdLocations{
-					local:    local,
-					root:     local,
-					home:     home,
-					homeTree: homeTree,
-					etc:      etc,
-					etcTree:  etcTree,
+					local: none,
+					root:  none,
+					home:  home,
+					etc:   etc,
 				}),
 				AddFile(never, "example.json"),
 			},
@@ -221,18 +239,16 @@ func TestCompileNotWin(t *testing.T) {
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				nonWinStdCfgLayout("example", nil, stdLocations{
-					local:    local,
-					root:     local,
-					home:     none,
-					homeTree: homeTree,
-					etc:      etc,
-					etcTree:  etcTree,
+					local: none,
+					root:  none,
+					home:  homeTree,
+					etc:   etc,
 				}),
 				AddFile(never, "example.json"),
 			},
 			want: st{},
 			expect: st{
-				Other: "home - wanted",
+				Other: "home - tree wanted",
 			},
 			files: []string{"2.json"},
 		}, {
@@ -240,12 +256,10 @@ func TestCompileNotWin(t *testing.T) {
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				nonWinStdCfgLayout("example", nil, stdLocations{
-					local:    local,
-					root:     local,
-					home:     none,
-					homeTree: none,
-					etc:      etc,
-					etcTree:  etcTree,
+					local: none,
+					root:  none,
+					home:  none,
+					etc:   etc,
 				}),
 				AddFile(never, "example.json"),
 			},
@@ -259,18 +273,16 @@ func TestCompileNotWin(t *testing.T) {
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				nonWinStdCfgLayout("example", nil, stdLocations{
-					local:    local,
-					root:     local,
-					home:     none,
-					homeTree: none,
-					etc:      none,
-					etcTree:  etcTree,
+					local: none,
+					root:  none,
+					home:  none,
+					etc:   etcTree,
 				}),
 				AddFile(never, "example.json"),
 			},
 			want: st{},
 			expect: st{
-				Other: "etc - wanted",
+				Other: "etc - tree wanted",
 			},
 			files: []string{"2.json"},
 		}, {

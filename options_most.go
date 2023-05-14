@@ -21,23 +21,19 @@ func stdCfgLayout(appName string, files []string) Option {
 }
 
 type stdLocations struct {
-	local    fs.FS
-	root     fs.FS
-	home     fs.FS
-	homeTree fs.FS
-	etc      fs.FS
-	etcTree  fs.FS
+	local fs.FS
+	home  fs.FS
+	etc   fs.FS
+	root  fs.FS
 }
 
 func (s *stdLocations) Populate(name string) {
 	s.local = os.DirFS(".")
 	s.root = os.DirFS("/")
 	s.etc = os.DirFS("/" + filepath.Join("etc", name))
-	s.etcTree = os.DirFS("/" + filepath.Join("etc", name, confDirName))
 
 	if home := os.Getenv("HOME"); home != "" {
 		s.home = os.DirFS(filepath.Join(home, "."+name))
-		s.homeTree = os.DirFS(filepath.Join(home, "."+name, confDirName))
 	}
 }
 
@@ -61,13 +57,13 @@ func nonWinStdCfgLayout(appName string, files []string, paths stdLocations) Opti
 	if paths.home != nil {
 		opts = append(opts,
 			AddFilesHalt(paths.home, single),
-			AddTreeHalt(paths.homeTree, confDirName),
+			AddTreeHalt(paths.home, confDirName),
 		)
 	}
 
 	opts = append(opts,
 		AddFilesHalt(paths.etc, single),
-		AddTreeHalt(paths.etcTree, confDirName),
+		AddTreeHalt(paths.etc, confDirName),
 	)
 
 	return NamedOptions("StdCfgLayout", opts...)
