@@ -4,6 +4,7 @@
 package adapter
 
 import (
+	"fmt"
 	"reflect"
 	"time"
 
@@ -24,13 +25,15 @@ func AllButTime(t any) bool {
 // error indicating the failure.  The specified layout is used as the string
 // form.
 func TimeUnmarshal(layout string) goschtalt.UnmarshalOption {
-	return goschtalt.AdaptFromCfg(marshalTime{layout: layout}, "TimeUnmarshal")
+	return goschtalt.AdaptFromCfg(marshalTime{layout: layout},
+		fmt.Sprintf("TimeUnmarshal['%s']", layout))
 }
 
 // MarshalTime converts a time.Time into its configuration form. The
 // configuration form is a string matching the specified layout.
 func MarshalTime(layout string) goschtalt.ValueOption {
-	return goschtalt.AdaptToCfg(marshalTime{layout}, "MarshalTime")
+	return goschtalt.AdaptToCfg(marshalTime{layout},
+		fmt.Sprintf("MarshalTime['%s']", layout))
 }
 
 type marshalTime struct {
@@ -53,8 +56,4 @@ func (t marshalTime) To(from reflect.Value) (any, error) {
 	}
 
 	return nil, goschtalt.ErrNotApplicable
-}
-
-func (t marshalTime) String() string {
-	return t.layout
 }

@@ -34,5 +34,11 @@ issues:
         - funlen
         - gocognit
         - goconst
+    - path: pkg/adapter/int.go
+      linters:
+        - dupl
+    - path: pkg/adapter/uint.go
+      linters:
+        - dupl
   exclude:
     - "ExampleOrderList refers to unknown identifier: OrderList"
