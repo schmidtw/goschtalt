@@ -12,7 +12,7 @@ import (
 // to triple pointers are supported.
 func IntUnmarshal() goschtalt.UnmarshalOption {
 	return goschtalt.AdaptFromCfg(
-		marshalNumber{
+		marshalBuiltin{
 			typ: "int",
 		},
 		"IntUnmarshal")
@@ -22,7 +22,7 @@ func IntUnmarshal() goschtalt.UnmarshalOption {
 // configuration form.
 func MarshalInt() goschtalt.ValueOption {
 	return goschtalt.AdaptToCfg(
-		marshalNumber{
+		marshalBuiltin{
 			typ: "int",
 		},
 		"MarshalInt")

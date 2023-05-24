@@ -51,6 +51,9 @@ func numToString(v reflect.Value, accepts ...string) string {
 	for ; v.Kind() == reflect.Ptr; v = v.Elem() {
 	}
 
+	if v.Kind() == reflect.Bool && only("bool", accepts) {
+		return strconv.FormatBool(v.Bool())
+	}
 	if v.CanUint() && only("uint", accepts) {
 		return strconv.FormatUint(v.Uint(), 10)
 	}
@@ -60,9 +63,8 @@ func numToString(v reflect.Value, accepts ...string) string {
 	if v.CanFloat() && only("float", accepts) {
 		return strconv.FormatFloat(v.Float(), 'f', -1, 64)
 	}
-	if v.CanComplex() && only("complex", accepts) {
-		return strconv.FormatComplex(v.Complex(), 'f', -1, 128)
-	}
+	// Ignore complex64 & complex128 since mapstruct and hashstruct don't
+	// support them.
 
 	return ""
 }
@@ -73,6 +75,29 @@ func numToStringErr(v reflect.Value, only ...string) (string, error) {
 		return "", goschtalt.ErrNotApplicable
 	}
 	return s, nil
+}
+
+func sToB(s string, ptr int) (any, error) {
+	b, err := strconv.ParseBool(s)
+	if err != nil {
+		if err.(*strconv.NumError).Err == strconv.ErrSyntax { //nolint:errorlint
+			err = goschtalt.ErrNotApplicable
+		}
+		return nil, err
+	}
+
+	switch ptr {
+	case 0:
+		return b, nil
+	case 1:
+		return toPtr(b), nil
+	case 2:
+		return toPtr(toPtr(b)), nil
+	case 3:
+		return toPtr(toPtr(toPtr(b))), nil
+	default:
+	}
+	return nil, goschtalt.ErrUnsupported
 }
 
 func sToF[T float](s string, bits, ptr int) (any, error) {
@@ -147,6 +172,21 @@ func sToU[T unsigned](s string, bits, ptr int) (any, error) {
 	return nil, goschtalt.ErrUnsupported
 }
 
+func sToS(s string, ptr int) (any, error) {
+	switch ptr {
+	case 0:
+		return s, nil
+	case 1:
+		return toPtr(s), nil
+	case 2:
+		return toPtr(toPtr(s)), nil
+	case 3:
+		return toPtr(toPtr(toPtr(s))), nil
+	default:
+	}
+	return nil, goschtalt.ErrUnsupported
+}
+
 func stringToNum(s string, want reflect.Value) (any, error) {
 	if s == "" {
 		return nil, goschtalt.ErrNotApplicable
@@ -159,6 +199,10 @@ func stringToNum(s string, want reflect.Value) (any, error) {
 	}
 
 	switch want.Kind() {
+	// Boolean
+	case reflect.Bool:
+		return sToB(s, ptr)
+
 	// Float
 	case reflect.Float32:
 		return sToF[float32](s, want.Type().Bits(), ptr)
@@ -190,20 +234,25 @@ func stringToNum(s string, want reflect.Value) (any, error) {
 		return sToU[uint64](s, want.Type().Bits(), ptr)
 	case reflect.Uintptr:
 		return sToU[uintptr](s, want.Type().Bits(), ptr)
+
+	// String
+	case reflect.String:
+		return sToS(s, ptr)
+
 	default:
 	}
 
 	return nil, goschtalt.ErrNotApplicable
 }
 
-type marshalNumber struct {
+type marshalBuiltin struct {
 	typ string
 }
 
-func (marshalNumber) From(from, to reflect.Value) (any, error) {
+func (marshalBuiltin) From(from, to reflect.Value) (any, error) {
 	return stringToNum(numOrStringToString(from), to)
 }
 
-func (m marshalNumber) To(from reflect.Value) (any, error) {
+func (m marshalBuiltin) To(from reflect.Value) (any, error) {
 	return numToStringErr(from, m.typ)
 }

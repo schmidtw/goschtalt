@@ -11,7 +11,7 @@ import (
 // possible, or returns an error indicating the failure.
 func FloatUnmarshal() goschtalt.UnmarshalOption {
 	return goschtalt.AdaptFromCfg(
-		marshalNumber{
+		marshalBuiltin{
 			typ: "float",
 		},
 		"FloatUnmarshal")
@@ -20,7 +20,7 @@ func FloatUnmarshal() goschtalt.UnmarshalOption {
 // MarshalFloat converts a float32/float64 into its string configuration form.
 func MarshalFloat() goschtalt.ValueOption {
 	return goschtalt.AdaptToCfg(
-		marshalNumber{
+		marshalBuiltin{
 			typ: "float",
 		},
 		"MarshalFloat")

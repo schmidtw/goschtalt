@@ -73,10 +73,6 @@ func TestNumToString(t *testing.T) {
 			description: "float64(255.1) --> 255.1",
 			in:          float64(255.1),
 			expect:      "255.1",
-		}, {
-			description: "complex128(10+22i) --> (10+22i)",
-			in:          complex128(10 + 22i),
-			expect:      "(10+22i)",
 		},
 
 		// Check that only works
@@ -226,6 +222,76 @@ func TestNumToStringErr(t *testing.T) {
 
 			assert.Equal(tc.expect, got)
 			assert.NoError(err)
+		})
+	}
+}
+
+func TestSToB(t *testing.T) {
+	tests := []struct {
+		description string
+		kind        reflect.Kind
+		in          string
+		ptr         int
+		expect      any
+		errExpected error
+	}{
+		// Simple checks
+		{
+			description: "true",
+			kind:        reflect.Bool,
+			in:          "true",
+			expect:      true,
+		},
+
+		// Pointer checks
+		{
+			description: "single pointer",
+			kind:        reflect.Bool,
+			in:          "true",
+			ptr:         1,
+			expect:      toPtr(true),
+		}, {
+			description: "double pointer",
+			kind:        reflect.Bool,
+			in:          "true",
+			ptr:         2,
+			expect:      toPtr(toPtr(true)),
+		}, {
+			description: "triple pointer",
+			kind:        reflect.Bool,
+			in:          "true",
+			ptr:         3,
+			expect:      toPtr(toPtr(toPtr(true))),
+		}, {
+			description: "quad pointer",
+			kind:        reflect.Bool,
+			in:          "true",
+			ptr:         4,
+			errExpected: goschtalt.ErrUnsupported,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			var got any
+			var err error
+			switch tc.kind {
+			case reflect.Bool:
+				got, err = sToB(tc.in, tc.ptr)
+			default:
+				panic("unsupported kind")
+			}
+
+			if tc.errExpected != nil {
+				assert.Nil(got)
+				assert.ErrorIs(err, tc.errExpected)
+				return
+			}
+
+			assert.NoError(err)
+			assert.Equal(tc.expect, got)
 		})
 	}
 }
@@ -533,6 +599,76 @@ func TestSToU(t *testing.T) {
 				got, err = sToU[uint64](tc.in, 64, tc.ptr)
 			case reflect.Uintptr:
 				got, err = sToU[uintptr](tc.in, reflect.TypeOf(uintptr(0)).Bits(), tc.ptr)
+			default:
+				panic("unsupported kind")
+			}
+
+			if tc.errExpected != nil {
+				assert.Nil(got)
+				assert.ErrorIs(err, tc.errExpected)
+				return
+			}
+
+			assert.NoError(err)
+			assert.Equal(tc.expect, got)
+		})
+	}
+}
+
+func TestSToS(t *testing.T) {
+	tests := []struct {
+		description string
+		kind        reflect.Kind
+		in          string
+		ptr         int
+		expect      any
+		errExpected error
+	}{
+		// Simple checks
+		{
+			description: "some string",
+			kind:        reflect.String,
+			in:          "some string",
+			expect:      "some string",
+		},
+
+		// Pointer checks
+		{
+			description: "single pointer",
+			kind:        reflect.String,
+			in:          "255",
+			ptr:         1,
+			expect:      toPtr("255"),
+		}, {
+			description: "double pointer",
+			kind:        reflect.String,
+			in:          "255",
+			ptr:         2,
+			expect:      toPtr(toPtr("255")),
+		}, {
+			description: "triple pointer",
+			kind:        reflect.String,
+			in:          "255",
+			ptr:         3,
+			expect:      toPtr(toPtr(toPtr("255"))),
+		}, {
+			description: "quad pointer",
+			kind:        reflect.String,
+			in:          "255",
+			ptr:         4,
+			errExpected: goschtalt.ErrUnsupported,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			var got any
+			var err error
+			switch tc.kind {
+			case reflect.String:
+				got, err = sToS(tc.in, tc.ptr)
 			default:
 				panic("unsupported kind")
 			}
