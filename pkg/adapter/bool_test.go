@@ -14,27 +14,27 @@ func TestBoolValueAdapterInternals(t *testing.T) {
 		{
 			description: "bool - true",
 			from:        bool(true),
-			obj:         marshalBool{},
+			obj:         marshalBuiltin{typ: "bool"},
 			expect:      "true",
 		}, {
 			description: "*bool - true",
 			from:        toPtr(true),
-			obj:         marshalBool{},
+			obj:         marshalBuiltin{typ: "bool"},
 			expect:      "true",
 		}, {
 			description: "bool - false",
 			from:        bool(false),
-			obj:         marshalBool{},
+			obj:         marshalBuiltin{typ: "bool"},
 			expect:      "false",
 		}, {
 			description: "*bool - false",
 			from:        toPtr(false),
-			obj:         marshalBool{},
+			obj:         marshalBuiltin{typ: "bool"},
 			expect:      "false",
 		}, {
 			description: "bool - invalid",
 			from:        "string",
-			obj:         marshalBool{},
+			obj:         marshalBuiltin{typ: "bool"},
 			expectErr:   goschtalt.ErrNotApplicable,
 		},
 	}
@@ -45,34 +45,34 @@ func TestBoolValueAdapterInternals(t *testing.T) {
 func TestBoolUnmarshalAdapterInternals(t *testing.T) {
 	tests := []unmarshalAdapterTest{
 		{
-			description: "marshalBool, a valid string",
+			description: "a valid string",
 			from:        "true",
 			to:          true,
-			obj:         marshalBool{},
+			obj:         marshalBuiltin{typ: "bool"},
 			expect:      true,
 		}, {
-			description: "marshalBool, a valid string to a pointer",
+			description: "a valid string to a pointer",
 			from:        "true",
 			to:          new(bool),
-			obj:         marshalBool{},
+			obj:         marshalBuiltin{typ: "bool"},
 			expect:      toPtr(true),
 		}, {
-			description: "marshalBool, not a string",
+			description: "not a string",
 			from:        12,
 			to:          true,
-			obj:         marshalBool{},
+			obj:         marshalBuiltin{typ: "bool"},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
-			description: "marshalBool, not a bool",
+			description: "not a bool",
 			from:        "true",
-			to:          "string",
-			obj:         marshalBool{},
+			to:          int(0),
+			obj:         marshalBuiltin{typ: "bool"},
 			expectErr:   goschtalt.ErrNotApplicable,
 		}, {
-			description: "marshalBool, not a valid bool option",
+			description: "not a valid bool option",
 			from:        "invalid",
 			to:          true,
-			obj:         marshalBool{},
+			obj:         marshalBuiltin{typ: "bool"},
 			expectErr:   goschtalt.ErrNotApplicable,
 		},
 	}
