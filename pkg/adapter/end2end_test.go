@@ -62,7 +62,7 @@ func TestEndToEnd(t *testing.T) {
 				D:  time.Hour,
 				F:  1234.56,
 				I:  -99,
-				IP: net.ParseIP("192.168.1.1"),
+				IP: net.ParseIP("192.168.1.13"),
 				T:  time.Date(2002, time.August, 15, 0, 0, 0, 0, time.UTC),
 				U:  73,
 			},

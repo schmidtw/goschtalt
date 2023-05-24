@@ -40,12 +40,6 @@ type unmarshalAdapterTest struct {
 	expectErr   error
 }
 
-func toPtr[T any](o T) *T {
-	rv := new(T)
-	*rv = o
-	return rv
-}
-
 func testValueAdapters(t *testing.T, tests []valueAdapterTest) {
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
