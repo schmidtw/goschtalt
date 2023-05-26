@@ -46,21 +46,21 @@ var (
 				"   camelSnakeKEBAB",
 			},
 			Out: map[string]string{
-				"Camel":           "camelSnakeKebab",
-				"Pascal":          "CamelSnakeKebab",
-				"Snake":           "camel_snake_kebab",
-				"CamelSnake":      "Camel_Snake_Kebab",
-				"ScreamingSnake":  "CAMEL_SNAKE_KEBAB",
-				"Kebab":           "camel-snake-kebab",
-				"CamelKebab":      "Camel-Snake-Kebab",
-				"ScreamingKebab":  "CAMEL-SNAKE-KEBAB",
-				"Lower":           "camel snake kebab",
-				"Title":           "Camel Snake Kebab",
-				"Screaming":       "CAMEL SNAKE KEBAB",
-				"LowerCamelSnake": "camel_Snake_Kebab",
-				"LowerCamelKebab": "camel-Snake-Kebab",
-				"Flat":            "camelsnakekebab",
-				"Upper":           "CAMELSNAKEKEBAB",
+				"twoWords":  "camelSnakeKebab",
+				"TwoWords":  "CamelSnakeKebab",
+				"two_words": "camel_snake_kebab",
+				"Two_Words": "Camel_Snake_Kebab",
+				"TWO_WORDS": "CAMEL_SNAKE_KEBAB",
+				"two-words": "camel-snake-kebab",
+				"Two-Words": "Camel-Snake-Kebab",
+				"TWO-WORDS": "CAMEL-SNAKE-KEBAB",
+				"two words": "camel snake kebab",
+				"Two Words": "Camel Snake Kebab",
+				"TWO WORDS": "CAMEL SNAKE KEBAB",
+				"two_Words": "camel_Snake_Kebab",
+				"two-Words": "camel-Snake-Kebab",
+				"twowords":  "camelsnakekebab",
+				"TWOWORDS":  "CAMELSNAKEKEBAB",
 			},
 		},
 		{
@@ -70,21 +70,21 @@ var (
 				"__ Camel-snakeKEBAB__",
 			},
 			Out: map[string]string{
-				"Camel":           "camelSnakeKebab",
-				"Pascal":          "CamelSnakeKebab",
-				"Snake":           "__camel_snake_kebab__",
-				"CamelSnake":      "__Camel_Snake_Kebab__",
-				"ScreamingSnake":  "__CAMEL_SNAKE_KEBAB__",
-				"Kebab":           "camel-snake-kebab",
-				"CamelKebab":      "Camel-Snake-Kebab",
-				"ScreamingKebab":  "CAMEL-SNAKE-KEBAB",
-				"Lower":           "camel snake kebab",
-				"Title":           "Camel Snake Kebab",
-				"Screaming":       "CAMEL SNAKE KEBAB",
-				"LowerCamelSnake": "__camel_Snake_Kebab__",
-				"LowerCamelKebab": "camel-Snake-Kebab",
-				"Flat":            "camelsnakekebab",
-				"Upper":           "CAMELSNAKEKEBAB",
+				"twoWords":  "camelSnakeKebab",
+				"TwoWords":  "CamelSnakeKebab",
+				"two_words": "__camel_snake_kebab__",
+				"Two_Words": "__Camel_Snake_Kebab__",
+				"TWO_WORDS": "__CAMEL_SNAKE_KEBAB__",
+				"two-words": "camel-snake-kebab",
+				"Two-Words": "Camel-Snake-Kebab",
+				"TWO-WORDS": "CAMEL-SNAKE-KEBAB",
+				"two words": "camel snake kebab",
+				"Two Words": "Camel Snake Kebab",
+				"TWO WORDS": "CAMEL SNAKE KEBAB",
+				"two_Words": "__camel_Snake_Kebab__",
+				"two-Words": "camel-Snake-Kebab",
+				"twowords":  "camelsnakekebab",
+				"TWOWORDS":  "CAMELSNAKEKEBAB",
 			},
 		},
 		{
@@ -94,21 +94,21 @@ var (
 				"__ Camel-snakeKEBABs__",
 			},
 			Out: map[string]string{
-				"Camel":           "camelSnakeKebabs",
-				"Pascal":          "CamelSnakeKebabs",
-				"Snake":           "__camel_snake_kebabs__",
-				"CamelSnake":      "__Camel_Snake_Kebabs__",
-				"ScreamingSnake":  "__CAMEL_SNAKE_KEBABS__",
-				"Kebab":           "camel-snake-kebabs",
-				"CamelKebab":      "Camel-Snake-Kebabs",
-				"ScreamingKebab":  "CAMEL-SNAKE-KEBABS",
-				"Lower":           "camel snake kebabs",
-				"Title":           "Camel Snake Kebabs",
-				"Screaming":       "CAMEL SNAKE KEBABS",
-				"LowerCamelSnake": "__camel_Snake_Kebabs__",
-				"LowerCamelKebab": "camel-Snake-Kebabs",
-				"Flat":            "camelsnakekebabs",
-				"Upper":           "CAMELSNAKEKEBABS",
+				"twoWords":  "camelSnakeKebabs",
+				"TwoWords":  "CamelSnakeKebabs",
+				"two_words": "__camel_snake_kebabs__",
+				"Two_Words": "__Camel_Snake_Kebabs__",
+				"TWO_WORDS": "__CAMEL_SNAKE_KEBABS__",
+				"two-words": "camel-snake-kebabs",
+				"Two-Words": "Camel-Snake-Kebabs",
+				"TWO-WORDS": "CAMEL-SNAKE-KEBABS",
+				"two words": "camel snake kebabs",
+				"Two Words": "Camel Snake Kebabs",
+				"TWO WORDS": "CAMEL SNAKE KEBABS",
+				"two_Words": "__camel_Snake_Kebabs__",
+				"two-Words": "camel-Snake-Kebabs",
+				"twowords":  "camelsnakekebabs",
+				"TWOWORDS":  "CAMELSNAKEKEBABS",
 			},
 		},
 		{
@@ -119,21 +119,21 @@ var (
 				"__CamelSNAKE_Kebab_",
 			},
 			Out: map[string]string{
-				"Camel":           "camelSnakeKebab",
-				"Pascal":          "CamelSnakeKebab",
-				"Snake":           "__camel_snake_kebab_",
-				"CamelSnake":      "__Camel_Snake_Kebab_",
-				"ScreamingSnake":  "__CAMEL_SNAKE_KEBAB_",
-				"Kebab":           "camel-snake-kebab",
-				"CamelKebab":      "Camel-Snake-Kebab",
-				"ScreamingKebab":  "CAMEL-SNAKE-KEBAB",
-				"Lower":           "camel snake kebab",
-				"Title":           "Camel Snake Kebab",
-				"Screaming":       "CAMEL SNAKE KEBAB",
-				"LowerCamelSnake": "__camel_Snake_Kebab_",
-				"LowerCamelKebab": "camel-Snake-Kebab",
-				"Flat":            "camelsnakekebab",
-				"Upper":           "CAMELSNAKEKEBAB",
+				"twoWords":  "camelSnakeKebab",
+				"TwoWords":  "CamelSnakeKebab",
+				"two_words": "__camel_snake_kebab_",
+				"Two_Words": "__Camel_Snake_Kebab_",
+				"TWO_WORDS": "__CAMEL_SNAKE_KEBAB_",
+				"two-words": "camel-snake-kebab",
+				"Two-Words": "Camel-Snake-Kebab",
+				"TWO-WORDS": "CAMEL-SNAKE-KEBAB",
+				"two words": "camel snake kebab",
+				"Two Words": "Camel Snake Kebab",
+				"TWO WORDS": "CAMEL SNAKE KEBAB",
+				"two_Words": "__camel_Snake_Kebab_",
+				"two-Words": "camel-Snake-Kebab",
+				"twowords":  "camelsnakekebab",
+				"TWOWORDS":  "CAMELSNAKEKEBAB",
 			},
 		},
 		{
@@ -142,21 +142,21 @@ var (
 				"--CAMELSnake_kebab",
 			},
 			Out: map[string]string{
-				"Camel":           "camelSnakeKebab",
-				"Pascal":          "CamelSnakeKebab",
-				"Snake":           "camel_snake_kebab",
-				"CamelSnake":      "Camel_Snake_Kebab",
-				"ScreamingSnake":  "CAMEL_SNAKE_KEBAB",
-				"Kebab":           "--camel-snake-kebab",
-				"CamelKebab":      "--Camel-Snake-Kebab",
-				"ScreamingKebab":  "--CAMEL-SNAKE-KEBAB",
-				"Lower":           "camel snake kebab",
-				"Title":           "Camel Snake Kebab",
-				"Screaming":       "CAMEL SNAKE KEBAB",
-				"LowerCamelSnake": "camel_Snake_Kebab",
-				"LowerCamelKebab": "--camel-Snake-Kebab",
-				"Flat":            "camelsnakekebab",
-				"Upper":           "CAMELSNAKEKEBAB",
+				"twoWords":  "camelSnakeKebab",
+				"TwoWords":  "CamelSnakeKebab",
+				"two_words": "camel_snake_kebab",
+				"Two_Words": "Camel_Snake_Kebab",
+				"TWO_WORDS": "CAMEL_SNAKE_KEBAB",
+				"two-words": "--camel-snake-kebab",
+				"Two-Words": "--Camel-Snake-Kebab",
+				"TWO-WORDS": "--CAMEL-SNAKE-KEBAB",
+				"two words": "camel snake kebab",
+				"Two Words": "Camel Snake Kebab",
+				"TWO WORDS": "CAMEL SNAKE KEBAB",
+				"two_Words": "camel_Snake_Kebab",
+				"two-Words": "--camel-Snake-Kebab",
+				"twowords":  "camelsnakekebab",
+				"TWOWORDS":  "CAMELSNAKEKEBAB",
 			},
 		},
 		{
@@ -165,21 +165,21 @@ var (
 				"-CAMEL   Snake_kebab ----",
 			},
 			Out: map[string]string{
-				"Camel":           "camelSnakeKebab",
-				"Pascal":          "CamelSnakeKebab",
-				"Snake":           "camel_snake_kebab",
-				"CamelSnake":      "Camel_Snake_Kebab",
-				"ScreamingSnake":  "CAMEL_SNAKE_KEBAB",
-				"Kebab":           "-camel-snake-kebab----",
-				"CamelKebab":      "-Camel-Snake-Kebab----",
-				"ScreamingKebab":  "-CAMEL-SNAKE-KEBAB----",
-				"Lower":           "camel snake kebab",
-				"Title":           "Camel Snake Kebab",
-				"Screaming":       "CAMEL SNAKE KEBAB",
-				"LowerCamelSnake": "camel_Snake_Kebab",
-				"LowerCamelKebab": "-camel-Snake-Kebab----",
-				"Flat":            "camelsnakekebab",
-				"Upper":           "CAMELSNAKEKEBAB",
+				"twoWords":  "camelSnakeKebab",
+				"TwoWords":  "CamelSnakeKebab",
+				"two_words": "camel_snake_kebab",
+				"Two_Words": "Camel_Snake_Kebab",
+				"TWO_WORDS": "CAMEL_SNAKE_KEBAB",
+				"two-words": "-camel-snake-kebab----",
+				"Two-Words": "-Camel-Snake-Kebab----",
+				"TWO-WORDS": "-CAMEL-SNAKE-KEBAB----",
+				"two words": "camel snake kebab",
+				"Two Words": "Camel Snake Kebab",
+				"TWO WORDS": "CAMEL SNAKE KEBAB",
+				"two_Words": "camel_Snake_Kebab",
+				"two-Words": "-camel-Snake-Kebab----",
+				"twowords":  "camelsnakekebab",
+				"TWOWORDS":  "CAMELSNAKEKEBAB",
 			},
 		},
 		{
@@ -197,21 +197,21 @@ var (
 				"X CAMEL XX SNAKE XXX KEBAB",
 			},
 			Out: map[string]string{
-				"Camel":           "xCamelXxSnakeXxxKebab",
-				"Pascal":          "XCamelXxSnakeXxxKebab",
-				"Snake":           "x_camel_xx_snake_xxx_kebab",
-				"CamelSnake":      "X_Camel_Xx_Snake_Xxx_Kebab",
-				"ScreamingSnake":  "X_CAMEL_XX_SNAKE_XXX_KEBAB",
-				"Kebab":           "x-camel-xx-snake-xxx-kebab",
-				"CamelKebab":      "X-Camel-Xx-Snake-Xxx-Kebab",
-				"ScreamingKebab":  "X-CAMEL-XX-SNAKE-XXX-KEBAB",
-				"Lower":           "x camel xx snake xxx kebab",
-				"Title":           "X Camel Xx Snake Xxx Kebab",
-				"Screaming":       "X CAMEL XX SNAKE XXX KEBAB",
-				"LowerCamelSnake": "x_Camel_Xx_Snake_Xxx_Kebab",
-				"LowerCamelKebab": "x-Camel-Xx-Snake-Xxx-Kebab",
-				"Flat":            "xcamelxxsnakexxxkebab",
-				"Upper":           "XCAMELXXSNAKEXXXKEBAB",
+				"twoWords":  "xCamelXxSnakeXxxKebab",
+				"TwoWords":  "XCamelXxSnakeXxxKebab",
+				"two_words": "x_camel_xx_snake_xxx_kebab",
+				"Two_Words": "X_Camel_Xx_Snake_Xxx_Kebab",
+				"TWO_WORDS": "X_CAMEL_XX_SNAKE_XXX_KEBAB",
+				"two-words": "x-camel-xx-snake-xxx-kebab",
+				"Two-Words": "X-Camel-Xx-Snake-Xxx-Kebab",
+				"TWO-WORDS": "X-CAMEL-XX-SNAKE-XXX-KEBAB",
+				"two words": "x camel xx snake xxx kebab",
+				"Two Words": "X Camel Xx Snake Xxx Kebab",
+				"TWO WORDS": "X CAMEL XX SNAKE XXX KEBAB",
+				"two_Words": "x_Camel_Xx_Snake_Xxx_Kebab",
+				"two-Words": "x-Camel-Xx-Snake-Xxx-Kebab",
+				"twowords":  "xcamelxxsnakexxxkebab",
+				"TWOWORDS":  "XCAMELXXSNAKEXXXKEBAB",
 			},
 		},
 		{
@@ -219,21 +219,21 @@ var (
 				"",
 			},
 			Out: map[string]string{
-				"Camel":           "",
-				"Pascal":          "",
-				"Snake":           "",
-				"CamelSnake":      "",
-				"ScreamingSnake":  "",
-				"Kebab":           "",
-				"CamelKebab":      "",
-				"ScreamingKebab":  "",
-				"Lower":           "",
-				"Title":           "",
-				"Screaming":       "",
-				"LowerCamelSnake": "",
-				"LowerCamelKebab": "",
-				"Flat":            "",
-				"Upper":           "",
+				"twoWords":  "",
+				"TwoWords":  "",
+				"two_words": "",
+				"Two_Words": "",
+				"TWO_WORDS": "",
+				"two-words": "",
+				"Two-Words": "",
+				"TWO-WORDS": "",
+				"two words": "",
+				"Two Words": "",
+				"TWO WORDS": "",
+				"two_Words": "",
+				"two-Words": "",
+				"twowords":  "",
+				"TWOWORDS":  "",
 			},
 		},
 		{
@@ -241,21 +241,21 @@ var (
 				"I♥You",
 			},
 			Out: map[string]string{
-				"Camel":           "i♥You",
-				"Pascal":          "I♥You",
-				"Snake":           "i♥_you",
-				"CamelSnake":      "I♥_You",
-				"ScreamingSnake":  "I♥_YOU",
-				"Kebab":           "i♥-you",
-				"CamelKebab":      "I♥-You",
-				"ScreamingKebab":  "I♥-YOU",
-				"Lower":           "i♥ you",
-				"Title":           "I♥ You",
-				"Screaming":       "I♥ YOU",
-				"LowerCamelSnake": "i♥_You",
-				"LowerCamelKebab": "i♥-You",
-				"Flat":            "i♥you",
-				"Upper":           "I♥YOU",
+				"twoWords":  "i♥You",
+				"TwoWords":  "I♥You",
+				"two_words": "i♥_you",
+				"Two_Words": "I♥_You",
+				"TWO_WORDS": "I♥_YOU",
+				"two-words": "i♥-you",
+				"Two-Words": "I♥-You",
+				"TWO-WORDS": "I♥-YOU",
+				"two words": "i♥ you",
+				"Two Words": "I♥ You",
+				"TWO WORDS": "I♥ YOU",
+				"two_Words": "i♥_You",
+				"two-Words": "i♥-You",
+				"twowords":  "i♥you",
+				"TWOWORDS":  "I♥YOU",
 			},
 		},
 		{
@@ -263,21 +263,21 @@ var (
 				"I ♥ You",
 			},
 			Out: map[string]string{
-				"Camel":           "i♥You",
-				"Pascal":          "I♥You",
-				"Snake":           "i_♥_you",
-				"CamelSnake":      "I_♥_You",
-				"ScreamingSnake":  "I_♥_YOU",
-				"Kebab":           "i-♥-you",
-				"CamelKebab":      "I-♥-You",
-				"ScreamingKebab":  "I-♥-YOU",
-				"Lower":           "i ♥ you",
-				"Title":           "I ♥ You",
-				"Screaming":       "I ♥ YOU",
-				"LowerCamelSnake": "i_♥_You",
-				"LowerCamelKebab": "i-♥-You",
-				"Flat":            "i♥you",
-				"Upper":           "I♥YOU",
+				"twoWords":  "i♥You",
+				"TwoWords":  "I♥You",
+				"two_words": "i_♥_you",
+				"Two_Words": "I_♥_You",
+				"TWO_WORDS": "I_♥_YOU",
+				"two-words": "i-♥-you",
+				"Two-Words": "I-♥-You",
+				"TWO-WORDS": "I-♥-YOU",
+				"two words": "i ♥ you",
+				"Two Words": "I ♥ You",
+				"TWO WORDS": "I ♥ YOU",
+				"two_Words": "i_♥_You",
+				"two-Words": "i-♥-You",
+				"twowords":  "i♥you",
+				"TWOWORDS":  "I♥YOU",
 			},
 		},
 		{
@@ -288,21 +288,21 @@ var (
 				" ACLs ",
 			},
 			Out: map[string]string{
-				"Camel":           "acls",
-				"Pascal":          "Acls",
-				"Snake":           "acls",
-				"CamelSnake":      "Acls",
-				"ScreamingSnake":  "ACLS",
-				"Kebab":           "acls",
-				"CamelKebab":      "Acls",
-				"ScreamingKebab":  "ACLS",
-				"Lower":           "acls",
-				"Title":           "Acls",
-				"Screaming":       "ACLS",
-				"LowerCamelSnake": "acls",
-				"LowerCamelKebab": "acls",
-				"Flat":            "acls",
-				"Upper":           "ACLS",
+				"twoWords":  "acls",
+				"TwoWords":  "Acls",
+				"two_words": "acls",
+				"Two_Words": "Acls",
+				"TWO_WORDS": "ACLS",
+				"two-words": "acls",
+				"Two-Words": "Acls",
+				"TWO-WORDS": "ACLS",
+				"two words": "acls",
+				"Two Words": "Acls",
+				"TWO WORDS": "ACLS",
+				"two_Words": "acls",
+				"two-Words": "acls",
+				"twowords":  "acls",
+				"TWOWORDS":  "ACLS",
 			},
 		},
 		{
@@ -313,21 +313,21 @@ var (
 				" MoonsAsPlanets ",
 			},
 			Out: map[string]string{
-				"Camel":           "moonsAsPlanets",
-				"Pascal":          "MoonsAsPlanets",
-				"Snake":           "moons_as_planets",
-				"CamelSnake":      "Moons_As_Planets",
-				"ScreamingSnake":  "MOONS_AS_PLANETS",
-				"Kebab":           "moons-as-planets",
-				"CamelKebab":      "Moons-As-Planets",
-				"ScreamingKebab":  "MOONS-AS-PLANETS",
-				"Lower":           "moons as planets",
-				"Title":           "Moons As Planets",
-				"Screaming":       "MOONS AS PLANETS",
-				"LowerCamelSnake": "moons_As_Planets",
-				"LowerCamelKebab": "moons-As-Planets",
-				"Flat":            "moonsasplanets",
-				"Upper":           "MOONSASPLANETS",
+				"twoWords":  "moonsAsPlanets",
+				"TwoWords":  "MoonsAsPlanets",
+				"two_words": "moons_as_planets",
+				"Two_Words": "Moons_As_Planets",
+				"TWO_WORDS": "MOONS_AS_PLANETS",
+				"two-words": "moons-as-planets",
+				"Two-Words": "Moons-As-Planets",
+				"TWO-WORDS": "MOONS-AS-PLANETS",
+				"two words": "moons as planets",
+				"Two Words": "Moons As Planets",
+				"TWO WORDS": "MOONS AS PLANETS",
+				"two_Words": "moons_As_Planets",
+				"two-Words": "moons-As-Planets",
+				"twowords":  "moonsasplanets",
+				"TWOWORDS":  "MOONSASPLANETS",
 			},
 		},
 		{
@@ -338,28 +338,11 @@ var (
 				" DefaultTTLs",
 			},
 			Out: map[string]string{
-				"Camel":  "defaultTtls",
-				"Pascal": "DefaultTtls",
-				"Snake":  "default_ttls",
+				"twoWords":  "defaultTtls",
+				"TwoWords":  "DefaultTtls",
+				"two_words": "default_ttls",
 			},
 		},
-	}
-	converters = map[string]func(string) string{
-		"Camel":           Camel,
-		"Pascal":          Pascal,
-		"Snake":           Snake,
-		"CamelSnake":      CamelSnake,
-		"ScreamingSnake":  ScreamingSnake,
-		"Kebab":           Kebab,
-		"CamelKebab":      CamelKebab,
-		"ScreamingKebab":  ScreamingKebab,
-		"Lower":           Lower,
-		"Title":           Title,
-		"Screaming":       Screaming,
-		"LowerCamelSnake": LowerCamelSnake,
-		"LowerCamelKebab": LowerCamelKebab,
-		"Flat":            Flat,
-		"Upper":           Upper,
 	}
 )
 
@@ -367,7 +350,7 @@ func Test(t *testing.T) {
 	for _, c := range cases {
 		for _, in := range c.In {
 			for converter, expected := range c.Out {
-				got := converters[converter](in)
+				got := Find(converter)(in)
 				if got != expected {
 					t.Errorf("Converting %q to %s expected %q, but got %q", in, converter, expected, got)
 				}
@@ -376,69 +359,65 @@ func Test(t *testing.T) {
 	}
 }
 
+func TestFindingInvalid(t *testing.T) {
+	got := Find("invalid")
+	if got != nil {
+		t.Errorf("Expected to find nil.")
+	}
+}
+
 var benchmarkPhrase = "xCAMELSnakeKebab_screaming pascal XXX"
 
-func BenchmarkCamel(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Camel(benchmarkPhrase)
+func benchmark(b *testing.B, which string) {
+	fn := Find(which)
+	if fn == nil {
+		return
 	}
+	for i := 0; i < b.N; i++ {
+		fn(benchmarkPhrase)
+	}
+}
+
+func BenchmarkCamel(b *testing.B) {
+	benchmark(b, "camelCase")
 }
 
 func BenchmarkPascal(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Pascal(benchmarkPhrase)
-	}
+	benchmark(b, "PascalCase")
 }
 
 func BenchmarkSnake(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Snake(benchmarkPhrase)
-	}
+	benchmark(b, "snake_case")
 }
-func BenchmarkCamelSnake(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		CamelSnake(benchmarkPhrase)
-	}
+
+func BenchmarkTitleSnake(b *testing.B) {
+	benchmark(b, "Title_Snake_Case")
 }
 
 func BenchmarkScreamingSnake(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ScreamingSnake(benchmarkPhrase)
-	}
+	benchmark(b, "SCREAMING_SNAKE_CASE")
 }
 
 func BenchmarkKebab(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Kebab(benchmarkPhrase)
-	}
+	benchmark(b, "kebab-case")
 }
 
-func BenchmarkCamelKebab(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		CamelKebab(benchmarkPhrase)
-	}
+func BenchmarkTitleKebab(b *testing.B) {
+	benchmark(b, "title-kebab-case")
 }
 
 func BenchmarkScreamingKebab(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		ScreamingKebab(benchmarkPhrase)
-	}
+	benchmark(b, "SCREAMING-KEBAB-CASE")
 }
 
 func BenchmarkLower(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Lower(benchmarkPhrase)
-	}
+	benchmark(b, "lower case")
 }
 
 func BenchmarkTitle(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Title(benchmarkPhrase)
-	}
+	benchmark(b, "Title Case")
 }
 
 func BenchmarkScreaming(b *testing.B) {
-	for i := 0; i < b.N; i++ {
-		Screaming(benchmarkPhrase)
-	}
+	benchmark(b, "SCREAMING CASE")
 }

@@ -314,6 +314,61 @@ func TestCompile(t *testing.T) {
 			},
 			expectedErr: unknownErr,
 		}, {
+			description: "A normal case ConfigIs() used.",
+			opts: []Option{
+				AddBuffer("lower.json", []byte(`{"madd": "cat", "hello": "Mr. Blue Sky", "blue": "${thing}"}`)),
+				ConfigIs("flatcase"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				AutoCompile(),
+			},
+			want: st1{},
+			expect: st1{
+				Hello: "Mr. Blue Sky",
+				Blue:  "${thing}",
+				Madd:  "cat",
+			},
+			files: []string{"lower.json"},
+		}, {
+			description: "A normal case ConfigIs() used with overrides.",
+			opts: []Option{
+				AddBuffer("lower.json", []byte(`{"crazy": "cat", "hello": "Mr. Blue Sky", "blue": "${thing}"}`)),
+				ConfigIs("flatcase", map[string]string{"Madd": "crazy"}),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				AutoCompile(),
+			},
+			want: st1{},
+			expect: st1{
+				Hello: "Mr. Blue Sky",
+				Blue:  "${thing}",
+				Madd:  "cat",
+			},
+			files: []string{"lower.json"},
+		}, {
+			description: "An error case where an invalid format is used.",
+			opts: []Option{
+				ConfigIs("invalid"),
+			},
+			compileOption: true,
+			want:          st1{},
+			expect:        st1{},
+			expectedErr:   ErrInvalidInput,
+		}, {
+			description: "An error case where an a duplicate map key is present.",
+			opts: []Option{
+				ConfigIs("flatcase",
+					map[string]string{
+						"key": "first",
+					},
+					map[string]string{
+						"key": "second",
+					},
+				),
+			},
+			compileOption: true,
+			want:          st1{},
+			expect:        st1{},
+			expectedErr:   ErrInvalidInput,
+		}, {
 			description: "A normal case with options including expansion.",
 			opts: []Option{
 				AddTree(fs1, "."),

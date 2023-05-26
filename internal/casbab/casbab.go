@@ -20,11 +20,12 @@
 // representation.
 //
 // Examples:
-//     Kebab("camel_snake_kebab") == "camel-snake-kebab"
-//     ScreamingSnake("camel_snake_kebab") == "CAMEL_SNAKE_KEBAB"
-//     Camel("camel_snake_kebab") == "camelSnakeKebab"
-//     Pascal("camel_snake_kebab") == "CamelSnakeKebab"
-//     Snake("camelSNAKEKebab") == "camel_snake_kebab"
+//
+//	kebab("camel_snake_kebab") == "camel-snake-kebab"
+//	screamingSnake("camel_snake_kebab") == "CAMEL_SNAKE_KEBAB"
+//	camel("camel_snake_kebab") == "camelSnakeKebab"
+//	pascal("camel_snake_kebab") == "CamelSnakeKebab"
+//	snake("camelSNAKEKebab") == "camel_snake_kebab"
 //
 // Word separation works by detecting delimiters hyphen (-),
 // underscore (_), space ( ) and letter case change.
@@ -35,153 +36,211 @@
 // semantics between different writings.
 //
 // Examples:
-//     CamelSnake("__camel_snake_kebab__") == "__Camel_Snake_Kebab__"
-//     Kebab("__camel_snake_kebab") == "camel-snake-kebab"
-//     Screaming("__camel_snake_kebab") == "CAMEL SNAKE KEBAB"
-//     CamelKebab("--camel-snake-kebab") == "--Camel-Snake-Kebab"
-//     Snake("--camel-snake-kebab") == "camel_snake_kebab"
-//     Screaming("--camel-snake-kebab") == "CAMEL SNAKE KEBAB"
+//
+//	titleSnake("__camel_snake_kebab__") == "__Camel_Snake_Kebab__"
+//	kebab("__camel_snake_kebab") == "camel-snake-kebab"
+//	screaming("__camel_snake_kebab") == "CAMEL SNAKE KEBAB"
+//	titleKebab("--camel-snake-kebab") == "--Camel-Snake-Kebab"
+//	snake("--camel-snake-kebab") == "camel_snake_kebab"
+//	screaming("--camel-snake-kebab") == "CAMEL SNAKE KEBAB"
 package casbab
 
 import (
 	"strings"
 )
 
-// Camel case is the practice of writing compound words
+// Find returns the function based on the capitalization scheme desired, or
+// nil if it doesn't recognize the scheme.
+//
+// The complete list:
+//
+//   - "two words" aliases: "lower case"
+//   - "two-words" aliases: "kebab-case"
+//   - "two-Words" aliases: "camel-Kebab-Case"
+//   - "two_words" aliases: "snake_case"
+//   - "two_Words" aliases: "camel_Snake_Case"
+//   - "twowords"  aliases: "flatcase"
+//   - "twoWords"  aliases: "camelCase"
+//   - "Two Words" aliases: "Title Case"
+//   - "Two-Words" aliases: "Pascal-Kebab-Case", "Title-Kebab-Case"
+//   - "Two_Words" aliases: "Pascal_Snake_Case", "Title_Snake_Case"
+//   - "TwoWords"  aliases: "PascalCase"
+//   - "TWO WORDS" aliases: "SCREAMING CASE"
+//   - "TWO-WORDS" aliases: "SCREAMING-KEBAB-CASE"
+//   - "TWO_WORDS" aliases: "SCREAMING_SNAKE_CASE"
+//   - "TWOWORDS"  aliases: "UPPERCASE"
+func Find(s string) func(string) string {
+	switch s {
+	case "two words", "lower case":
+		return lower
+	case "two-words", "kebab-case":
+		return kebab
+	case "two-Words", "camel-kebab-case":
+		return camelKebab
+	case "two_words", "snake_case":
+		return snake
+	case "two_Words", "camel_Snake_Case":
+		return camelSnake
+	case "twowords", "flatcase":
+		return flat
+	case "twoWords", "camelCase":
+		return camel
+	case "Two Words", "Title Case":
+		return title
+	case "Two-Words", "Pascal-Kebab-Case", "Title-Kebab-Case":
+		return titleKebab
+	case "Two_Words", "Pascal_Snake_Case", "Title_Snake_Case":
+		return titleSnake
+	case "TwoWords", "PascalCase":
+		return pascal
+	case "TWO WORDS", "SCREAMING CASE":
+		return screaming
+	case "TWO-WORDS", "SCREAMING-KEBAB-CASE":
+		return screamingKebab
+	case "TWO_WORDS", "SCREAMING_SNAKE_CASE":
+		return screamingSnake
+	case "TWOWORDS", "UPPERCASE":
+		return upper
+	}
+
+	return nil
+}
+
+// camel case is the practice of writing compound words
 // or phrases such that each word or abbreviation in the
 // middle of the phrase begins with a capital letter,
 // with no spaces or hyphens.
 //
 // Example: "camelSnakeKebab".
-func Camel(s string) string {
-	return strings.Join(camel(words(s), 1), "")
+func camel(s string) string {
+	return strings.Join(capitalize(words(s), 1), "")
 }
 
-// Pascal case is a variant of Camel case writing where
+// pascal case is a variant of Camel case writing where
 // the first letter of the first word is always capitalized.
 //
 // Example: "CamelSnakeKebab".
-func Pascal(s string) string {
-	return strings.Join(camel(words(s), 0), "")
+func pascal(s string) string {
+	return strings.Join(capitalize(words(s), 0), "")
 }
 
-// Snake case is the practice of writing compound words
+// snake case is the practice of writing compound words
 // or phrases in which the elements are separated with
 // one underscore character (_) and no spaces, with all
 // element letters lowercased within the compound.
 //
 // Example: "camel_snake_kebab".
-func Snake(s string) string {
+func snake(s string) string {
 	head, tail := headTailCount(s, '_')
 	return strings.Repeat("_", head) + strings.Join(words(s), "_") + strings.Repeat("_", tail)
 }
 
-// CamelSnake case is a variant of Camel case with
+// titleSnake case is a variant of Camel case with
 // each element's first letter uppercased.
 //
 // Example: "Camel_Snake_Kebab".
-func CamelSnake(s string) string {
+func titleSnake(s string) string {
 	head, tail := headTailCount(s, '_')
-	return strings.Repeat("_", head) + strings.Join(camel(words(s), 0), "_") + strings.Repeat("_", tail)
+	return strings.Repeat("_", head) + strings.Join(capitalize(words(s), 0), "_") + strings.Repeat("_", tail)
 }
 
-// LowerCamelSnake case is a variant of Camel case with
+// camelSnake case is a variant of Camel case with
 // each element's first letter uppercased, except the first.
 //
 // Example: "camel_Snake_Kebab".
-func LowerCamelSnake(s string) string {
+func camelSnake(s string) string {
 	head, tail := headTailCount(s, '_')
-	return strings.Repeat("_", head) + strings.Join(camel(words(s), 1), "_") + strings.Repeat("_", tail)
+	return strings.Repeat("_", head) + strings.Join(capitalize(words(s), 1), "_") + strings.Repeat("_", tail)
 }
 
-// ScreamingSnake case is a variant of Camel case with
+// screamingSnake case is a variant of Camel case with
 // all letters uppercased.
 //
 // Example: "CAMEL_SNAKE_KEBAB".
-func ScreamingSnake(s string) string {
+func screamingSnake(s string) string {
 	head, tail := headTailCount(s, '_')
 	return strings.Repeat("_", head) + strings.Join(scream(words(s)), "_") + strings.Repeat("_", tail)
 }
 
-// Kebab case is the practice of writing compound words
+// kebab case is the practice of writing compound words
 // or phrases in which the elements are separated with
 // one hyphen character (-) and no spaces, with all
 // element letters lowercased within the compound.
 //
 // Example: "camel-snake-kebab".
-func Kebab(s string) string {
+func kebab(s string) string {
 	head, tail := headTailCount(s, '-')
 	return strings.Repeat("-", head) + strings.Join(words(s), "-") + strings.Repeat("-", tail)
 }
 
-// CamelKebab case is a variant of Kebab case with
+// titleKebab case is a variant of Kebab case with
 // each element's first letter uppercased.
 //
 // Example: "Camel-Snake-Kebab".
-func CamelKebab(s string) string {
+func titleKebab(s string) string {
 	head, tail := headTailCount(s, '-')
-	return strings.Repeat("-", head) + strings.Join(camel(words(s), 0), "-") + strings.Repeat("-", tail)
+	return strings.Repeat("-", head) + strings.Join(capitalize(words(s), 0), "-") + strings.Repeat("-", tail)
 }
 
-// LowerCamelKebab case is a variant of Kebab case with
+// camelKebab case is a variant of Kebab case with
 // each element's first letter uppercased, except the first.
 //
 // Example: "camel-Snake-Kebab".
-func LowerCamelKebab(s string) string {
+func camelKebab(s string) string {
 	head, tail := headTailCount(s, '-')
-	return strings.Repeat("-", head) + strings.Join(camel(words(s), 1), "-") + strings.Repeat("-", tail)
+	return strings.Repeat("-", head) + strings.Join(capitalize(words(s), 1), "-") + strings.Repeat("-", tail)
 }
 
-// ScreamingKebab case is a variant of Kebab case with
+// screamingKebab case is a variant of Kebab case with
 // all letters uppercased.
 //
 // Example: "CAMEL-SNAKE-KEBAB".
-func ScreamingKebab(s string) string {
+func screamingKebab(s string) string {
 	head, tail := headTailCount(s, '-')
 	return strings.Repeat("-", head) + strings.Join(scream(words(s)), "-") + strings.Repeat("-", tail)
 }
 
-// Lower is returning detected words, not in a compound
+// lower is returning detected words, not in a compound
 // form, but separated by one space character with all
 // letters in lower case.
 //
 // Example: "camel snake kebab".
-func Lower(s string) string {
+func lower(s string) string {
 	return strings.Join(words(s), " ")
 }
 
-// Flat is returning detected words, as a compond form with no separation
+// flat is returning detected words, as a compond form with no separation
 // character and all letters in lower case.
 //
 // Example: "camelsnakekebab".
-func Flat(s string) string {
+func flat(s string) string {
 	return strings.Join(words(s), "")
 }
 
-// Title is returning detected words, not in a compound
+// title is returning detected words, not in a compound
 // form, but separated by one space character with first
 // character in all letters in upper case and all other
 // letters in lower case.
 //
 // Example: "Camel Snake Kebab".
-func Title(s string) string {
-	return strings.Join(camel(words(s), 0), " ")
+func title(s string) string {
+	return strings.Join(capitalize(words(s), 0), " ")
 }
 
-// Screaming is returning detected words, not in a compound
+// screaming is returning detected words, not in a compound
 // form, but separated by one space character with all
 // letters in upper case.
 //
 // Example: "CAMEL SNAKE KEBAB".
-func Screaming(s string) string {
+func screaming(s string) string {
 	return strings.Join(scream(words(s)), " ")
 }
 
-// Upper is returning detected words, as a compond form with no separation
+// upper is returning detected words, as a compond form with no separation
 // character with all letters in upper case.
 //
 // Example: "CAMELSNAKEKEBAB".
-func Upper(s string) string {
+func upper(s string) string {
 	return strings.Join(scream(words(s)), "")
 }
 
@@ -256,7 +315,7 @@ func scream(s []string) []string {
 	return s
 }
 
-func camel(s []string, start int) []string {
+func capitalize(s []string, start int) []string {
 	for i := start; i < len(s); i++ {
 		switch len([]rune(s[i])) {
 		case 0:
