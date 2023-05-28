@@ -8,6 +8,7 @@ import (
 	"io/fs"
 	"path/filepath"
 
+	"github.com/goschtalt/goschtalt/internal/casbab"
 	"github.com/goschtalt/goschtalt/internal/natsort"
 	"github.com/goschtalt/goschtalt/internal/print"
 	"github.com/goschtalt/goschtalt/pkg/decoder"
@@ -330,6 +331,82 @@ func (a autoCompileOption) apply(opts *options) error {
 func (_ autoCompileOption) ignoreDefaults() bool { return false }
 func (a autoCompileOption) String() string {
 	return print.P("AutoCompile", print.BoolSilentTrue(bool(a)))
+}
+
+// ConfigIs provides a strict field/key mapper that converts the config
+// values from the specified nomenclature into the go structure name.
+//
+// Since the names of the different formatting styles are not standardized, only
+// a few of the common ones have consts defined.  The complete list is below:
+//
+//   - "two words" aliases: "lower case"
+//   - "two-words" aliases: "kebab-case"
+//   - "two-Words" aliases: "camel-Kebab-Case"
+//   - "two_words" aliases: "snake_case"
+//   - "two_Words" aliases: "camel_Snake_Case"
+//   - "twowords"  aliases: "flatcase"
+//   - "twoWords"  aliases: "camelCase"
+//   - "Two Words" aliases: "Title Case"
+//   - "Two-Words" aliases: "Pascal-Kebab-Case", "Title-Kebab-Case"
+//   - "Two_Words" aliases: "Pascal_Snake_Case", "Title_Snake_Case"
+//   - "TwoWords"  aliases: "PascalCase"
+//   - "TWO WORDS" aliases: "SCREAMING CASE"
+//   - "TWO-WORDS" aliases: "SCREAMING-KEBAB-CASE"
+//   - "TWO_WORDS" aliases: "SCREAMING_SNAKE_CASE"
+//   - "TWOWORDS"  aliases: "UPPERCASE"
+//
+// This option provides a KeymapMapper based option that will convert
+// every input string, ending the chain 100% of the time.
+//
+// To make adjustments pass in a map (or many) with keys being the golang
+// structure field names and values being the configuration name.
+func ConfigIs(format string, overrides ...map[string]string) Option {
+	sToC, err := mergeOverrides(overrides)
+	if err != nil {
+		return WithError(err)
+	}
+
+	toCase := casbab.Find(format)
+	if toCase == nil {
+		return WithError(
+			fmt.Errorf("%w, '%s' unknown format ConfigIs()", ErrInvalidInput, format),
+		)
+	}
+
+	opt := KeymapMapper(&casemapper{
+		toCase:      toCase,
+		adjustments: sToC,
+	})
+	return Options(
+		DefaultUnmarshalOptions(opt),
+		DefaultValueOptions(opt),
+	)
+}
+
+func mergeOverrides(in []map[string]string) (map[string]string, error) {
+	sToC := make(map[string]string, len(in))
+	for i := range in {
+		for k, v := range in[i] {
+			if _, a := sToC[k]; a {
+				return nil, fmt.Errorf("%w, '%s' is duplicated.", ErrInvalidInput, k)
+			}
+			sToC[k] = v
+		}
+	}
+	return sToC, nil
+}
+
+type casemapper struct {
+	toCase      func(string) string
+	adjustments map[string]string
+}
+
+func (c casemapper) Map(in string) string {
+	out, found := c.adjustments[in]
+	if !found {
+		out = c.toCase(in)
+	}
+	return out
 }
 
 // SetKeyDelimiter provides the delimiter used for determining key parts.  A

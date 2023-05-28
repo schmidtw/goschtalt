@@ -712,3 +712,87 @@ func TestOptions(t *testing.T) {
 		})
 	}
 }
+
+func TestMergeOverrides(t *testing.T) {
+	tests := []struct {
+		description string
+		in          []map[string]string
+		sToC        map[string]string
+		expectErr   error
+	}{
+		{
+			description: "single item",
+			in: []map[string]string{
+				map[string]string{
+					"a": "b",
+				},
+			},
+			sToC: map[string]string{
+				"a": "b",
+			},
+		}, {
+			description: "multiple in the array",
+			in: []map[string]string{
+				map[string]string{
+					"A": "a",
+				},
+				map[string]string{
+					"B": "b",
+				},
+			},
+			sToC: map[string]string{
+				"A": "a",
+				"B": "b",
+			},
+		}, {
+			description: "duplicated config name",
+			in: []map[string]string{
+				map[string]string{
+					"A": "a",
+				},
+				map[string]string{
+					"B": "b",
+				},
+				map[string]string{
+					"C": "b",
+				},
+			},
+			sToC: map[string]string{
+				"A": "a",
+				"B": "b",
+				"C": "b",
+			},
+		}, {
+			description: "invalid, duplicated field name",
+			in: []map[string]string{
+				map[string]string{
+					"A": "a",
+				},
+				map[string]string{
+					"B": "b",
+				},
+				map[string]string{
+					"B": "c",
+				},
+			},
+			expectErr: ErrInvalidInput,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			a, e := mergeOverrides(tc.in)
+
+			if tc.expectErr == nil {
+				assert.Equal(a, tc.sToC)
+				assert.NoError(e)
+				return
+			}
+
+			assert.Nil(a)
+			assert.ErrorIs(e, tc.expectErr)
+		})
+	}
+}
