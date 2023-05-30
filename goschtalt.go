@@ -13,7 +13,6 @@ import (
 	"github.com/goschtalt/goschtalt/pkg/decoder"
 	"github.com/goschtalt/goschtalt/pkg/encoder"
 	"github.com/goschtalt/goschtalt/pkg/meta"
-	"github.com/mitchellh/hashstructure"
 )
 
 // Root provides a more descriptive name to use for the root node of the
@@ -41,7 +40,7 @@ type Config struct {
 	records    []string
 	tree       meta.Object
 	compiledAt time.Time
-	hash       uint64
+	hash       []byte
 	explain    Explanation
 
 	rawOpts []Option
@@ -57,9 +56,6 @@ func New(opts ...Option) (*Config, error) {
 			encoders: newRegistry[encoder.Encoder](),
 		},
 	}
-
-	hash, _ := hashstructure.Hash(c.tree, nil)
-	c.hash = hash
 
 	if err := c.With(opts...); err != nil {
 		return nil, err
@@ -91,6 +87,7 @@ func (c *Config) With(opts ...Option) error {
 	full := []Option{
 		SortRecordsNaturally(),
 		SetKeyDelimiter("."),
+		SetHasher(nil),
 	}
 
 	if !ignoreDefaultOpts(raw) {
@@ -211,7 +208,7 @@ func (c *Config) compileInternal(start time.Time) error {
 		}
 	}
 
-	hash, err := hashstructure.Hash(merged, nil)
+	hash, err := c.opts.hasher.Hash(merged)
 	if err != nil {
 		return err
 	}
@@ -291,8 +288,8 @@ func (c *Config) CompiledAt() time.Time {
 }
 
 // Hash returns the hash of the configuration; even if the configuration is
-// empty.
-func (c *Config) Hash() uint64 {
+// empty.  SetHasher() needs to be set to get a useful (non-empty) value.
+func (c *Config) Hash() []byte {
 	c.mutex.Lock()
 	defer c.mutex.Unlock()
 
