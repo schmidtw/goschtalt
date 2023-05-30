@@ -887,22 +887,59 @@ func TestOrderList(t *testing.T) {
 }
 
 func TestHash(t *testing.T) {
+	testErr := fmt.Errorf("test err")
 	tests := []struct {
 		description string
 		opts        []Option
-		expect      uint64
+		expect      []byte
+		expectedErr error
 	}{
 		{
-			description: "An empty list",
-			expect:      0xd199e2449a8d3676,
+			description: "The default hasher returns []bytes{}.",
 		}, {
-			description: "A simple list",
+			description: "A simple hasher",
 			opts: []Option{
-				AddValue("rec", Root, map[string]string{"hello": "world"}),
+				SetHasher(HasherFunc(
+					func(o any) ([]byte, error) {
+						return []byte{0x01, 0x02}, nil
+					},
+				)),
 				AutoCompile(),
 			},
-			expect: 0xd4998250e28306ae,
+			expect: []byte{0x01, 0x02},
+		}, {
+			description: "A simple hasher that always errors",
+			opts: []Option{
+				SetHasher(HasherFunc(
+					func(o any) ([]byte, error) {
+						return nil, testErr
+					},
+				)),
+				AutoCompile(),
+			},
+			expectedErr: testErr,
 		},
+		/*
+			{
+				description: "Example using hashstructure.Hash().",
+				opts: []Option{
+					AddValue("rec", Root, map[string]string{"hello": "world"}),
+					SetHasher(HasherFunc(
+						func(o any) ([]byte, error) {
+							h, err := hashstructure.Hash(o, nil)
+							if err != nil {
+								return nil, err
+							}
+							b := make([]byte, 8)
+							binary.LittleEndian.PutUint64(b, h)
+							return b, nil
+						},
+					)),
+					AutoCompile(),
+				},
+				expect: []byte{0xae, 0x06, 0x83, 0xe2, 0x50, 0x82, 0x99, 0xd4},
+			},
+		*/
 	}
 
 	for _, tc := range tests {
@@ -911,6 +948,13 @@ func TestHash(t *testing.T) {
 			require := require.New(t)
 
 			cfg, err := New(tc.opts...)
+
+			if tc.expectedErr != nil {
+				require.Nil(cfg)
+				require.ErrorIs(err, tc.expectedErr)
+				return
+			}
+
 			require.NotNil(cfg)
 			require.NoError(err)
 

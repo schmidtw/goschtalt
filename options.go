@@ -44,6 +44,7 @@ type options struct {
 	autoCompile  bool
 	keyDelimiter string
 	sorter       RecordSorter
+	hasher       Hasher
 
 	// Codecs where there can be many.
 	decoders *codecRegistry[decoder.Decoder]
@@ -438,6 +439,56 @@ func (s setKeyDelimiterOption) String() string {
 	return print.P("SetKeyDelimiter", print.String(string(s)))
 }
 
+// Hasher provides the methods needed to hash the object tree.
+type Hasher interface {
+	Hash(any) ([]byte, error)
+}
+
+// HasherFunc is an adapter to allow the use of ordinary functions as Hashers.
+// If f is a function with the appropriate signature, HasherFunc(f) is a Hasher
+// that calls f.
+type HasherFunc func(any) ([]byte, error)
+
+// Hash calls f(o)
+func (f HasherFunc) Hash(o any) ([]byte, error) {
+	return f(o)
+}
+
+var _ Hasher = (*HasherFunc)(nil)
+
+// The default do nothing hash function provided.
+
+type defaultHasher struct{}
+
+func (defaultHasher) Hash(o any) ([]byte, error) {
+	return []byte{}, nil
+}
+
+var _ Hasher = (*defaultHasher)(nil)
+
+// SetHasher provides a way to specify which hash algorithm to use on the object
+// tree.  If the provided Hasher is nil, then no hashing is done (default).
+func SetHasher(h Hasher) Option {
+	if h == nil {
+		h = &defaultHasher{}
+	}
+	return &hashOption{
+		hasher: h,
+	}
+}
+
+type hashOption struct {
+	hasher Hasher
+}
+
+func (h hashOption) apply(opts *options) error {
+	opts.hasher = h.hasher
+	return nil
+}
+
+func (_ hashOption) ignoreDefaults() bool { return false }
+func (_ hashOption) String() string       { return "SetHasher" }
+
 // RecordSorter provides the methods needed to sort records.
 type RecordSorter interface {
 	// Less reports whether a is before b.
@@ -449,7 +500,7 @@ type RecordSorter interface {
 // RecordSorterFunc(f) is a RecordSorter that calls f.
 type RecordSorterFunc func(string, string) bool
 
-// Get calls f(a, b)
+// Less calls f(a, b)
 func (f RecordSorterFunc) Less(a, b string) bool {
 	return f(a, b)
 }
