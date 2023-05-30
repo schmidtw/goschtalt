@@ -167,8 +167,7 @@ func TestOptions(t *testing.T) {
 					{
 						fs:    abs,
 						paths: []string{absFile},
-					},
-					{
+					}, {
 						fs:    rel,
 						paths: []string{"./path2"},
 					},
@@ -723,7 +722,7 @@ func TestMergeOverrides(t *testing.T) {
 		{
 			description: "single item",
 			in: []map[string]string{
-				map[string]string{
+				{
 					"a": "b",
 				},
 			},
@@ -733,10 +732,9 @@ func TestMergeOverrides(t *testing.T) {
 		}, {
 			description: "multiple in the array",
 			in: []map[string]string{
-				map[string]string{
+				{
 					"A": "a",
-				},
-				map[string]string{
+				}, {
 					"B": "b",
 				},
 			},
@@ -747,13 +745,11 @@ func TestMergeOverrides(t *testing.T) {
 		}, {
 			description: "duplicated config name",
 			in: []map[string]string{
-				map[string]string{
+				{
 					"A": "a",
-				},
-				map[string]string{
+				}, {
 					"B": "b",
-				},
-				map[string]string{
+				}, {
 					"C": "b",
 				},
 			},
@@ -765,13 +761,11 @@ func TestMergeOverrides(t *testing.T) {
 		}, {
 			description: "invalid, duplicated field name",
 			in: []map[string]string{
-				map[string]string{
+				{
 					"A": "a",
-				},
-				map[string]string{
+				}, {
 					"B": "b",
-				},
-				map[string]string{
+				}, {
 					"B": "c",
 				},
 			},
