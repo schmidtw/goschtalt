@@ -317,7 +317,7 @@ func TestCompileNotWin(t *testing.T) {
 
 			var tell string
 			if cfg != nil {
-				tell = cfg.Explain()
+				tell = cfg.Explain().String()
 			}
 
 			if tc.expectedErr == nil {
@@ -333,9 +333,7 @@ func TestCompileNotWin(t *testing.T) {
 				}
 
 				// check the file order
-				got, err := cfg.ShowOrder()
-				require.NoError(err)
-				assert.Equal(tc.files, got)
+				assert.Equal(tc.files, cfg.records)
 
 				assert.NotEmpty(tell)
 
@@ -354,9 +352,7 @@ func TestCompileNotWin(t *testing.T) {
 
 			if !tc.compileOption {
 				// check the file order is correct
-				got, err := cfg.ShowOrder()
-				assert.ErrorIs(err, ErrNotCompiled)
-				assert.Empty(got)
+				assert.Empty(cfg.explain.Records)
 				assert.NotEmpty(tell)
 			}
 		})

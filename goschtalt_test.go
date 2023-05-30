@@ -800,7 +800,7 @@ func TestCompile(t *testing.T) {
 
 			var tell string
 			if cfg != nil {
-				tell = cfg.Explain()
+				tell = cfg.Explain().String()
 			}
 
 			if tc.expectedErr == nil {
@@ -816,9 +816,11 @@ func TestCompile(t *testing.T) {
 				}
 
 				// check the file order
-				got, err := cfg.ShowOrder()
-				require.NoError(err)
-				assert.Equal(tc.files, got)
+				if tc.files == nil {
+					assert.Empty(cfg.records)
+				} else {
+					assert.Equal(tc.files, cfg.records)
+				}
 
 				assert.NotEmpty(tell)
 
@@ -837,9 +839,7 @@ func TestCompile(t *testing.T) {
 
 			if !tc.compileOption {
 				// check the file order is correct
-				got, err := cfg.ShowOrder()
-				assert.ErrorIs(err, ErrNotCompiled)
-				assert.Empty(got)
+				assert.Empty(cfg.records)
 				assert.NotEmpty(tell)
 			}
 		})
@@ -880,37 +880,6 @@ func TestOrderList(t *testing.T) {
 			require.NoError(err)
 
 			got := cfg.OrderList(tc.in)
-
-			assert.Equal(tc.expect, got)
-		})
-	}
-}
-
-func TestExtensions(t *testing.T) {
-	tests := []struct {
-		description string
-		opts        []Option
-		expect      []string
-	}{
-		{
-			description: "An empty list",
-		}, {
-			description: "A simple list",
-			opts:        []Option{WithDecoder(&testDecoder{extensions: []string{"json"}})},
-			expect:      []string{"json"},
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.description, func(t *testing.T) {
-			assert := assert.New(t)
-			require := require.New(t)
-
-			cfg, err := New(tc.opts...)
-			require.NotNil(cfg)
-			require.NoError(err)
-
-			got := cfg.Extensions()
 
 			assert.Equal(tc.expect, got)
 		})
