@@ -1241,6 +1241,10 @@ func TestMerge(t *testing.T) {
 					"dogs":[
 						"fido",
 						"pluto"
+					],
+					"cats":[
+						"scaredy",
+						"cheezburger"
 					]}`,
 			next: `{	"foo((replace, secret))": "very secret.",
 						"bar((keep))": "bats",
@@ -1264,7 +1268,8 @@ func TestMerge(t *testing.T) {
 						},
 						"dogs((replace))":[
 							{ "snoopy ((keep))": "beagle" }
-						]}`,
+						],
+						"cats((keep))":["ignored"]}`,
 			expected: Object{
 				Origins: []Origin{},
 				Map: map[string]Object{
@@ -1363,6 +1368,18 @@ func TestMerge(t *testing.T) {
 										Value:   "beagle",
 									},
 								},
+							},
+						},
+					},
+					"cats": {
+						Origins: []Origin{},
+						Array: []Object{
+							{
+								Origins: []Origin{},
+								Value:   "scaredy",
+							}, {
+								Origins: []Origin{},
+								Value:   "cheezburger",
 							},
 						},
 					},
