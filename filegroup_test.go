@@ -11,11 +11,47 @@ import (
 	"strings"
 	"testing"
 	"testing/fstest"
+	"time"
 
 	"github.com/goschtalt/goschtalt/pkg/decoder"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+// Implement a fake file system with files that fail in specific ways to test
+// the different failure modes possible.
+type fakeFS struct{}
+
+func (fakeFS) Open(name string) (iofs.File, error) {
+	if name == "stat-fails.json" {
+		return &statFailsFile{}, nil
+	}
+	if name == "read-fails.json" {
+		return &readFailsFile{}, nil
+	}
+	return nil, nil
+}
+
+type statFailsFile struct{}
+
+func (statFailsFile) Stat() (iofs.FileInfo, error) { return nil, iofs.ErrPermission }
+func (statFailsFile) Read([]byte) (int, error)     { return 0, nil }
+func (statFailsFile) Close() error                 { return nil }
+
+type readFailsFile struct{}
+
+func (readFailsFile) Stat() (iofs.FileInfo, error) { return &readFailsFileInfo{}, nil }
+func (readFailsFile) Read([]byte) (int, error)     { return 0, iofs.ErrPermission }
+func (readFailsFile) Close() error                 { return nil }
+
+type readFailsFileInfo struct{}
+
+func (readFailsFileInfo) Name() string        { return "read-fails.json" }
+func (readFailsFileInfo) Size() int64         { return 1234 }
+func (readFailsFileInfo) Mode() iofs.FileMode { return iofs.ModeCharDevice }
+func (readFailsFileInfo) ModTime() time.Time  { return time.Time{} }
+func (readFailsFileInfo) IsDir() bool         { return false }
+func (readFailsFileInfo) Sys() any            { return nil }
 
 func TestWalk(t *testing.T) {
 	tests := []struct {
@@ -122,6 +158,14 @@ func TestWalk(t *testing.T) {
 				exactFile: true,
 			},
 			expectedErr: iofs.ErrInvalid,
+		}, {
+			description: "Ensure Stat() failures are handled.",
+			grp: filegroup{
+				fs:        &fakeFS{},
+				paths:     []string{"stat-fails.json"},
+				exactFile: true,
+			},
+			expectedErr: iofs.ErrNotExist,
 		},
 	}
 	for _, tc := range tests {
@@ -205,13 +249,37 @@ func TestToRecord(t *testing.T) {
 	tests := []struct {
 		description string
 		file        string
+		grp         filegroup
 		expectedNil bool
 		expectedErr error
 	}{
 		{
 			description: "Test with an invalid file.",
 			file:        "missing",
+			grp: filegroup{
+				fs: fstest.MapFS{
+					"1.json": &fstest.MapFile{
+						Data: []byte(`{"hello":"world"}`),
+						Mode: 0755,
+					},
+				},
+			},
 			expectedErr: unknown,
+		}, {
+			description: "Test with an failing stat call.",
+			file:        "stat-fails.json",
+			grp: filegroup{
+				fs: &fakeFS{},
+			},
+			expectedErr: iofs.ErrPermission,
+		}, {
+			description: "Ensure ReadAll() failures are handled.",
+			file:        "read-fails.json",
+			grp: filegroup{
+				fs:        &fakeFS{},
+				exactFile: true,
+			},
+			expectedErr: iofs.ErrPermission,
 		},
 	}
 
@@ -220,20 +288,58 @@ func TestToRecord(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			g := filegroup{
-				fs: fstest.MapFS{
-					"1.json": &fstest.MapFile{
-						Data: []byte(`{"hello":"world"}`),
-						Mode: 0755,
-					},
-				},
-			}
-
 			dr := newRegistry[decoder.Decoder]()
 			require.NotNil(dr)
 			dr.register(&testDecoder{extensions: []string{"json"}})
 
-			got, err := g.toRecord(tc.file, ".", dr)
+			got, err := tc.grp.toRecord(tc.file, ".", dr)
+
+			if tc.expectedErr == nil {
+				if tc.expectedNil {
+					assert.Nil(got)
+				} else {
+					assert.NotNil(got)
+				}
+				return
+			}
+
+			assert.Nil(got)
+			if errors.Is(unknown, tc.expectedErr) {
+				assert.Error(err)
+				return
+			}
+
+			assert.ErrorIs(err, tc.expectedErr)
+		})
+	}
+}
+
+func TestEnumeratePath(t *testing.T) {
+	unknown := errors.New("unknown")
+	tests := []struct {
+		description string
+		file        string
+		grp         filegroup
+		expectedNil bool
+		expectedErr error
+	}{
+		{
+			description: "Ensure Stat() failures are handled & skipped over.",
+			file:        "stat-fails.json",
+			grp: filegroup{
+				fs:        &fakeFS{},
+				paths:     []string{"stat-fails.json"},
+				exactFile: true,
+			},
+			expectedNil: true,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			got, err := tc.grp.enumeratePath(tc.file)
 
 			if tc.expectedErr == nil {
 				if tc.expectedNil {
