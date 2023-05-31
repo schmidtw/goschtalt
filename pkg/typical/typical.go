@@ -6,10 +6,10 @@
 //
 // # Why not include this automatically?
 //
-//	1. Due to separate packages for the adapters that depends on goschtalt,
-//	   goschtalt can't also depend upon the adapters, so a 3rd package is needed.
-//	2. If you don't want these values, no problem, simply don't include this package.
-//	3. Testing is easier with no default values.
+//  1. Due to separate packages for the adapters that depends on goschtalt,
+//     goschtalt can't also depend upon the adapters, so a 3rd package is needed.
+//  2. If you don't want these values, no problem, simply don't include this package.
+//  3. Testing is easier with no default values.
 //
 // # What is included?
 //
