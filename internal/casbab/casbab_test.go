@@ -11,7 +11,10 @@
 
 package casbab
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 var (
 	cases = []struct {
@@ -63,6 +66,7 @@ var (
 				"TWOWORDS":  "CAMELSNAKEKEBAB",
 			},
 		},
+
 		{
 			In: []string{
 				"__camel_snake_kebab__",
@@ -343,6 +347,80 @@ var (
 				"two_words": "default_ttls",
 			},
 		},
+		{
+			In: []string{
+				"single",
+				"Single",
+				"SINGLE",
+				" single",
+				"   single",
+			},
+			Out: map[string]string{
+				"twoWords":  "single",
+				"TwoWords":  "Single",
+				"two_words": "single",
+				"Two_Words": "Single",
+				"TWO_WORDS": "SINGLE",
+				"two-words": "single",
+				"Two-Words": "Single",
+				"TWO-WORDS": "SINGLE",
+				"two words": "single",
+				"Two Words": "Single",
+				"TWO WORDS": "SINGLE",
+				"two_Words": "single",
+				"two-Words": "single",
+				"twowords":  "single",
+				"TWOWORDS":  "SINGLE",
+			},
+		},
+		{
+			In: []string{
+				"",
+				" ",
+			},
+			Out: map[string]string{
+				"twoWords":  "",
+				"TwoWords":  "",
+				"two_words": "",
+				"Two_Words": "",
+				"TWO_WORDS": "",
+				"two-words": "",
+				"Two-Words": "",
+				"TWO-WORDS": "",
+				"two words": "",
+				"Two Words": "",
+				"TWO WORDS": "",
+				"two_Words": "",
+				"two-Words": "",
+				"twowords":  "",
+				"TWOWORDS":  "",
+			},
+		},
+		{
+			In: []string{
+				"a",
+				"A",
+				" a",
+				" A",
+			},
+			Out: map[string]string{
+				"twoWords":  "a",
+				"TwoWords":  "A",
+				"two_words": "a",
+				"Two_Words": "A",
+				"TWO_WORDS": "A",
+				"two-words": "a",
+				"Two-Words": "A",
+				"TWO-WORDS": "A",
+				"two words": "a",
+				"Two Words": "A",
+				"TWO WORDS": "A",
+				"two_Words": "a",
+				"two-Words": "a",
+				"twowords":  "a",
+				"TWOWORDS":  "A",
+			},
+		},
 	}
 )
 
@@ -420,4 +498,60 @@ func BenchmarkTitle(b *testing.B) {
 
 func BenchmarkScreaming(b *testing.B) {
 	benchmark(b, "SCREAMING CASE")
+}
+
+func FuzzAll(f *testing.F) {
+	f.Fuzz(func(t *testing.T, in string) {
+		list := []string{
+			"twoWords",
+			"TwoWords",
+			"two_words",
+			"Two_Words",
+			"TWO_WORDS",
+			"two-words",
+			"Two-Words",
+			"TWO-WORDS",
+			"two words",
+			"Two Words",
+			"TWO WORDS",
+			"two_Words",
+			"two-Words",
+			"twowords",
+			"TWOWORDS",
+		}
+
+		for _, item := range list {
+			fn := Find(item)
+			got := fn(in)
+
+			min := strings.ReplaceAll(in, "-", "")
+			min = strings.ReplaceAll(min, "_", "")
+			min = strings.ReplaceAll(min, " ", "")
+
+			if len([]rune(got)) < len([]rune(min)) {
+				t.Errorf("the final %q is too short %q\n", got, in)
+			}
+
+			switch item {
+			case "twoWords", "TwoWords", "twowords", "TWOWORDS":
+				if strings.ContainsAny(got, "-_ ") {
+					t.Errorf("the final %q is contains '-_ ' %q\n", got, in)
+				}
+			case "two_words", "Two_Words", "TWO_WORDS", "two_Words":
+				if strings.ContainsAny(got, "- ") {
+					t.Errorf("the final %q is contains '- ' %q\n", got, in)
+				}
+			case "two-words", "Two-Words", "TWO-WORDS", "two-Words":
+				if strings.ContainsAny(got, "_ ") {
+					t.Errorf("the final %q is contains '_ ' %q\n", got, in)
+				}
+			case "two words", "Two Words", "TWO WORDS", "two Words":
+				if strings.ContainsAny(got, "-_") {
+					t.Errorf("the final %q is contains '-_' %q\n", got, in)
+				}
+			default:
+				t.Errorf("the input of %q is missed", item)
+			}
+		}
+	})
 }

@@ -254,7 +254,7 @@ Loop:
 	for i, c := range runes {
 		switch c {
 		case '-', '_', ' ':
-			if start != i {
+			if start < i {
 				w = append(w, toLower(runes[start:i]))
 			}
 			start = i + 1
@@ -265,7 +265,7 @@ Loop:
 		if isUpper(c) {
 			prevUpper = true
 			if prevLower {
-				if i != start {
+				if start < i {
 					w = append(w, toLower(runes[start:i]))
 				}
 				start = i
@@ -279,7 +279,7 @@ Loop:
 				// helps eliminate words like 'MyURLs' becoming 'my' 'ur' 'ls'
 				// and instead makes them 'my' 'urls' as you would hope.
 				if !isFinalS(c, runes[i+1:]) {
-					if i-1 != start {
+					if start < i-1 {
 						w = append(w, toLower(runes[start:i-1]))
 					}
 					start = i - 1
@@ -315,19 +315,16 @@ func scream(s []string) []string {
 	return s
 }
 
-func capitalize(s []string, start int) []string {
-	for i := start; i < len(s); i++ {
-		switch len([]rune(s[i])) {
-		case 0:
-		case 1:
-			runes := []rune(s[i])
-			s[i] = toUpper(runes[0:1])
-		default:
-			runes := []rune(s[i])
-			s[i] = toUpper(runes[0:1]) + string(runes[1:])
+func capitalize(list []string, start int) []string {
+	for i := start; i < len(list); i++ {
+		if len([]rune(list[i])) < 2 {
+			list[i] = strings.ToUpper(list[i])
+		} else {
+			runes := []rune(list[i])
+			list[i] = toUpper(runes[0:1]) + string(runes[1:])
 		}
 	}
-	return s
+	return list
 }
 
 func headTailCount(s string, sub rune) (head, tail int) {
