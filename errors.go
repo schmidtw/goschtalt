@@ -15,4 +15,5 @@ var (
 	ErrInvalidInput  = errors.New("input is invalid")
 	ErrFileMissing   = errors.New("required file is missing")
 	ErrUnsupported   = errors.New("feature is unsupported")
+	ErrHint          = errors.New("a hint found an issue")
 )

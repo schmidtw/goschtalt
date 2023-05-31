@@ -780,6 +780,46 @@ func TestCompile(t *testing.T) {
 				Hello: "World",
 			},
 			files: []string{"1.json"},
+		}, {
+			description: "Ensure the HintDecoder() can find one.",
+			opts: []Option{
+				HintDecoder("json", "http://github.com/goschtalt/json-decoder", "json"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+		}, {
+			description: "Ensure the HintDecoder() can find when they are missing.",
+			opts: []Option{
+				HintDecoder("dogs", "http://github.com/goschtalt/dogs-decoder", "dogs"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+			compileOption: true,
+			expectedErr:   ErrHint,
+		}, {
+			description: "Ensure the HintDecoder() can handle a partial success.",
+			opts: []Option{
+				HintDecoder("json_dogs", "http://github.com/goschtalt/dogs-decoder", "dogs", "json"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+		}, {
+			description: "Ensure the HintEncoder() can find one.",
+			opts: []Option{
+				HintEncoder("json", "http://github.com/goschtalt/json-decoder", "json"),
+				WithEncoder(&testEncoder{extensions: []string{"json"}}),
+			},
+		}, {
+			description: "Ensure the HintEncoder() can find when they are missing.",
+			opts: []Option{
+				HintEncoder("dogs", "http://github.com/goschtalt/dogs-decoder", "dogs"),
+				WithEncoder(&testEncoder{extensions: []string{"json"}}),
+			},
+			compileOption: true,
+			expectedErr:   ErrHint,
+		}, {
+			description: "Ensure the HintEncoder() can handle a partial success.",
+			opts: []Option{
+				HintEncoder("json_dogs", "http://github.com/goschtalt/dogs-decoder", "dogs", "json"),
+				WithEncoder(&testEncoder{extensions: []string{"json"}}),
+			},
 		},
 	}
 
