@@ -375,6 +375,66 @@ func TestCompile(t *testing.T) {
 			},
 			files: []string{"1.json", "2.json", "3.json", "90.json"},
 		}, {
+			description: "A normal case with options including expansion and getters.",
+			opts: []Option{
+				AddTree(fs1, "."),
+				AddTree(fs2, "."),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				AddValueGetter("99", Root,
+					mockValueGetter{
+						f: func(s string, u Unmarshaler) (any, error) {
+							str := struct {
+								Blue string
+							}{}
+							// At this point Blue = "jay"
+							err := u("", &str)
+							if err != nil {
+								return nil, err
+							}
+
+							return struct {
+								Madd string
+							}{
+								Madd: str.Blue + " as a ${thing}",
+							}, nil
+						},
+					},
+				),
+				Expand(mapper1),
+				Expand(mapper2, WithDelimiters("|", "|")),
+			},
+			expect: st1{
+				Hello: "Mr. Blue Sky",
+				Blue:  "jay",
+				Madd:  "jay as a jay",
+			},
+			files: []string{"1.json", "2.json", "3.json", "90.json", "99"},
+		}, {
+			description: "A recursion case where a failure results with a getter.",
+			opts: []Option{
+				AddTree(fs1, "."),
+				AddTree(fs2, "."),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				Expand(mapper3),
+				AutoCompile(),
+				AddValueGetter("99", Root,
+					mockValueGetter{
+						f: func(s string, u Unmarshaler) (any, error) {
+							str := struct {
+								Blue string
+							}{
+								Blue: "${thing}",
+							}
+
+							return str, nil
+						},
+					},
+				),
+			},
+			skipCompile: true,
+			expect:      st1{},
+			expectedErr: unknownErr,
+		}, {
 			description: "A normal case with options including env expansion.",
 			opts: []Option{
 				AddTree(fs1, "."),
