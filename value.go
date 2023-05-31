@@ -119,6 +119,10 @@ func (v value) toTree(delimiter string, u Unmarshaler, defaultOpts ...ValueOptio
 		return meta.Object{}, err
 	}
 
+	if data == nil {
+		return meta.Object{}, nil
+	}
+
 	// Dereference the pointer if it is one.
 	if reflect.TypeOf(data).Kind() == reflect.Ptr {
 		data = reflect.ValueOf(data).Elem().Interface()

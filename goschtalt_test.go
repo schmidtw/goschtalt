@@ -667,6 +667,20 @@ func TestCompile(t *testing.T) {
 			expect:      st1{},
 			expectedErr: testErr,
 		}, {
+			description: "A getter returns nil.",
+			opts: []Option{
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				AddValueGetter("dynamic", Root,
+					mockValueGetter{
+						f: func(s string, u Unmarshaler) (any, error) {
+							return nil, nil
+						},
+					},
+				),
+			},
+			expect: st1{},
+			files:  []string{"dynamic"},
+		}, {
 			description: "A case where the an option is/becomes an error.",
 			opts: []Option{
 				AddValue("record", Root, st1{
