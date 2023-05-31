@@ -167,7 +167,7 @@ func TestCompile(t *testing.T) {
 
 	tests := []struct {
 		description    string
-		compileOption  bool
+		skipCompile    bool
 		opts           []Option
 		want           any
 		key            string
@@ -260,8 +260,8 @@ func TestCompile(t *testing.T) {
 			},
 			files: []string{"1.json", "2.json", "3.json"},
 		}, {
-			description:   "A case with an encoded buffer that is invalid",
-			compileOption: true,
+			description: "A case with an encoded buffer that is invalid",
+			skipCompile: true,
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
@@ -269,16 +269,16 @@ func TestCompile(t *testing.T) {
 			},
 			expectedErr: unknownErr,
 		}, {
-			description:   "An encoded buffer can't be decoded.",
-			compileOption: true,
+			description: "An encoded buffer can't be decoded.",
+			skipCompile: true,
 			opts: []Option{
 				AutoCompile(),
 				AddBuffer("1.json", []byte(`invalid`)),
 			},
 			expectedErr: unknownErr,
 		}, {
-			description:   "An encoded buffer with an option that causes a failure.",
-			compileOption: true,
+			description: "An encoded buffer with an option that causes a failure.",
+			skipCompile: true,
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
@@ -286,8 +286,8 @@ func TestCompile(t *testing.T) {
 			},
 			expectedErr: testErr,
 		}, {
-			description:   "A case with an encoded buffer function that returns an error",
-			compileOption: true,
+			description: "A case with an encoded buffer function that returns an error",
+			skipCompile: true,
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
@@ -300,8 +300,8 @@ func TestCompile(t *testing.T) {
 			},
 			expectedErr: unknownErr,
 		}, {
-			description:   "A case with an encoded buffer function that returns an invalidly formatted buffer",
-			compileOption: true,
+			description: "A case with an encoded buffer function that returns an invalidly formatted buffer",
+			skipCompile: true,
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
@@ -348,10 +348,10 @@ func TestCompile(t *testing.T) {
 			opts: []Option{
 				ConfigIs("invalid"),
 			},
-			compileOption: true,
-			want:          st1{},
-			expect:        st1{},
-			expectedErr:   ErrInvalidInput,
+			skipCompile: true,
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: ErrInvalidInput,
 		}, {
 			description: "An error case where an a duplicate map key is present.",
 			opts: []Option{
@@ -364,10 +364,10 @@ func TestCompile(t *testing.T) {
 					},
 				),
 			},
-			compileOption: true,
-			want:          st1{},
-			expect:        st1{},
-			expectedErr:   ErrInvalidInput,
+			skipCompile: true,
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: ErrInvalidInput,
 		}, {
 			description: "A normal case with options including expansion.",
 			opts: []Option{
@@ -642,10 +642,10 @@ func TestCompile(t *testing.T) {
 				Expand(mapper3),
 				AutoCompile(),
 			},
-			compileOption: true,
-			want:          st1{},
-			expect:        st1{},
-			expectedErr:   unknownErr,
+			skipCompile: true,
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: unknownErr,
 		}, {
 			description: "A case where the value adapter returns an error.",
 			opts: []Option{
@@ -675,10 +675,10 @@ func TestCompile(t *testing.T) {
 					Madd:  "cat",
 				}),
 			},
-			compileOption: true,
-			want:          st1{},
-			expect:        st1{},
-			expectedErr:   ErrInvalidInput,
+			skipCompile: true,
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: ErrInvalidInput,
 		}, {
 			description: "A case where the value function returns an error.",
 			opts: []Option{
@@ -691,10 +691,10 @@ func TestCompile(t *testing.T) {
 					},
 				),
 			},
-			compileOption: true,
-			want:          st1{},
-			expect:        st1{},
-			expectedErr:   testErr,
+			skipCompile: true,
+			want:        st1{},
+			expect:      st1{},
+			expectedErr: testErr,
 		}, {
 			description: "A case where the an option is/becomes an error.",
 			opts: []Option{
@@ -792,8 +792,8 @@ func TestCompile(t *testing.T) {
 				HintDecoder("dogs", "http://github.com/goschtalt/dogs-decoder", "dogs"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			compileOption: true,
-			expectedErr:   ErrHint,
+			skipCompile: true,
+			expectedErr: ErrHint,
 		}, {
 			description: "Ensure the HintDecoder() can handle a partial success.",
 			opts: []Option{
@@ -812,8 +812,8 @@ func TestCompile(t *testing.T) {
 				HintEncoder("dogs", "http://github.com/goschtalt/dogs-decoder", "dogs"),
 				WithEncoder(&testEncoder{extensions: []string{"json"}}),
 			},
-			compileOption: true,
-			expectedErr:   ErrHint,
+			skipCompile: true,
+			expectedErr: ErrHint,
 		}, {
 			description: "Ensure the HintEncoder() can handle a partial success.",
 			opts: []Option{
@@ -833,7 +833,7 @@ func TestCompile(t *testing.T) {
 
 			cfg, err := New(tc.opts...)
 
-			if !tc.compileOption {
+			if !tc.skipCompile {
 				require.NoError(err)
 				err = cfg.Compile()
 			}
@@ -877,7 +877,7 @@ func TestCompile(t *testing.T) {
 				assert.ErrorIs(err, tc.expectedErr)
 			}
 
-			if !tc.compileOption {
+			if !tc.skipCompile {
 				// check the file order is correct
 				assert.Empty(cfg.records)
 				assert.NotEmpty(tell)
