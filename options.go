@@ -7,10 +7,12 @@ import (
 	"fmt"
 	"io/fs"
 	"path/filepath"
+	"strings"
 
 	"github.com/goschtalt/goschtalt/internal/casbab"
 	"github.com/goschtalt/goschtalt/internal/natsort"
 	"github.com/goschtalt/goschtalt/internal/print"
+	"github.com/goschtalt/goschtalt/internal/strs"
 	"github.com/goschtalt/goschtalt/pkg/decoder"
 	"github.com/goschtalt/goschtalt/pkg/encoder"
 )
@@ -64,6 +66,10 @@ type options struct {
 
 	// Expansions; there can be many.
 	expansions []expand
+
+	// Hints are special options that check that the configuration makes sense;
+	// there can be many.
+	hints []func(*options) error
 }
 
 // ---- Options follow ---------------------------------------------------------
@@ -588,6 +594,60 @@ func (s sortRecordsOption) apply(opts *options) error {
 
 func (_ sortRecordsOption) ignoreDefaults() bool { return false }
 func (s sortRecordsOption) String() string       { return s.text }
+
+// HintEncoder provides a way to suggest importing additional encoders without
+// needing to include a specific one in goschtalt.  Generally, this option is
+// not needed unless you are creating pre-set option lists.
+func HintEncoder(label, url string, exts ...string) Option {
+	return &hintOption{
+		text: print.P("HintEncoder", print.Literal(label)),
+		hint: func(opts *options) error {
+			return hintCodecCheck(opts.encoders.extensions(), exts, url, "encoders")
+		},
+	}
+}
+
+// HintDecoder provides a way to suggest importing additional decoders without
+// needing to include a specific one in goschtalt.  Generally, this option is
+// not needed unless you are creating pre-set option lists.
+func HintDecoder(label, url string, exts ...string) Option {
+	return &hintOption{
+		text: print.P("HintDecoder", print.Literal(label)),
+		hint: func(opts *options) error {
+			return hintCodecCheck(opts.decoders.extensions(), exts, url, "decoders")
+		},
+	}
+}
+
+func hintCodecCheck(have, want []string, url, typ string) error {
+	missing := strs.Missing(have, want)
+
+	// If some of the extensions are supported, that's probably what they wanted.
+	if len(missing) < len(want) {
+		return nil
+	}
+
+	return fmt.Errorf("%w: none of the required (%s) %s are present, try importing %s",
+		ErrHint, strings.Join(missing, ", "), typ, url)
+}
+
+type hintOption struct {
+	text string
+	hint func(*options) error
+}
+
+func (h hintOption) apply(opts *options) error {
+	opts.hints = append(opts.hints, h.hint)
+	return nil
+}
+
+func (hintOption) ignoreDefaults() bool {
+	return false
+}
+
+func (h hintOption) String() string {
+	return h.text
+}
 
 // WithDecoder registers a Decoder for the specific file extensions provided.
 // Attempting to register a duplicate extension is not supported.

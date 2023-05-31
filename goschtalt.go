@@ -113,6 +113,12 @@ func (c *Config) With(opts ...Option) error {
 		}
 	}
 
+	for _, hint := range cfg.hints {
+		if err := hint(&cfg); err != nil {
+			return err
+		}
+	}
+
 	// The options are valid, record them.
 	c.opts = cfg
 	c.rawOpts = raw
