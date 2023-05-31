@@ -169,7 +169,6 @@ func TestCompile(t *testing.T) {
 		description    string
 		skipCompile    bool
 		opts           []Option
-		want           any
 		key            string
 		expect         any
 		files          []string
@@ -185,7 +184,6 @@ func TestCompile(t *testing.T) {
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "${thing}",
@@ -201,7 +199,6 @@ func TestCompile(t *testing.T) {
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "${thing}",
@@ -222,7 +219,6 @@ func TestCompile(t *testing.T) {
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "${thing}",
@@ -252,7 +248,6 @@ func TestCompile(t *testing.T) {
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "cat",
 				Blue:  "cat",
@@ -321,7 +316,6 @@ func TestCompile(t *testing.T) {
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "${thing}",
@@ -336,7 +330,6 @@ func TestCompile(t *testing.T) {
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				AutoCompile(),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "${thing}",
@@ -349,7 +342,6 @@ func TestCompile(t *testing.T) {
 				ConfigIs("invalid"),
 			},
 			skipCompile: true,
-			want:        st1{},
 			expect:      st1{},
 			expectedErr: ErrInvalidInput,
 		}, {
@@ -365,7 +357,6 @@ func TestCompile(t *testing.T) {
 				),
 			},
 			skipCompile: true,
-			want:        st1{},
 			expect:      st1{},
 			expectedErr: ErrInvalidInput,
 		}, {
@@ -377,7 +368,6 @@ func TestCompile(t *testing.T) {
 				Expand(mapper1),
 				Expand(mapper2, WithDelimiters("|", "|")),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "jay",
@@ -392,7 +382,6 @@ func TestCompile(t *testing.T) {
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				ExpandEnv(),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "ocean",
@@ -408,7 +397,6 @@ func TestCompile(t *testing.T) {
 					Madd:  "cat",
 				}),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "jay",
@@ -425,7 +413,6 @@ func TestCompile(t *testing.T) {
 				}),
 			},
 			key:    "Hello",
-			want:   "string",
 			expect: "Mr. Blue Sky",
 			files:  []string{"record1"},
 		}, {
@@ -452,7 +439,6 @@ func TestCompile(t *testing.T) {
 					KeymapReport(&remappings),
 				),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "jay",
@@ -475,7 +461,6 @@ func TestCompile(t *testing.T) {
 					},
 					FailOnNonSerializable()),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "jay",
@@ -497,7 +482,6 @@ func TestCompile(t *testing.T) {
 					}),
 				),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "jay",
@@ -514,7 +498,6 @@ func TestCompile(t *testing.T) {
 						Madd:  "cat",
 					}),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "jay",
@@ -541,7 +524,6 @@ func TestCompile(t *testing.T) {
 					adaptStringToFunc(),
 				),
 			},
-			want: withAll{},
 			expect: withAll{
 				Foo:      "string",
 				Duration: time.Second,
@@ -573,7 +555,6 @@ func TestCompile(t *testing.T) {
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			want:   st1{},
 			expect: st1{},
 		}, {
 			description: "An empty set of files.",
@@ -581,7 +562,6 @@ func TestCompile(t *testing.T) {
 				AddFiles(fs1),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			want:   st1{},
 			expect: st1{},
 		}, {
 			description: "An glob of everything.",
@@ -589,7 +569,6 @@ func TestCompile(t *testing.T) {
 				AddFiles(fs1, "*"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
 				Blue:  "sky",
@@ -601,7 +580,6 @@ func TestCompile(t *testing.T) {
 				AddFile(fs1, "invalid.json"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			want:        st1{},
 			expect:      st1{},
 			expectedErr: ErrFileMissing,
 		}, {
@@ -610,7 +588,6 @@ func TestCompile(t *testing.T) {
 				AddFile(fs1, "*"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			want:        st1{},
 			expect:      st1{},
 			expectedErr: ErrFileMissing,
 		}, {
@@ -620,7 +597,6 @@ func TestCompile(t *testing.T) {
 				AddTree(fs3, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			want:        st1{},
 			expect:      st1{},
 			expectedErr: meta.ErrConflict,
 		}, {
@@ -630,7 +606,6 @@ func TestCompile(t *testing.T) {
 				AddTree(fs4, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			want:        st1{},
 			expect:      st1{},
 			expectedErr: unknownErr,
 		}, {
@@ -643,7 +618,6 @@ func TestCompile(t *testing.T) {
 				AutoCompile(),
 			},
 			skipCompile: true,
-			want:        st1{},
 			expect:      st1{},
 			expectedErr: unknownErr,
 		}, {
@@ -662,7 +636,6 @@ func TestCompile(t *testing.T) {
 					adaptDurationToCfg(),
 				),
 			},
-			want:        withAll{},
 			expectedErr: unknownErr,
 			files:       []string{"record1"},
 		}, {
@@ -676,7 +649,6 @@ func TestCompile(t *testing.T) {
 				}),
 			},
 			skipCompile: true,
-			want:        st1{},
 			expect:      st1{},
 			expectedErr: ErrInvalidInput,
 		}, {
@@ -692,7 +664,6 @@ func TestCompile(t *testing.T) {
 				),
 			},
 			skipCompile: true,
-			want:        st1{},
 			expect:      st1{},
 			expectedErr: testErr,
 		}, {
@@ -709,7 +680,6 @@ func TestCompile(t *testing.T) {
 					testSetError([]error{nil, testErr}),
 				),
 			},
-			want:        st1{},
 			expect:      st1{},
 			expectedErr: testErr,
 		}, {
@@ -725,7 +695,6 @@ func TestCompile(t *testing.T) {
 					FailOnNonSerializable(),
 				),
 			},
-			want:        st1{},
 			expect:      st1{},
 			expectedErr: meta.ErrNonSerializable,
 		}, {
@@ -736,7 +705,6 @@ func TestCompile(t *testing.T) {
 				AddFiles(fs1, "2.json"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			want: st1{},
 			expect: st1{
 				Blue: "sky",
 			},
@@ -749,7 +717,6 @@ func TestCompile(t *testing.T) {
 				AddFiles(fs1, "3.json"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			want: st1{},
 			expect: st1{
 				Blue: "sky",
 			},
@@ -762,7 +729,6 @@ func TestCompile(t *testing.T) {
 				AddFiles(fs1, "2.json"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			want: st1{},
 			expect: st1{
 				Blue: "sky",
 			},
@@ -775,7 +741,6 @@ func TestCompile(t *testing.T) {
 				AddTree(fs1, "3.json"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
-			want: st1{},
 			expect: st1{
 				Hello: "World",
 			},
@@ -846,13 +811,16 @@ func TestCompile(t *testing.T) {
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				require.NotNil(cfg)
-				err = cfg.Unmarshal(tc.key, &tc.want)
-				require.NoError(err)
+				if tc.expect != nil {
+					want := reflect.Zero(reflect.TypeOf(tc.expect)).Interface()
+					err = cfg.Unmarshal(tc.key, &want)
+					require.NoError(err)
 
-				if tc.compare != nil {
-					assert.True(tc.compare(assert, tc.expect, tc.want))
-				} else {
-					assert.Equal(tc.expect, tc.want)
+					if tc.compare != nil {
+						assert.True(tc.compare(assert, tc.expect, want))
+					} else {
+						assert.Equal(tc.expect, want)
+					}
 				}
 
 				// check the file order
