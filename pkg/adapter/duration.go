@@ -7,6 +7,7 @@ import (
 	"reflect"
 	"time"
 
+	"github.com/goschtalt/approx"
 	"github.com/goschtalt/goschtalt"
 )
 
@@ -38,7 +39,7 @@ func (marshalDuration) From(from, to reflect.Value) (any, error) {
 		return nil, goschtalt.ErrNotApplicable
 	}
 
-	d, err := time.ParseDuration(from.Interface().(string))
+	d, err := approx.ParseDuration(from.Interface().(string))
 	if err != nil {
 		return nil, err
 	}
@@ -51,7 +52,7 @@ func (marshalDuration) From(from, to reflect.Value) (any, error) {
 
 func (marshalDuration) To(from reflect.Value) (any, error) {
 	if from.Type() == reflect.TypeOf(time.Duration(1)) {
-		return from.Interface().(time.Duration).String(), nil
+		return approx.String(from.Interface().(time.Duration)), nil
 	}
 
 	return nil, goschtalt.ErrNotApplicable

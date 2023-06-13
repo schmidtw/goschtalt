@@ -3,6 +3,7 @@ module github.com/goschtalt/goschtalt
 go 1.18
 
 require (
+	github.com/goschtalt/approx v1.0.0
 	github.com/mitchellh/mapstructure v1.5.0
 	github.com/stretchr/testify v1.8.4
 	gonum.org/v1/gonum v0.13.0
