@@ -183,6 +183,40 @@ func TestCompileNotWin(t *testing.T) {
 			},
 			files: []string{"example.json"},
 		}, {
+			description: "local - default file, empty list",
+			opts: []Option{
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				nonWinStdCfgLayout("example", []string{}, stdLocations{
+					local: local,
+					root:  none,
+					home:  home,
+					etc:   etc,
+				}),
+				AddFile(never, "example.json"),
+			},
+			want: st{},
+			expect: st{
+				Status: "local - default name wanted",
+			},
+			files: []string{"example.json"},
+		}, {
+			description: "local - default file, list of empty strings",
+			opts: []Option{
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				nonWinStdCfgLayout("example", []string{"", ""}, stdLocations{
+					local: local,
+					root:  none,
+					home:  home,
+					etc:   etc,
+				}),
+				AddFile(never, "example.json"),
+			},
+			want: st{},
+			expect: st{
+				Status: "local - default name wanted",
+			},
+			files: []string{"example.json"},
+		}, {
 			description: "local - one dir in the list",
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -292,6 +326,18 @@ func TestCompileNotWin(t *testing.T) {
 				AutoCompile(),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				nonWinStdCfgLayout("", nil, stdLocations{}),
+				AddFile(never, "example.json"),
+			},
+			want:        st{},
+			expect:      st{},
+			expectedErr: ErrInvalidInput,
+		}, {
+			description:   "invalid appname",
+			compileOption: true,
+			opts: []Option{
+				AutoCompile(),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				nonWinStdCfgLayout("foo/bar", nil, stdLocations{}),
 				AddFile(never, "example.json"),
 			},
 			want:        st{},
