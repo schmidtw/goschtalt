@@ -45,6 +45,12 @@ func (c *Config) Marshal(opts ...MarshalOption) ([]byte, error) {
 		tree = tree.ToRedacted()
 	}
 
+	// Issue 52 - depending on encoders, they may encode a nil or null object
+	// instead of returning an expected empty array of bytes.
+	if tree.IsEmpty() {
+		return []byte{}, nil
+	}
+
 	enc, err := c.opts.encoders.find(cfg.format)
 	if err != nil {
 		return nil, err

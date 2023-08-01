@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/goschtalt/goschtalt/pkg/encoder"
+	"github.com/goschtalt/goschtalt/pkg/meta"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -52,6 +53,9 @@ func TestMarshal(t *testing.T) {
 			opts:        []MarshalOption{FormatAs("json"), IncludeOrigins(true)},
 			expected:    `{"Origins":[{"File":"file","Line":1,"Col":123}],"Array":null,"Map":{"foo":{"Origins":[{"File":"file","Line":2,"Col":123}],"Array":null,"Map":null,"Value":"bar"}},"Value":null}`,
 		}, {
+			description: "Import and export an empty tree.",
+			opts:        []MarshalOption{FormatAs("json"), IncludeOrigins(true)},
+		}, {
 			description: "Not compiled.",
 			input:       `{"foo":"bar"}`,
 			notCompiled: true,
@@ -80,8 +84,12 @@ func TestMarshal(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			tree, err := decode("file", tc.input).ResolveCommands()
-			require.NoError(err)
+			var tree meta.Object
+			var err error
+			if tc.input != "" {
+				tree, err = decode("file", tc.input).ResolveCommands()
+				require.NoError(err)
+			}
 
 			now := time.Time{}
 			if !tc.notCompiled {
