@@ -718,7 +718,7 @@ func (obj Object) FilterNonSerializable() Object {
 		for _, val := range obj.Array {
 			if val.isSerializable() {
 				got := val.FilterNonSerializable()
-				if !got.isEmpty() {
+				if !got.IsEmpty() {
 					array = append(array, got)
 				}
 			}
@@ -730,7 +730,7 @@ func (obj Object) FilterNonSerializable() Object {
 		for key, val := range obj.Map {
 			if val.isSerializable() {
 				got := val.FilterNonSerializable()
-				if !got.isEmpty() {
+				if !got.IsEmpty() {
 					m[key] = val.FilterNonSerializable()
 				}
 			}
@@ -792,9 +792,9 @@ func (obj Object) isSerializable() bool {
 	return true
 }
 
-// isEmpty returns if the object is an empty node.  Metadata about the node
+// IsEmpty returns if the object is an empty node.  Metadata about the node
 // like the origin or secret are ignored in this determination.
-func (o Object) isEmpty() bool {
+func (o Object) IsEmpty() bool {
 	if len(o.Array) == 0 && len(o.Map) == 0 && o.Value == nil {
 		return true
 	}
