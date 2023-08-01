@@ -10,6 +10,7 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 const confDirName = "conf.d"
@@ -17,6 +18,7 @@ const confDirName = "conf.d"
 func stdCfgLayout(appName string, files []string) Option {
 	var l stdLocations
 	l.Populate(appName)
+
 	return nonWinStdCfgLayout(appName, files, l)
 }
 
@@ -39,11 +41,22 @@ func (s *stdLocations) Populate(name string) {
 
 func nonWinStdCfgLayout(appName string, files []string, paths stdLocations) Option {
 	if appName == "" {
-		return WithError(fmt.Errorf("%w: StdCfgLayout appName", ErrInvalidInput))
+		return WithError(fmt.Errorf("%w: StdCfgLayout appName cannot be empty", ErrInvalidInput))
+	}
+	if strings.Contains(appName, string(filepath.Separator)) {
+		return WithError(fmt.Errorf("%w: StdCfgLayout appName cannot contain character '%s'", ErrInvalidInput, string(filepath.Separator)))
 	}
 
-	if len(files) > 0 {
-		return AddJumbledHalt(paths.root, paths.local, files...)
+	// Prune out any empty files.
+	actualFiles := make([]string, 0, len(files))
+	for _, file := range files {
+		if file != "" {
+			actualFiles = append(actualFiles, file)
+		}
+	}
+
+	if len(actualFiles) > 0 {
+		return AddJumbledHalt(paths.root, paths.local, actualFiles...)
 	}
 
 	single := appName + ".*"
