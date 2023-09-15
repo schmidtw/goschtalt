@@ -401,15 +401,16 @@ func TestUnmarshal(t *testing.T) {
 				require.NoError(opt.apply(&c.opts))
 			}
 
+			want := tc.want
 			if tc.nilWanted {
 				err = c.Unmarshal(tc.key, nil, tc.opts...)
 			} else {
-				err = c.Unmarshal(tc.key, &tc.want, tc.opts...)
+				err = c.Unmarshal(tc.key, &want, tc.opts...)
 			}
 
 			if tc.expectedErr == nil {
 				assert.NoError(err)
-				assert.Equal(tc.expected, tc.want)
+				assert.Equal(tc.expected, want)
 				return
 			}
 

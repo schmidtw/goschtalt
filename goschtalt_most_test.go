@@ -369,13 +369,14 @@ func TestCompileNotWin(t *testing.T) {
 			if tc.expectedErr == nil {
 				assert.NoError(err)
 				require.NotNil(cfg)
-				err = cfg.Unmarshal(tc.key, &tc.want)
+				want := tc.want
+				err = cfg.Unmarshal(tc.key, &want)
 				require.NoError(err)
 
 				if tc.compare != nil {
-					assert.True(tc.compare(assert, tc.expect, tc.want))
+					assert.True(tc.compare(assert, tc.expect, want))
 				} else {
-					assert.Equal(tc.expect, tc.want)
+					assert.Equal(tc.expect, want)
 				}
 
 				// check the file order
