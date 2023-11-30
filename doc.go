@@ -40,16 +40,16 @@
 //
 // # Where do I find configuration file encoders/decoders?
 //
-// The project contains several packages that are versioned together, but are
+// The project contains several related packages that are isolated from the core
+// goschtalt package to keep the dependencies low.  They are all maintained by
+// the same group of people, but are not required to be used together, and are
 // otherwise independent (different go modules).  They can be found here:
 //
-// https://github.com/goschtalt/goschtalt/tree/main/extensions/
-//
-//	decoders/env        - decoder for environment variables
-//	decoders/json       - decoder for json files
-//	decoders/properties - decoder for properties files
-//	decoders/yaml       - decoder for yaml files
-//	encoders/yaml       - encoder for yaml files
+//   - https://github.com/goschtalt/env-decoder
+//   - https://github.com/goschtalt/properties-decoder
+//   - https://github.com/goschtalt/json-decoder
+//   - https://github.com/goschtalt/yaml-encoder
+//   - https://github.com/goschtalt/yaml-decoder
 //
 // # How do I decorate my configuration files to take full advantage of goschtalt?
 //

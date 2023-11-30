@@ -212,13 +212,13 @@ func TestOptions(t *testing.T) {
 			description: "AutoCompile()",
 			opt:         AutoCompile(),
 			str:         "AutoCompile()",
-			goal: options{
-				autoCompile: true,
-			},
 		}, {
 			description: "AutoCompile(false)",
 			opt:         AutoCompile(false),
 			str:         "AutoCompile( false )",
+			goal: options{
+				disableAutoCompile: true,
+			},
 		}, {
 			description: "SetKeyDelimiter( . )",
 			opt:         SetKeyDelimiter("."),

@@ -125,7 +125,7 @@ func (c *Config) With(opts ...Option) error {
 
 	c.explain.extsSupported(c.opts.decoders.extensions())
 
-	if c.opts.autoCompile {
+	if !c.opts.disableAutoCompile {
 		return c.compile()
 	}
 
