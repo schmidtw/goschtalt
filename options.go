@@ -43,10 +43,10 @@ type Option interface {
 
 type options struct {
 	// Settings where there are one.
-	autoCompile  bool
-	keyDelimiter string
-	sorter       RecordSorter
-	hasher       Hasher
+	disableAutoCompile bool
+	keyDelimiter       string
+	sorter             RecordSorter
+	hasher             Hasher
 
 	// Codecs where there can be many.
 	decoders *codecRegistry[decoder.Decoder]
@@ -322,21 +322,21 @@ func (o groupOption) String() string {
 //
 // # Default
 //
-// AutoCompile is not enabled.
+// AutoCompile is enabled.
 func AutoCompile(enable ...bool) Option {
 	enable = append(enable, true)
-	return autoCompileOption(enable[0])
+	return disableAutoCompileOption(enable[0])
 }
 
-type autoCompileOption bool
+type disableAutoCompileOption bool
 
-func (a autoCompileOption) apply(opts *options) error {
-	opts.autoCompile = bool(a)
+func (a disableAutoCompileOption) apply(opts *options) error {
+	opts.disableAutoCompile = !bool(a)
 	return nil
 }
 
-func (_ autoCompileOption) ignoreDefaults() bool { return false }
-func (a autoCompileOption) String() string {
+func (_ disableAutoCompileOption) ignoreDefaults() bool { return false }
+func (a disableAutoCompileOption) String() string {
 	return print.P("AutoCompile", print.BoolSilentTrue(bool(a)))
 }
 

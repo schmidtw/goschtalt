@@ -323,7 +323,6 @@ func TestCompileNotWin(t *testing.T) {
 			description:   "invalid appname",
 			compileOption: true,
 			opts: []Option{
-				AutoCompile(),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				nonWinStdCfgLayout("", nil, stdLocations{}),
 				AddFile(never, "example.json"),
@@ -335,7 +334,6 @@ func TestCompileNotWin(t *testing.T) {
 			description:   "invalid appname",
 			compileOption: true,
 			opts: []Option{
-				AutoCompile(),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				nonWinStdCfgLayout("foo/bar", nil, stdLocations{}),
 				AddFile(never, "example.json"),

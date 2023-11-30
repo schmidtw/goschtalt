@@ -31,7 +31,6 @@ func TestNew(t *testing.T) {
 			description: "A normal case with no options.",
 		}, {
 			description: "A normal case with options.",
-			opts:        []Option{AutoCompile()},
 		}, {
 			description: "A case with an empty option.",
 			opts:        []Option{zeroOpt},
@@ -182,7 +181,6 @@ func TestCompile(t *testing.T) {
 				AddTree(fs1, "."),
 				AddTree(fs2, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
-				AutoCompile(),
 			},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
@@ -197,7 +195,6 @@ func TestCompile(t *testing.T) {
 				AddBuffer("2.json", []byte(`{"Blue": "${thing}"}`)),
 				AddBuffer("3.json", []byte(`{"Madd": "cat"}`)),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
-				AutoCompile(),
 			},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
@@ -217,7 +214,6 @@ func TestCompile(t *testing.T) {
 						},
 					}),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
-				AutoCompile(),
 			},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
@@ -246,7 +242,6 @@ func TestCompile(t *testing.T) {
 						},
 					}),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
-				AutoCompile(),
 			},
 			expect: st1{
 				Hello: "cat",
@@ -259,7 +254,6 @@ func TestCompile(t *testing.T) {
 			skipCompile: true,
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
-				AutoCompile(),
 				AddBuffer("1.json", []byte(`invalid`)),
 			},
 			expectedErr: unknownErr,
@@ -267,7 +261,6 @@ func TestCompile(t *testing.T) {
 			description: "An encoded buffer can't be decoded.",
 			skipCompile: true,
 			opts: []Option{
-				AutoCompile(),
 				AddBuffer("1.json", []byte(`invalid`)),
 			},
 			expectedErr: unknownErr,
@@ -276,7 +269,6 @@ func TestCompile(t *testing.T) {
 			skipCompile: true,
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
-				AutoCompile(),
 				AddBuffer("1.json", []byte(`{}`), WithError(testErr)),
 			},
 			expectedErr: testErr,
@@ -285,7 +277,6 @@ func TestCompile(t *testing.T) {
 			skipCompile: true,
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
-				AutoCompile(),
 				AddBufferGetter("3.json",
 					mockBufferGetter{
 						f: func(_ string, _ Unmarshaler) ([]byte, error) {
@@ -299,7 +290,6 @@ func TestCompile(t *testing.T) {
 			skipCompile: true,
 			opts: []Option{
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
-				AutoCompile(),
 				AddBufferGetter("3.json",
 					mockBufferGetter{
 						f: func(_ string, _ Unmarshaler) ([]byte, error) {
@@ -314,7 +304,6 @@ func TestCompile(t *testing.T) {
 				AddBuffer("lower.json", []byte(`{"madd": "cat", "hello": "Mr. Blue Sky", "blue": "${thing}"}`)),
 				ConfigIs("flatcase"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
-				AutoCompile(),
 			},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
@@ -328,7 +317,6 @@ func TestCompile(t *testing.T) {
 				AddBuffer("lower.json", []byte(`{"crazy": "cat", "hello": "Mr. Blue Sky", "blue": "${thing}"}`)),
 				ConfigIs("flatcase", map[string]string{"Madd": "crazy"}),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
-				AutoCompile(),
 			},
 			expect: st1{
 				Hello: "Mr. Blue Sky",
@@ -416,7 +404,6 @@ func TestCompile(t *testing.T) {
 				AddTree(fs2, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				Expand(mapper3),
-				AutoCompile(),
 				AddValueGetter("99", Root,
 					mockValueGetter{
 						f: func(s string, u Unmarshaler) (any, error) {
@@ -637,6 +624,7 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "An invalid file when one must be present.",
 			opts: []Option{
+				AutoCompile(false),
 				AddFile(fs1, "invalid.json"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
@@ -645,6 +633,7 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "AddFile doesn't accept globs since that's multiple files.",
 			opts: []Option{
+				AutoCompile(false),
 				AddFile(fs1, "*"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
@@ -653,6 +642,7 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A merge failure case.",
 			opts: []Option{
+				AutoCompile(false),
 				AddTree(fs1, "."),
 				AddTree(fs3, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -662,6 +652,7 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A decode failure case.",
 			opts: []Option{
+				AutoCompile(false),
 				AddTree(fs1, "."),
 				AddTree(fs4, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -675,7 +666,6 @@ func TestCompile(t *testing.T) {
 				AddTree(fs2, "."),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 				Expand(mapper3),
-				AutoCompile(),
 			},
 			skipCompile: true,
 			expect:      st1{},
@@ -683,6 +673,7 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case where the value adapter returns an error.",
 			opts: []Option{
+				AutoCompile(false),
 				AddValue("record1", Root,
 					withAll{
 						Foo:      "string",
@@ -701,7 +692,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case where the value doesn't have a record name.",
 			opts: []Option{
-				AutoCompile(),
 				AddValue("", Root, st1{
 					Hello: "Mr. Blue Sky",
 					Blue:  "jay",
@@ -714,7 +704,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case where the value function returns an error.",
 			opts: []Option{
-				AutoCompile(),
 				AddValueGetter("record", Root,
 					mockValueGetter{
 						f: func(string, Unmarshaler) (any, error) {
@@ -743,6 +732,7 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case where the an option is/becomes an error.",
 			opts: []Option{
+				AutoCompile(false),
 				AddValue("record", Root, st1{
 					Hello: "Mr. Blue Sky",
 					Blue:  "jay",
@@ -759,6 +749,7 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "A case with non-serializable values producing an error.",
 			opts: []Option{
+				AutoCompile(false),
 				AddValue("record1", Root,
 					st2{
 						Hello: "Mr. Blue Sky",
@@ -774,7 +765,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "Make sure the AddFilesHalt doesn't stop if no files are found.",
 			opts: []Option{
-				AutoCompile(),
 				AddFilesHalt(fs1, "none.json"),
 				AddFiles(fs1, "2.json"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -786,7 +776,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "Make sure the AddFilesHalt stops if files are found.",
 			opts: []Option{
-				AutoCompile(),
 				AddFilesHalt(fs1, "2.json"),
 				AddFiles(fs1, "3.json"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -798,7 +787,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "Make sure the AddTreeHalt doesn't stop if no files are found.",
 			opts: []Option{
-				AutoCompile(),
 				AddTreeHalt(fs1, "none"),
 				AddFiles(fs1, "2.json"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -810,7 +798,6 @@ func TestCompile(t *testing.T) {
 		}, {
 			description: "Make sure the AddTreeHalt stops if files are found.",
 			opts: []Option{
-				AutoCompile(),
 				AddTreeHalt(fs1, "a"),
 				AddTree(fs1, "3.json"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -957,7 +944,10 @@ func TestOrderList(t *testing.T) {
 			assert := assert.New(t)
 			require := require.New(t)
 
-			cfg, err := New(WithDecoder(&testDecoder{extensions: []string{"json"}}))
+			cfg, err := New(
+				AutoCompile(false),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			)
 			require.NotNil(cfg)
 			require.NoError(err)
 
@@ -978,6 +968,9 @@ func TestHash(t *testing.T) {
 	}{
 		{
 			description: "The default hasher returns []bytes{}.",
+			opts: []Option{
+				AutoCompile(false),
+			},
 		}, {
 			description: "A simple hasher",
 			opts: []Option{
@@ -986,7 +979,6 @@ func TestHash(t *testing.T) {
 						return []byte{0x01, 0x02}, nil
 					},
 				)),
-				AutoCompile(),
 			},
 			expect: []byte{0x01, 0x02},
 		}, {
@@ -997,7 +989,6 @@ func TestHash(t *testing.T) {
 						return nil, testErr
 					},
 				)),
-				AutoCompile(),
 			},
 			expectedErr: testErr,
 		},
@@ -1017,7 +1008,6 @@ func TestHash(t *testing.T) {
 							return b, nil
 						},
 					)),
-					AutoCompile(),
 				},
 				expect: []byte{0xae, 0x06, 0x83, 0xe2, 0x50, 0x82, 0x99, 0xd4},
 			},
@@ -1056,12 +1046,12 @@ func TestCompiledAt(t *testing.T) {
 		{
 			description: "An empty list",
 			timeZero:    true,
+			opts: []Option{
+				AutoCompile(false),
+			},
 		}, {
 			description: "A simple list",
-			opts: []Option{
-				AutoCompile(),
-			},
-			timeZero: false,
+			timeZero:    false,
 		},
 	}
 
@@ -1096,7 +1086,6 @@ func TestGetTree(t *testing.T) {
 		}, {
 			description: "A simple list",
 			opts: []Option{
-				AutoCompile(),
 				AddValue("record1", Root,
 					struct {
 						Entry string

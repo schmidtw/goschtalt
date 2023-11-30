@@ -55,7 +55,6 @@ func init() {
 // but you are also free to choose whatever variations you wish.
 func typical() goschtalt.Option {
 	return goschtalt.Options(
-		goschtalt.AutoCompile(),
 		goschtalt.ExpandEnv(),
 		goschtalt.DefaultMarshalOptions(
 			goschtalt.IncludeOrigins(),
