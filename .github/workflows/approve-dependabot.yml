@@ -1,4 +1,4 @@
-# SPDX-FileCopyrightText: 2022 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
+# SPDX-FileCopyrightText: 2022-2024 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
 # SPDX-License-Identifier: Apache-2.0
 ---
 name: 'Dependabot auto approvals'
