@@ -29,6 +29,7 @@ func (fakeFS) Open(name string) (iofs.File, error) {
 	if name == "read-fails.json" {
 		return &readFailsFile{}, nil
 	}
+
 	return nil, nil
 }
 
@@ -314,47 +315,77 @@ func TestToRecord(t *testing.T) {
 	}
 }
 
-func TestEnumeratePath(t *testing.T) {
-	unknown := errors.New("unknown")
+func Test_normalizeDirError(t *testing.T) {
+	errUnknown := errors.New("unknown")
 	tests := []struct {
 		description string
-		file        string
-		grp         filegroup
-		expectedNil bool
+		err         error
 		expectedErr error
 	}{
 		{
-			description: "Ensure Stat() failures are handled & skipped over.",
-			file:        "stat-fails.json",
-			grp: filegroup{
-				fs:        &fakeFS{},
-				paths:     []string{"stat-fails.json"},
-				exactFile: true,
-			},
-			expectedNil: true,
+			description: "ErrPermission is normalized to nil",
+			err:         iofs.ErrPermission,
+		}, {
+			description: "ErrNotExist is unchanged",
+			err:         iofs.ErrNotExist,
+			expectedErr: iofs.ErrNotExist,
+		}, {
+			description: "ErrInvalid is unchanged",
+			err:         iofs.ErrInvalid,
+			expectedErr: iofs.ErrInvalid,
+		}, {
+			description: "ErrExist is unchanged",
+			err:         iofs.ErrExist,
+			expectedErr: iofs.ErrExist,
+		}, {
+			description: "Unknown error is unchanged",
+			err:         errUnknown,
+			expectedErr: errUnknown,
 		},
 	}
-
 	for _, tc := range tests {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 
-			got, err := tc.grp.enumeratePath(tc.file)
+			err := normalizeDirError(tc.err)
 
-			if tc.expectedErr == nil {
-				if tc.expectedNil {
-					assert.Nil(got)
-				} else {
-					assert.NotNil(got)
-				}
-				return
-			}
+			assert.ErrorIs(err, tc.expectedErr)
+		})
+	}
+}
 
-			assert.Nil(got)
-			if errors.Is(unknown, tc.expectedErr) {
-				assert.Error(err)
-				return
-			}
+func Test_normalizeFileError(t *testing.T) {
+	errUnknown := errors.New("unknown")
+	tests := []struct {
+		description string
+		err         error
+		expectedErr error
+	}{
+		{
+			description: "ErrPermission is normalized to nil",
+			err:         iofs.ErrPermission,
+		}, {
+			description: "ErrNotExist is normalized to nil",
+			err:         iofs.ErrNotExist,
+		}, {
+			description: "ErrInvalid is unchanged",
+			err:         iofs.ErrInvalid,
+			expectedErr: iofs.ErrInvalid,
+		}, {
+			description: "ErrExist is normalized to nil",
+			err:         iofs.ErrExist,
+			expectedErr: iofs.ErrExist,
+		}, {
+			description: "Unknown error is unchanged",
+			err:         errUnknown,
+			expectedErr: errUnknown,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			err := normalizeFileError(tc.err)
 
 			assert.ErrorIs(err, tc.expectedErr)
 		})

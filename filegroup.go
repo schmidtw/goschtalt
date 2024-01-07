@@ -153,11 +153,7 @@ func (g filegroup) enumerate() ([]string, error) {
 func (g filegroup) enumeratePath(path string) ([]string, error) {
 	isDir, err := g.isDir(path)
 	if err != nil {
-		// Fail if the path is not found, otherwise, continue
-		if errors.Is(err, fs.ErrInvalid) || errors.Is(err, fs.ErrNotExist) {
-			return nil, err
-		}
-		return nil, nil
+		return nil, normalizeDirError(err)
 	}
 
 	if !isDir {
@@ -168,35 +164,18 @@ func (g filegroup) enumeratePath(path string) ([]string, error) {
 		return nil, fs.ErrInvalid
 	}
 
-	var files []string
-	var walker fs.WalkDirFunc
-	if g.recurse {
-		walker = func(file string, d fs.DirEntry, err error) error {
-			if err != nil || d.IsDir() {
-				return err
-			}
-			files = append(files, file)
-			return nil
-		}
-	} else {
-		walker = func(file string, d fs.DirEntry, err error) error {
-			if err == nil {
-				// Don't proceed into any directories except the top directory
-				// specified.
-				if file != path {
-					if d.IsDir() {
-						return fs.SkipDir
-					}
-					files = append(files, file)
-				}
-			}
-			return err
-		}
+	fc := filecollector{
+		path: path,
+		fg:   g,
 	}
 
+	walker := fs.WalkDirFunc(fc.nonrecurse)
+	if g.recurse {
+		walker = fc.recurse
+	}
 	err = fs.WalkDir(g.fs, path, walker)
 
-	return files, err
+	return fc.files, err
 }
 
 // isDir examines a structure to see if it is a directory or something else.
@@ -246,4 +225,92 @@ func filegroupsToRecords(delimiter string, filegroups []filegroup, decoders *cod
 	}
 
 	return rv, nil
+}
+
+// filecollector is a helper structure for collecting files from a directory.
+type filecollector struct {
+	path  string
+	files []string
+	fg    filegroup
+}
+
+// isReadable checks if a file is readable by trying to open it.
+func (fc *filecollector) isReadable(file string) error {
+	f, err := fc.fg.fs.Open(file)
+	if err == nil {
+		f.Close()
+	}
+
+	return err
+}
+
+// recurse is the function that is called for each file in a directory when
+// recursion is enabled while walking the directory.
+func (fc *filecollector) recurse(file string, d fs.DirEntry, err error) error {
+	if err != nil || d.IsDir() {
+		return normalizeFileError(err)
+	}
+
+	err = fc.isReadable(file)
+	if err == nil {
+		fc.files = append(fc.files, file)
+	}
+
+	return normalizeFileError(err)
+}
+
+// nonrecurse is the function that is called for each file in a directory when
+// recursion is disabled while walking the directory.
+func (fc *filecollector) nonrecurse(file string, d fs.DirEntry, err error) error {
+	if err == nil && file != fc.path {
+		if d.IsDir() {
+			return fs.SkipDir
+		}
+
+		err = fc.isReadable(file)
+		if err == nil {
+			fc.files = append(fc.files, file)
+		}
+	}
+
+	return normalizeFileError(err)
+}
+
+// normalizeFileError ignores some errors that are not fatal and returns others
+// that are fatal.
+func normalizeFileError(err error) error {
+	// Ignore files we can't read.
+	if errors.Is(err, fs.ErrPermission) {
+		return nil
+	}
+
+	// Ignore files that might have disappeared between the time we found them
+	// and the time we tried to read them.
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+
+	// The other errors are fatal because they indicate an unknown problem.
+	// Known other errors: (there could be others)
+	// 	ErrInvalid
+	// 	ErrExist
+	// 	ErrClosed
+	return err
+}
+
+// normalizeDirError ignores some errors that are not fatal and returns others
+// that are fatal.
+func normalizeDirError(err error) error {
+	// Ignore directories we can't read.
+	if errors.Is(err, fs.ErrPermission) {
+		return nil
+	}
+
+	// The other errors are fatal because they indicate an unknown problem.
+	// Known other errors: (there could be others)
+	// 	ErrInvalid
+	//  ErrNotExist
+	// 	ErrExist
+	// 	ErrClosed
+	return err
 }
