@@ -5,7 +5,7 @@ package goschtalt
 
 import (
 	"fmt"
-	"path/filepath"
+	"path"
 	"strings"
 
 	"github.com/goschtalt/goschtalt/internal/print"
@@ -139,7 +139,7 @@ func (b *buffer) toTree(delimiter string, u Unmarshaler, decoders *codecRegistry
 		return meta.Object{}, err
 	}
 
-	ext := strings.TrimPrefix(filepath.Ext(b.recordName), ".")
+	ext := strings.TrimPrefix(path.Ext(b.recordName), ".")
 
 	dec, err := decoders.find(ext)
 	if err != nil {

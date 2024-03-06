@@ -1,6 +1,6 @@
 module github.com/goschtalt/goschtalt
 
-go 1.18
+go 1.20
 
 require (
 	github.com/goschtalt/approx v1.0.0
