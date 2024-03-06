@@ -11,6 +11,7 @@ import (
 	"testing"
 	"testing/fstest"
 
+	"github.com/goschtalt/goschtalt/internal/fspath"
 	"github.com/goschtalt/goschtalt/pkg/decoder"
 	"github.com/goschtalt/goschtalt/pkg/encoder"
 	"github.com/stretchr/testify/assert"
@@ -166,10 +167,10 @@ func TestOptions(t *testing.T) {
 				filegroups: []filegroup{
 					{
 						fs:    abs,
-						paths: []string{absFile},
+						paths: []string{fspath.MustToRel(absFile)},
 					}, {
 						fs:    rel,
-						paths: []string{"./path2"},
+						paths: []string{"path2"},
 					},
 				},
 			},

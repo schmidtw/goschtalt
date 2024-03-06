@@ -6,10 +6,11 @@ package goschtalt
 import (
 	"fmt"
 	"io/fs"
-	"path/filepath"
+	"path"
 	"strings"
 
 	"github.com/goschtalt/goschtalt/internal/casbab"
+	"github.com/goschtalt/goschtalt/internal/fspath"
 	"github.com/goschtalt/goschtalt/internal/natsort"
 	"github.com/goschtalt/goschtalt/internal/print"
 	"github.com/goschtalt/goschtalt/internal/strs"
@@ -233,6 +234,8 @@ func AddDirs(fs fs.FS, paths ...string) Option {
 // processed will be ignored.  It is not an error if any files are missing or if
 // all the files cannot be processed.
 //
+// Note: The paths are expected to use the fs.FS path separator ("/") and format.
+//
 // Use [AddFile]() if you need to require a file to be present.
 //
 // Generally this option is useful when processing files from the same filesystem
@@ -247,6 +250,8 @@ func AddJumbled(abs, rel fs.FS, paths ...string) Option {
 // subdirectories) for inclusion when compiling the configurationm, and if any
 // are added halts the process of adding more file records.
 //
+// Note: The paths are expected to use the fs.FS path separator ("/") and format.
+//
 // This option works the same as [AddJumbled]() except no further files are processed
 // if this group added any files.
 //
@@ -260,16 +265,29 @@ func addJumbled(name string, abs, rel fs.FS, paths []string, halt bool) Option {
 	absPaths := make([]string, 0, len(paths))
 	relPaths := make([]string, 0, len(paths))
 
-	for _, path := range paths {
-		if filepath.IsAbs(path) {
-			absPaths = append(absPaths, path)
-		} else {
-			relPaths = append(relPaths, path)
+	for _, p := range paths {
+		if p == "" {
+			continue
 		}
+
+		// If the path is local, it is relative.
+		if fspath.IsLocal(p) {
+			relPaths = append(relPaths, path.Clean(p))
+			continue
+		}
+
+		// Everything else ends up being absolute.
+
+		rel, err := fspath.ToRel(p)
+		if err != nil {
+			return WithError(err)
+		}
+
+		absPaths = append(absPaths, rel)
 	}
 
 	return &optionsOption{
-		text: print.P("AddJumbled",
+		text: print.P(name,
 			print.Literal("abs"),
 			print.Literal("rel"),
 			print.Strings(paths),

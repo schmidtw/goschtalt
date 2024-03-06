@@ -4,7 +4,7 @@
 package goschtalt
 
 import (
-	"path/filepath"
+	"path"
 	"sort"
 	"strings"
 	"sync"
@@ -275,7 +275,7 @@ func (c *Config) OrderList(list []string) []string {
 		file := cfg.name
 
 		// Only include the file if there is a decoder for it.
-		ext := strings.TrimPrefix(filepath.Ext(file), ".")
+		ext := strings.TrimPrefix(path.Ext(file), ".")
 		_, err := c.opts.decoders.find(ext)
 		if err == nil {
 			out = append(out, file)
