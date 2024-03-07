@@ -191,14 +191,15 @@ func TestSort(t *testing.T) {
 					run(assert, require, list, tc.want)
 				}
 			} else {
+				r := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint:gosec
+
 				// We can't fully cover the combinations, so randomly mix them up.
 				for i := 0; i < 1000; i++ {
 					list := make([]string, len(tc.want))
 					copy(list, tc.want)
 
 					/* shuffle the list, randomly */
-					rand.Seed(time.Now().UnixNano())
-					rand.Shuffle(len(list), func(i, j int) { list[i], list[j] = list[j], list[i] })
+					r.Shuffle(len(list), func(i, j int) { list[i], list[j] = list[j], list[i] })
 
 					run(assert, require, list, tc.want)
 				}
@@ -207,7 +208,7 @@ func TestSort(t *testing.T) {
 	}
 }
 
-func run(assert *assert.Assertions, require *require.Assertions, list, want []string) {
+func run(assert *assert.Assertions, _ *require.Assertions, list, want []string) {
 	start := make([]string, len(list))
 	copy(start, list)
 
