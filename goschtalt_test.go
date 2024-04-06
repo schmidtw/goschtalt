@@ -100,6 +100,13 @@ func TestCompile(t *testing.T) {
 		},
 	}
 
+	fs5 := fstest.MapFS{
+		"b/90.txt": &fstest.MapFile{
+			Data: []byte(`{"Hello":"Mr. Blue Sky"}`),
+			Mode: 0755,
+		},
+	}
+
 	mapper1 := mockExpander{
 		f: func(m string) string {
 			switch m {
@@ -155,6 +162,10 @@ func TestCompile(t *testing.T) {
 		Dog  string `goschtalt:"Hello"`
 		Blue string
 		Madd string
+	}
+
+	type st4 struct {
+		Hello string
 	}
 
 	type withAll struct {
@@ -603,6 +614,16 @@ func TestCompile(t *testing.T) {
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
 			},
 			expect: st1{},
+		}, {
+			description: "A file interpreted.",
+			opts: []Option{
+				AddFileAs(fs5, "json", "b/90.txt"),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+			expect: st4{
+				Hello: "Mr. Blue Sky",
+			},
+			files: []string{"90.txt"},
 		}, {
 			description: "An empty set of files.",
 			opts: []Option{

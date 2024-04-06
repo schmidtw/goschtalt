@@ -89,6 +89,20 @@ func AddFile(fs fs.FS, filename string) Option {
 	}
 }
 
+// AddFileAs is the same as [AddFile]() except the file is decoded as the
+// specified type.
+func AddFileAs(fs fs.FS, asType, filename string) Option {
+	return &groupOption{
+		name: "AddFileAs",
+		grp: filegroup{
+			fs:        fs,
+			paths:     []string{filename},
+			exactFile: true,
+			as:        asType,
+		},
+	}
+}
+
 // AddFiles adds any number of files to the list of files to be compiled into a
 // configuration.  The filenames must be relative to the fs.  Any files that
 // cannot be processed will be ignored.  It is not an error if any files are
@@ -108,6 +122,19 @@ func AddFiles(fs fs.FS, filenames ...string) Option {
 	}
 }
 
+// AddFilesAs is the same as [AddFiles]() except the files are decoded as the
+// specified type.
+func AddFilesAs(fs fs.FS, asType string, filenames ...string) Option {
+	return &groupOption{
+		name: "AddFilesAs",
+		grp: filegroup{
+			fs:    fs,
+			paths: filenames,
+			as:    asType,
+		},
+	}
+}
+
 // AddFilesHalt adds any number of files to the list of files to be compiled
 // into a configuration and if any are added halts the process of adding more
 // file records.
@@ -123,6 +150,20 @@ func AddFilesHalt(fs fs.FS, filenames ...string) Option {
 		grp: filegroup{
 			fs:    fs,
 			paths: filenames,
+			halt:  true,
+		},
+	}
+}
+
+// AddFilesHaltAs is the same as [AddFilesHalt]() except the files are decoded as
+// the specified type.
+func AddFilesHaltAs(fs fs.FS, asType string, filenames ...string) Option {
+	return &groupOption{
+		name: "AddFilesHaltAs",
+		grp: filegroup{
+			fs:    fs,
+			paths: filenames,
+			as:    asType,
 			halt:  true,
 		},
 	}
@@ -327,7 +368,16 @@ func (_ groupOption) ignoreDefaults() bool {
 }
 
 func (o groupOption) String() string {
-	return print.P(o.name, print.Literal("fs"), print.Strings(o.grp.paths))
+	opts := []print.Option{
+		print.Literal("fs"),
+	}
+
+	if strings.Contains(o.name, "As") {
+		opts = append(opts, print.String(o.grp.as))
+	}
+	opts = append(opts, print.Strings(o.grp.paths))
+
+	return print.P(o.name, opts...)
 }
 
 // AutoCompile instructs [New]() and [With]() to also compile the configuration
