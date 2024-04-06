@@ -103,6 +103,20 @@ func TestOptions(t *testing.T) {
 				},
 			},
 		}, {
+			description: "AddFileAs( /, json, filename )",
+			opt:         AddFileAs(fs, "json", "filename"),
+			str:         "AddFileAs( fs, 'json', 'filename' )",
+			goal: options{
+				filegroups: []filegroup{
+					{
+						fs:        fs,
+						paths:     []string{"filename"},
+						exactFile: true,
+						as:        "json",
+					},
+				},
+			},
+		}, {
 			description: "AddFiles( / )",
 			opt:         AddFiles(fs),
 			str:         "AddFiles( fs, '' )",
@@ -130,6 +144,33 @@ func TestOptions(t *testing.T) {
 					{
 						fs:    fs,
 						paths: []string{"a", "b"},
+					},
+				},
+			},
+		}, {
+			description: "AddFilesAs( /, json, filename )",
+			opt:         AddFilesAs(fs, "json", "filename"),
+			str:         "AddFilesAs( fs, 'json', 'filename' )",
+			goal: options{
+				filegroups: []filegroup{
+					{
+						fs:    fs,
+						paths: []string{"filename"},
+						as:    "json",
+					},
+				},
+			},
+		}, {
+			description: "AddFilesHaltAs( /, json, filename )",
+			opt:         AddFilesHaltAs(fs, "json", "filename"),
+			str:         "AddFilesHaltAs( fs, 'json', 'filename' )",
+			goal: options{
+				filegroups: []filegroup{
+					{
+						fs:    fs,
+						paths: []string{"filename"},
+						halt:  true,
+						as:    "json",
 					},
 				},
 			},

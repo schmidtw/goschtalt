@@ -36,6 +36,9 @@ type filegroup struct {
 	// halt means processing should stop after this filegroup if any files were
 	// found.
 	halt bool
+
+	// as is the decoder to use for the files described by this filegroup.
+	as string
 }
 
 // toRecords walks the filegroup and finds all the records that are present and
@@ -75,6 +78,11 @@ func (g filegroup) toRecord(file, delimiter string, decoders *codecRegistry[deco
 
 	basename := stat.Name()
 	ext := strings.TrimPrefix(path.Ext(basename), ".")
+
+	// If the user specified a decoder to use, use it.
+	if g.as != "" {
+		ext = strings.TrimPrefix(g.as, ".")
+	}
 
 	dec, err := decoders.find(ext)
 	if dec == nil {
