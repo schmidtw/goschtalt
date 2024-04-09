@@ -122,3 +122,31 @@ func TestExpandFunc(t *testing.T) {
 		})
 	}
 }
+
+func Test_envExpander_Expand(t *testing.T) {
+	tests := []struct {
+		description string
+		in          string
+		want        string
+	}{
+		{
+			description: "replace the string",
+			in:          "replace",
+			want:        "a value",
+		}, {
+			description: "do not replace the string",
+			in:          "ignored",
+			want:        "ignored",
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+
+			t.Setenv("replace", "a value")
+
+			e := envExpander{}
+			assert.Equal(tc.want, e.Expand(tc.in))
+		})
+	}
+}

@@ -12,7 +12,10 @@ import (
 
 // Expander provides a method that can expand variables in values.
 type Expander interface {
-	// Expand is expected to work just like os.Getenv.
+
+	// Expand maps the incoming string to a new string.  The string passed in
+	// will not contain the start and end delimiters.  If the string is not
+	// found, the original string is returned.
 	Expand(string) string
 }
 
@@ -31,7 +34,10 @@ var _ Expander = (*ExpanderFunc)(nil)
 type envExpander struct{}
 
 func (envExpander) Expand(s string) string {
-	return os.Getenv(s)
+	if v, found := os.LookupEnv(s); found {
+		return v
+	}
+	return s
 }
 
 // ExpandEnv is a simple way to add automatic environment variable expansion
