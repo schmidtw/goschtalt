@@ -8,6 +8,7 @@ import (
 	"os"
 
 	"github.com/goschtalt/goschtalt/internal/print"
+	"github.com/goschtalt/goschtalt/pkg/meta"
 )
 
 // Expander provides a method that can expand variables in values.
@@ -15,17 +16,17 @@ type Expander interface {
 
 	// Expand maps the incoming string to a new string.  The string passed in
 	// will not contain the start and end delimiters.  If the string is not
-	// found, the original string is returned.
-	Expand(string) string
+	// found, return the bool value of false, otherwise return true.
+	Expand(string) (string, bool)
 }
 
 // The ExpanderFunc type is an adapter to allow the use of ordinary functions
 // as Expanders. If f is a function with the appropriate signature,
 // ExpanderFunc(f) is a Expander that calls f.
-type ExpanderFunc func(string) string
+type ExpanderFunc func(string) (string, bool)
 
 // Get calls f(s)
-func (f ExpanderFunc) Expand(s string) string {
+func (f ExpanderFunc) Expand(s string) (string, bool) {
 	return f(s)
 }
 
@@ -33,11 +34,8 @@ var _ Expander = (*ExpanderFunc)(nil)
 
 type envExpander struct{}
 
-func (envExpander) Expand(s string) string {
-	if v, found := os.LookupEnv(s); found {
-		return v
-	}
-	return s
+func (envExpander) Expand(s string) (string, bool) {
+	return os.LookupEnv(s)
 }
 
 // ExpandEnv is a simple way to add automatic environment variable expansion
@@ -159,6 +157,37 @@ func (_ expand) ignoreDefaults() bool {
 
 func (exp expand) String() string {
 	return exp.text
+}
+
+// expandTree is a helper function that expands variables in the configuration
+// tree.  The maximum number of expansions is limited to the max value.
+func expandTree(in meta.Object, max int, expansions []expand) (meta.Object, bool, error) {
+	changed := true
+	for i := 0; changed && i < max; i++ {
+		changed = false
+		for _, exp := range expansions {
+			var err error
+			in, err = in.ToExpanded(
+				exp.maximum,
+				exp.origin,
+				exp.start,
+				exp.end,
+				func(s string) (string, bool) {
+					got, found := exp.expander.Expand(s)
+					if found {
+						changed = true
+					}
+					return got, found
+				},
+			)
+
+			if err != nil {
+				return meta.Object{}, false, err
+			}
+		}
+	}
+
+	return in, changed, nil
 }
 
 // ---- ExpandOption follow --------------------------------------------------

@@ -88,6 +88,7 @@ func (c *Config) With(opts ...Option) error {
 		SortRecordsNaturally(),
 		SetKeyDelimiter("."),
 		SetHasher(nil),
+		SetMaxExpansions(10000),
 	}
 
 	if !ignoreDefaultOpts(raw) {
@@ -159,30 +160,20 @@ func (c *Config) compileInternal(start time.Time) error {
 		return err
 	}
 
-	merged := meta.Object{
-		Map: make(map[string]meta.Object),
-	}
-
+	merged := meta.Object{Map: make(map[string]meta.Object)}
 	records := make([]string, 0, len(full))
+
 	for i, cfg := range full {
 		// Build an incremental snapshot of the configuration at this step so
 		// user provided functions can use the cfg values to acquire more if
 		// needed.
 		incremental := merged
-		for _, exp := range c.opts.expansions {
-			var err error
-			incremental, err = incremental.ToExpanded(
-				exp.maximum,
-				exp.origin,
-				exp.start,
-				exp.end,
-				func(s string) string { return exp.expander.Expand(s) },
-			)
 
-			if err != nil {
-				return err
-			}
+		incremental, _, err = expandTree(incremental, c.opts.exapansionMax, c.opts.expansions)
+		if err != nil {
+			return err
 		}
+
 		unmarshalFunc := func(key string, result any, opts ...UnmarshalOption) error {
 			// Pass in the merged value from this context and stage of processing.
 			return c.unmarshal(key, result, incremental, opts...)
@@ -199,19 +190,15 @@ func (c *Config) compileInternal(start time.Time) error {
 		c.explain.compileRecord(cfg.name, i < defaultCount, time.Now())
 	}
 
+	// Expand the final tree to ensure all values are expanded.
+	merged, _, err = expandTree(merged, c.opts.exapansionMax, c.opts.expansions)
+	if err != nil {
+		return err
+	}
+
+	// Record the expansions in effect.
 	for _, exp := range c.opts.expansions {
-		var err error
-		merged, err = merged.ToExpanded(
-			exp.maximum,
-			exp.origin,
-			exp.start,
-			exp.end,
-			func(s string) string { return exp.expander.Expand(s) },
-		)
 		c.explain.compileExpansions(exp.String())
-		if err != nil {
-			return err
-		}
 	}
 
 	hash, err := c.opts.hasher.Hash(merged)

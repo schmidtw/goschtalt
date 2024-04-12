@@ -13,9 +13,7 @@ import (
 func TestExpand(t *testing.T) {
 	testErr := errors.New("test error")
 	expander := mockExpander{
-		f: func(_ string) string {
-			return ""
-		},
+		f: func(string) (string, bool) { return "", false },
 	}
 
 	tests := []struct {
@@ -100,25 +98,32 @@ func TestExpand(t *testing.T) {
 
 func TestExpandFunc(t *testing.T) {
 	tests := []struct {
-		want string
+		in    string
+		want  string
+		found bool
 	}{
 		{
-			want: "text",
+			in:    "text",
+			want:  "text",
+			found: true,
 		}, {
-			want: "frogs",
+			in: "frogs",
 		},
 	}
 
 	for _, tc := range tests {
-		t.Run(tc.want, func(t *testing.T) {
+		t.Run(tc.in, func(t *testing.T) {
 			assert := assert.New(t)
-			f := ExpanderFunc(
-				func(s string) string {
-					return s
-				})
+			f := ExpanderFunc(func(s string) (string, bool) {
+				if s == "text" {
+					return "text", true
+				}
+				return "", false
+			})
 
-			assert.Equal(tc.want, f.Expand(tc.want))
-
+			got, found := f.Expand(tc.in)
+			assert.Equal(tc.want, got)
+			assert.Equal(tc.found, found)
 		})
 	}
 }
@@ -128,15 +133,16 @@ func Test_envExpander_Expand(t *testing.T) {
 		description string
 		in          string
 		want        string
+		found       bool
 	}{
 		{
 			description: "replace the string",
 			in:          "replace",
 			want:        "a value",
+			found:       true,
 		}, {
 			description: "do not replace the string",
 			in:          "ignored",
-			want:        "ignored",
 		},
 	}
 	for _, tc := range tests {
@@ -146,7 +152,9 @@ func Test_envExpander_Expand(t *testing.T) {
 			t.Setenv("replace", "a value")
 
 			e := envExpander{}
-			assert.Equal(tc.want, e.Expand(tc.in))
+			got, found := e.Expand(tc.in)
+			assert.Equal(tc.want, got)
+			assert.Equal(tc.found, found)
 		})
 	}
 }
