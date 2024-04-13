@@ -6,7 +6,6 @@ package meta
 import (
 	"errors"
 	"fmt"
-	"os"
 	"reflect"
 	"strconv"
 	"strings"
@@ -346,7 +345,7 @@ func (obj Object) ToRedacted() Object {
 // to the final instance.  The max value is used to prevent recursive substitutions
 // from never returning.  Instead the process is stopped and an error is returned.
 // The resulting tree is returned.
-func (obj Object) ToExpanded(max int, origin, start, end string, expander func(string) string) (Object, error) {
+func (obj Object) ToExpanded(max int, origin, start, end string, expander func(string) (string, bool)) (Object, error) {
 	var err error
 
 	switch obj.Kind() {
@@ -372,7 +371,10 @@ func (obj Object) ToExpanded(max int, origin, start, end string, expander func(s
 	case Value:
 		switch v := obj.Value.(type) {
 		case string:
-			val, changed, err := expand(max, v, start, end, expander)
+			// Limit the expansion to the max depth, but not the entire tree,
+			// just the value.
+			tmp := max
+			val, changed, err := expand(&tmp, v, start, end, expander)
 			if err != nil {
 				return Object{}, err
 			}
@@ -394,13 +396,17 @@ func (obj Object) ToExpanded(max int, origin, start, end string, expander func(s
 
 // expand performs the expansion of a string based on the starting and ending
 // tokens as well as the mapping function & max replacement depth.
-func expand(max int, in, startToken, endToken string, mapper func(string) string) (string, bool, error) {
+func expand(max *int, in, startToken, endToken string, mapper func(string) (string, bool)) (string, bool, error) {
+	if *max < 1 {
+		return "", false, ErrRecursionTooDeep
+	}
+	*max--
+
 	start := strings.Index(in, startToken)
 	if -1 == start {
 		return in, false, nil
 	}
 
-	before := in[:start]
 	rest := in[start+len(startToken):]
 	end := strings.Index(rest, endToken)
 
@@ -408,27 +414,38 @@ func expand(max int, in, startToken, endToken string, mapper func(string) string
 		return in, false, nil
 	}
 
-	// Keep resolving variables until nothing changes.  Then we're done resolving.
-	replaced := os.Expand("$"+strings.TrimSpace(rest[:end]), mapper)
-	prev := replaced + "-"
-	c := 0
-	for prev != replaced {
-		prev = replaced
-		replaced = os.Expand(replaced, mapper)
-		c++
-		if max < c {
-			return "", false, ErrRecursionTooDeep
-		}
-	}
-
+	before := in[:start]
 	after := rest[end+len(endToken):]
 
-	// Recurse and process the rest of the string until we're done.
-	trailer, _, err := expand(max, after, startToken, endToken, mapper)
+	key := strings.TrimSpace(rest[:end])
+
+	var full string
+	var changed bool
+	got, found := mapper(key)
+	if found {
+		changed = true
+		full = before + got
+	} else {
+		full = before + startToken + key + endToken
+	}
+
+	last, expanded, err := expand(max, after, startToken, endToken, mapper)
 	if err != nil {
 		return "", false, err
 	}
-	return before + replaced + trailer, true, nil
+
+	if expanded {
+		changed = true
+	}
+
+	full += last
+
+	if !changed {
+		return in, false, nil
+	}
+
+	rv, _, err := expand(max, full, startToken, endToken, mapper)
+	return rv, true, err
 }
 
 // ConvertMapsToArrays walks the object tree and looks for any maps that contain

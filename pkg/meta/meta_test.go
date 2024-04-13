@@ -939,7 +939,7 @@ func TestToExpanded(t *testing.T) {
 						Array: []Object{
 							{
 								Origins: []Origin{{File: "expanded:test"}},
-								Value:   "food ... food",
+								Value:   "food${{unknown}} ... food${{unknown}}",
 							},
 						},
 					},
@@ -948,8 +948,8 @@ func TestToExpanded(t *testing.T) {
 			start: "${{",
 			end:   "}}",
 			vars: map[string]string{
-				"bar":  "$foo",
-				"foo":  "${next}$unknown",
+				"bar":  "${{foo}}",
+				"foo":  "${{next}}${{unknown}}",
 				"next": "food",
 			},
 		}, {
@@ -980,8 +980,8 @@ func TestToExpanded(t *testing.T) {
 			start: "${{",
 			end:   "}}",
 			vars: map[string]string{
-				"bar": "${car}",
-				"car": "${bar}",
+				"bar": "${{car}}",
+				"car": "${{bar}}",
 				"cat": "tom",
 			},
 			expectedErr: ErrRecursionTooDeep,
@@ -991,12 +991,10 @@ func TestToExpanded(t *testing.T) {
 		t.Run(tc.description, func(t *testing.T) {
 			assert := assert.New(t)
 
-			got, err := tc.in.ToExpanded(10000, tc.origin, tc.start, tc.end, func(in string) string {
+			max := int(100)
+			got, err := tc.in.ToExpanded(max, tc.origin, tc.start, tc.end, func(in string) (string, bool) {
 				out, found := tc.vars[in]
-				if found {
-					return out
-				}
-				return ""
+				return out, found
 			})
 
 			if tc.expectedErr == nil {
@@ -1047,7 +1045,7 @@ func TestExpand(t *testing.T) {
 			start: "|",
 			end:   "|",
 			vars: map[string]string{
-				"oops": ".${oops}",
+				"oops": "|oops|",
 			},
 			expectedErr: ErrRecursionTooDeep,
 		}, {
@@ -1066,22 +1064,18 @@ func TestExpand(t *testing.T) {
 		t.Run(tc.in, func(t *testing.T) {
 			assert := assert.New(t)
 
-			got, changed, err := expand(10000, tc.in, tc.start, tc.end, func(in string) string {
+			max := int(100)
+			got, _, err := expand(&max, tc.in, tc.start, tc.end, func(in string) (string, bool) {
 				out, found := tc.vars[in]
-				if found {
-					return out
-				}
-				return ""
+				return out, found
 			})
 			if tc.expectedErr == nil {
-				assert.Equal(tc.changed, changed)
 				assert.Equal(tc.expected, got)
 				return
 			}
 
 			assert.ErrorIs(err, tc.expectedErr)
 			assert.Equal("", got)
-			assert.Equal(false, changed)
 		})
 	}
 }

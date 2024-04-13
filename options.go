@@ -66,7 +66,8 @@ type options struct {
 	values     []record
 
 	// Expansions; there can be many.
-	expansions []expand
+	expansions    []expand
+	exapansionMax int
 
 	// Hints are special options that check that the configuration makes sense;
 	// there can be many.
@@ -966,6 +967,37 @@ func (m optionsOption) String() string {
 // StdCfgLayout doesn't support a shared windows layout today.  One is welcome.
 func StdCfgLayout(appName string, files ...string) Option {
 	return stdCfgLayout(appName, files)
+}
+
+// SetMaxExpansions provides a way to set the maximum number of expansions
+// allowed before a recursion error is returned.  The value must be greater
+// than 0.
+//
+// # Default
+//
+// The default value is 10000.
+func SetMaxExpansions(max int) Option {
+	if max < 1 {
+		return WithError(
+			fmt.Errorf("%w, SetMaxExpansions must be greater than 0", ErrInvalidInput),
+		)
+	}
+	return setMaxExpansionsOption(max)
+}
+
+type setMaxExpansionsOption int
+
+func (s setMaxExpansionsOption) apply(opts *options) error {
+	opts.exapansionMax = int(s)
+	return nil
+}
+
+func (_ setMaxExpansionsOption) ignoreDefaults() bool {
+	return false
+}
+
+func (s setMaxExpansionsOption) String() string {
+	return print.P("SetMaxExpansions", print.Int(int(s)))
 }
 
 // ---- Options related helper functions follow --------------------------------

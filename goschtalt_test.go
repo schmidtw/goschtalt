@@ -107,41 +107,68 @@ func TestCompile(t *testing.T) {
 		},
 	}
 
+	fs6 := fstest.MapFS{
+		"b/90.json": &fstest.MapFile{
+			Data: []byte(`{"Hello": "${a}", "Madd": "${b}", "Blue": "${thing}"}`),
+			Mode: 0755,
+		},
+	}
+
 	mapper1 := mockExpander{
-		f: func(m string) string {
+		f: func(m string) (string, bool) {
 			switch m {
 			case "thing":
-				return "|bird|"
+				return "|bird|", true
 			}
 
-			return ""
+			return "", false
 		},
 	}
 
 	mapper2 := mockExpander{
-		f: func(m string) string {
+		f: func(m string) (string, bool) {
 			switch m {
 			case "bird":
-				return "jay"
+				return "jay", true
 			}
 
-			return ""
+			return "", false
 		},
 	}
 
 	// Causes infinite loop
 	mapper3 := mockExpander{
-		f: func(m string) string {
+		f: func(m string) (string, bool) {
 			switch m {
 			case "thing":
-				return ".${bird}"
+				return ".${bird}", true
 			case "bird":
-				return ".${jay}"
+				return ".${jay}", true
 			case "jay":
-				return ".${bird}"
+				return ".${bird}", true
 			}
 
-			return ""
+			return "", false
+		},
+	}
+
+	mapper4 := mockExpander{
+		f: func(m string) (string, bool) {
+			switch m {
+			case "a":
+				return "Tom", true
+			}
+			return "", false
+		},
+	}
+
+	mapper5 := mockExpander{
+		f: func(m string) (string, bool) {
+			switch m {
+			case "b":
+				return "${thing}", true
+			}
+			return "", false
 		},
 	}
 
@@ -446,6 +473,23 @@ func TestCompile(t *testing.T) {
 				Madd:  "cat",
 			},
 			files: []string{"1.json", "2.json", "3.json", "90.json"},
+		}, {
+			description: "A normal case with multiple expansions.",
+			opts: []Option{
+				AddTree(fs6, "."),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+				// The order is important here, because it shows the exapnsion
+				// order works as expected.
+				ExpandEnv(),
+				Expand(mapper5),
+				Expand(mapper4),
+			},
+			expect: st1{
+				Hello: "Tom",
+				Blue:  "ocean",
+				Madd:  "ocean",
+			},
+			files: []string{"90.json"},
 		}, {
 			description: "A normal case with values.",
 			opts: []Option{
@@ -1131,6 +1175,48 @@ func TestGetTree(t *testing.T) {
 			got := cfg.GetTree()
 			require.NotNil(got)
 			assert.Equal(tc.mapsize, len(got.Map))
+		})
+	}
+}
+
+func TestSetMaxExpansions(t *testing.T) {
+	tests := []struct {
+		description string
+		opts        []Option
+		expansions  int
+		expectedErr error
+	}{
+		{
+			description: "Set 100",
+			opts: []Option{
+				SetMaxExpansions(100),
+			},
+			expansions: 100,
+		}, {
+			description: "Set -100",
+			opts: []Option{
+				SetMaxExpansions(-100),
+			},
+			expectedErr: ErrInvalidInput,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.description, func(t *testing.T) {
+			assert := assert.New(t)
+			require := require.New(t)
+
+			cfg, err := New(tc.opts...)
+
+			if tc.expectedErr != nil {
+				assert.ErrorIs(err, tc.expectedErr)
+				return
+			}
+
+			require.NotNil(cfg)
+			require.NoError(err)
+
+			assert.Equal(tc.expansions, cfg.opts.exapansionMax)
 		})
 	}
 }

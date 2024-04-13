@@ -80,10 +80,10 @@ func (m mockRecordSorter) Less(a, b string) bool {
 // Mock Expander ///////////////////////////////////////////////////////////////
 
 type mockExpander struct {
-	f func(string) string
+	f func(string) (string, bool)
 }
 
-func (m mockExpander) Expand(s string) string {
+func (m mockExpander) Expand(s string) (string, bool) {
 	return m.f(s)
 }
 
