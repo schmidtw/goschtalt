@@ -5,6 +5,7 @@ package adapter
 
 import (
 	"fmt"
+	"math"
 	"reflect"
 	"time"
 
@@ -41,12 +42,34 @@ type marshalTime struct {
 }
 
 func (t marshalTime) From(from, to reflect.Value) (any, error) {
-	if from.Kind() == reflect.String && to.Type() == reflect.TypeOf(time.Time{}) {
-		a, e := time.Parse(t.layout, from.Interface().(string))
-		return a, e
+	if to.Type() != reflect.TypeOf(time.Time{}) {
+		return nil, goschtalt.ErrNotApplicable
 	}
 
-	return nil, goschtalt.ErrNotApplicable
+	var sec, nsec int64
+	switch from.Kind() {
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		sec = from.Int()
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64, reflect.Uintptr:
+		got := from.Uint()
+		if math.MaxInt64 < got {
+			return nil, goschtalt.ErrNotApplicable
+		}
+		sec = int64(got) // nolint:gosec
+	case reflect.Float32, reflect.Float64:
+		got := from.Float()
+		sec = int64(got)
+		nsec = int64((got - float64(sec)) * 1e9)
+	case reflect.String:
+		pt, err := time.Parse(t.layout, from.Interface().(string))
+		if err != nil {
+			return nil, err
+		}
+
+		return pt.UTC(), nil
+	}
+
+	return time.Unix(sec, nsec).UTC(), nil
 }
 
 func (t marshalTime) To(from reflect.Value) (any, error) {
