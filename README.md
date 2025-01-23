@@ -5,7 +5,7 @@ SPDX-License-Identifier: Apache-2.0
 # goschtalt
 
 [![Build Status](https://github.com/goschtalt/goschtalt/actions/workflows/ci.yml/badge.svg)](https://github.com/goschtalt/goschtalt/actions/workflows/ci.yml)
-[![codecov.io](http://codecov.io/github/goschtalt/goschtalt/coverage.svg?branch=main)](http://codecov.io/github/goschtalt/goschtalt?branch=main)
+[![codecov](https://codecov.io/gh/goschtalt/goschtalt/graph/badge.svg?token=bLEl1jj8lu)](https://codecov.io/gh/goschtalt/goschtalt)
 [![Go Report Card](https://goreportcard.com/badge/github.com/goschtalt/goschtalt)](https://goreportcard.com/report/github.com/goschtalt/goschtalt)
 [![GitHub Release](https://img.shields.io/github/release/goschtalt/goschtalt.svg)](https://github.com/goschtalt/goschtalt/releases)
 [![GoDoc](https://pkg.go.dev/badge/github.com/goschtalt/goschtalt)](https://pkg.go.dev/github.com/goschtalt/goschtalt)
