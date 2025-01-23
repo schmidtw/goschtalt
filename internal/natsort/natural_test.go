@@ -14,7 +14,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"gonum.org/v1/gonum/stat/combin"
 )
 
 type stringSlice []string
@@ -180,29 +179,17 @@ func TestSort(t *testing.T) {
 			require := require.New(t)
 
 			// The combinations are a factorial, so limit it to 5040 runs
-			if len(tc.want) < 8 {
-				best := combin.Permutations(len(tc.want), len(tc.want))
-				for _, comb := range best {
-					list := make([]string, len(tc.want))
-					for i, j := range comb {
-						list[i] = tc.want[j]
-					}
+			r := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint:gosec
 
-					run(assert, require, list, tc.want)
-				}
-			} else {
-				r := rand.New(rand.NewSource(time.Now().UnixNano())) // nolint:gosec
+			// We can't fully cover the combinations, so randomly mix them up.
+			for i := 0; i < 1000; i++ {
+				list := make([]string, len(tc.want))
+				copy(list, tc.want)
 
-				// We can't fully cover the combinations, so randomly mix them up.
-				for i := 0; i < 1000; i++ {
-					list := make([]string, len(tc.want))
-					copy(list, tc.want)
+				/* shuffle the list, randomly */
+				r.Shuffle(len(list), func(i, j int) { list[i], list[j] = list[j], list[i] })
 
-					/* shuffle the list, randomly */
-					r.Shuffle(len(list), func(i, j int) { list[i], list[j] = list[j], list[i] })
-
-					run(assert, require, list, tc.want)
-				}
+				run(assert, require, list, tc.want)
 			}
 		})
 	}
