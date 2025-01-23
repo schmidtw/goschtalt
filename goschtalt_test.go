@@ -114,6 +114,13 @@ func TestCompile(t *testing.T) {
 		},
 	}
 
+	fs7 := fstest.MapFS{
+		"b/90.json": &fstest.MapFile{
+			Data: []byte(`{"Hello": "dogs\ncats\nliving together\n"}`),
+			Mode: 0755,
+		},
+	}
+
 	mapper1 := mockExpander{
 		f: func(m string) (string, bool) {
 			switch m {
@@ -676,7 +683,7 @@ func TestCompile(t *testing.T) {
 			},
 			expect: st1{},
 		}, {
-			description: "An glob of everything.",
+			description: "A glob of everything.",
 			opts: []Option{
 				AddFiles(fs1, "*"),
 				WithDecoder(&testDecoder{extensions: []string{"json"}}),
@@ -686,6 +693,16 @@ func TestCompile(t *testing.T) {
 				Blue:  "sky",
 			},
 			files: []string{"1.json", "2.json", "3.json"},
+		}, {
+			description: "A multiline string.",
+			opts: []Option{
+				AddTree(fs7, "."),
+				WithDecoder(&testDecoder{extensions: []string{"json"}}),
+			},
+			expect: st1{
+				Hello: "dogs\ncats\nliving together\n",
+			},
+			files: []string{"90.json"},
 		}, {
 			description: "An invalid file when one must be present.",
 			opts: []Option{
