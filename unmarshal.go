@@ -10,9 +10,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/goschtalt/goschtalt/internal/mapstructure"
 	"github.com/goschtalt/goschtalt/internal/print"
 	"github.com/goschtalt/goschtalt/pkg/meta"
-	"github.com/mitchellh/mapstructure"
 )
 
 // Unmarshaler provides a special use [Unmarshal]() function during [AddBufferFunc]()
