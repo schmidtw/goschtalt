@@ -2568,7 +2568,11 @@ func TestDecode_StructTaggedWithOmitempty_OmitEmptyValues(t *testing.T) {
 	}
 
 	actual := &map[string]interface{}{}
-	Decode(input, actual)
+	err := Decode(input, actual)
+
+	if err != nil {
+		t.Fatalf("Decode() unexpected error: %s", err)
+	}
 
 	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Decode() expected: %#v, got: %#v", expected, actual)
@@ -2612,7 +2616,11 @@ func TestDecode_StructTaggedWithOmitempty_KeepNonEmptyValues(t *testing.T) {
 	}
 
 	actual := &map[string]interface{}{}
-	Decode(input, actual)
+	err := Decode(input, actual)
+
+	if err != nil {
+		t.Fatalf("Decode() unexpected error: %s", err)
+	}
 
 	if !reflect.DeepEqual(actual, expected) {
 		t.Fatalf("Decode() expected: %#v, got: %#v", expected, actual)

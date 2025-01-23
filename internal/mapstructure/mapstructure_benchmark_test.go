@@ -24,14 +24,14 @@ func Benchmark_Decode(b *testing.B) {
 
 	var result Person
 	for i := 0; i < b.N; i++ {
-		Decode(input, &result)
+		_ = Decode(input, &result)
 	}
 }
 
 // decodeViaJSON takes the map data and passes it through encoding/json to convert it into the
 // given Go native structure pointed to by v. v must be a pointer to a struct.
 func decodeViaJSON(data interface{}, v interface{}) error {
-	// Perform the task by simply marshalling the input into JSON,
+	// Perform the task by simply marshaling the input into JSON,
 	// then unmarshalling it into target native Go struct.
 	b, err := json.Marshal(data)
 	if err != nil {
@@ -52,7 +52,7 @@ func Benchmark_DecodeViaJSON(b *testing.B) {
 
 	var result Person
 	for i := 0; i < b.N; i++ {
-		decodeViaJSON(input, &result)
+		_ = decodeViaJSON(input, &result)
 	}
 }
 
@@ -73,7 +73,7 @@ func Benchmark_JSONUnmarshal(b *testing.B) {
 
 	var result Person
 	for i := 0; i < b.N; i++ {
-		json.Unmarshal(inputB, &result)
+		_ = json.Unmarshal(inputB, &result)
 	}
 }
 
@@ -93,7 +93,7 @@ func Benchmark_DecodeBasic(b *testing.B) {
 
 	for i := 0; i < b.N; i++ {
 		var result Basic
-		Decode(input, &result)
+		_ = Decode(input, &result)
 	}
 }
 
@@ -108,7 +108,7 @@ func Benchmark_DecodeEmbedded(b *testing.B) {
 
 	var result Embedded
 	for i := 0; i < b.N; i++ {
-		Decode(input, &result)
+		_ = Decode(input, &result)
 	}
 }
 
@@ -140,7 +140,7 @@ func Benchmark_DecodeTypeConversion(b *testing.B) {
 
 	var resultStrict TypeConversionResult
 	for i := 0; i < b.N; i++ {
-		Decode(input, &resultStrict)
+		_ = Decode(input, &resultStrict)
 	}
 }
 
@@ -155,7 +155,7 @@ func Benchmark_DecodeMap(b *testing.B) {
 
 	var result Map
 	for i := 0; i < b.N; i++ {
-		Decode(input, &result)
+		_ = Decode(input, &result)
 	}
 }
 
@@ -169,7 +169,7 @@ func Benchmark_DecodeMapOfStruct(b *testing.B) {
 
 	var result MapOfStruct
 	for i := 0; i < b.N; i++ {
-		Decode(input, &result)
+		_ = Decode(input, &result)
 	}
 }
 
@@ -181,7 +181,7 @@ func Benchmark_DecodeSlice(b *testing.B) {
 
 	var result Slice
 	for i := 0; i < b.N; i++ {
-		Decode(input, &result)
+		_ = Decode(input, &result)
 	}
 }
 
@@ -195,7 +195,7 @@ func Benchmark_DecodeSliceOfStruct(b *testing.B) {
 
 	var result SliceOfStruct
 	for i := 0; i < b.N; i++ {
-		Decode(input, &result)
+		_ = Decode(input, &result)
 	}
 }
 
@@ -221,7 +221,7 @@ func Benchmark_DecodeWeaklyTypedInput(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		decoder.Decode(input)
+		_ = decoder.Decode(input)
 	}
 }
 
@@ -245,7 +245,7 @@ func Benchmark_DecodeMetadata(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		decoder.Decode(input)
+		_ = decoder.Decode(input)
 	}
 }
 
@@ -268,7 +268,7 @@ func Benchmark_DecodeMetadataEmbedded(b *testing.B) {
 	}
 
 	for i := 0; i < b.N; i++ {
-		decoder.Decode(input)
+		_ = decoder.Decode(input)
 	}
 }
 
@@ -280,6 +280,6 @@ func Benchmark_DecodeTagged(b *testing.B) {
 
 	var result Tagged
 	for i := 0; i < b.N; i++ {
-		Decode(input, &result)
+		_ = Decode(input, &result)
 	}
 }

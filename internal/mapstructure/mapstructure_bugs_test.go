@@ -520,7 +520,7 @@ func TestDecodeIntermediateMapsSettable(t *testing.T) {
 
 				return &map[string]interface{}{
 					"Seconds": seconds,
-					"Nanos":   int32(nanos),
+					"Nanos":   int32(nanos), // nolint:gosec
 				}, nil
 			}
 			return data, nil
