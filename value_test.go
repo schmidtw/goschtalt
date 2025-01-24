@@ -8,7 +8,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/mitchellh/mapstructure"
+	"github.com/goschtalt/goschtalt/internal/mapstructure"
 	"github.com/stretchr/testify/assert"
 )
 

@@ -41,7 +41,6 @@ ecosystem while not bloating your code with a bunch of dependencies.
 
 The following are popular goschtalt extensions:
 
-* Name nomenclature converter https://github.com/goschtalt/casemapper
 * Environment variable decoder https://github.com/goschtalt/env-decoder
 * JSON file type decoder https://github.com/goschtalt/json-decoder
 * Properties file type Decoder https://github.com/goschtalt/properties-decoder
@@ -54,13 +53,12 @@ Coming soon.
 
 ## Dependencies
 
-There are only two production dependencies in the core goschtalt code beyond the
+There are only one production dependencies in the core goschtalt code beyond the
 go standard library.  The rest are testing dependencies.
 
 Production dependencies:
 
-* [github.com/mitchellh/hashstructure](https://github.com/mitchellh/hashstructure)
-* [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure)
+* [github.com/goschtalt/approx](https://github.com/goschtalt/approx)
 
 ## Compilation of a Configuration
 
