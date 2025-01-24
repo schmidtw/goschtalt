@@ -41,7 +41,6 @@ ecosystem while not bloating your code with a bunch of dependencies.
 
 The following are popular goschtalt extensions:
 
-* Name nomenclature converter https://github.com/goschtalt/casemapper
 * Environment variable decoder https://github.com/goschtalt/env-decoder
 * JSON file type decoder https://github.com/goschtalt/json-decoder
 * Properties file type Decoder https://github.com/goschtalt/properties-decoder
