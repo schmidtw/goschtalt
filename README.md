@@ -54,13 +54,12 @@ Coming soon.
 
 ## Dependencies
 
-There are only two production dependencies in the core goschtalt code beyond the
+There are only one production dependencies in the core goschtalt code beyond the
 go standard library.  The rest are testing dependencies.
 
 Production dependencies:
 
-* [github.com/mitchellh/hashstructure](https://github.com/mitchellh/hashstructure)
-* [github.com/mitchellh/mapstructure](https://github.com/mitchellh/mapstructure)
+* [github.com/goschtalt/approx](https://github.com/goschtalt/approx)
 
 ## Compilation of a Configuration
 
