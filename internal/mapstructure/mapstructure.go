@@ -655,7 +655,7 @@ func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) er
 				fmt.Errorf("cannot parse '%s' as int: %w", name, err),
 			)
 		}
-	case dataType.PkgPath() == "encoding/json" && dataType.Name() == "Number":
+	case isJSONNumber(dataType):
 		jn := data.(json.Number)
 		i, err := jn.Int64()
 		if err != nil {
@@ -724,7 +724,7 @@ func (d *Decoder) decodeUint(name string, data interface{}, val reflect.Value) e
 				fmt.Errorf("cannot parse '%s' as uint: %w", name, err),
 			)
 		}
-	case dataType.PkgPath() == "encoding/json" && dataType.Name() == "Number":
+	case isJSONNumber(dataType):
 		jn := data.(json.Number)
 		i, err := strconv.ParseUint(string(jn), 0, 64)
 		if err != nil {
@@ -816,7 +816,7 @@ func (d *Decoder) decodeFloat(name string, data interface{}, val reflect.Value) 
 				fmt.Errorf("cannot parse '%s' as float: %w", name, err),
 			)
 		}
-	case dataType.PkgPath() == "encoding/json" && dataType.Name() == "Number":
+	case isJSONNumber(dataType):
 		jn := data.(json.Number)
 		i, err := jn.Float64()
 		if err != nil {
@@ -1557,6 +1557,10 @@ func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) e
 	}
 
 	return nil
+}
+
+func isJSONNumber(t reflect.Type) bool {
+	return t.PkgPath() == "encoding/json" && t.Name() == "Number"
 }
 
 func isEmptyValue(v reflect.Value) bool {
