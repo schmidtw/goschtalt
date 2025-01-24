@@ -2027,6 +2027,7 @@ func TestDecodeTable(t *testing.T) {
 				Vint:    intPtr(2),
 				Vuint:   uintPtr(3),
 				Vbool:   boolPtr(true),
+				vsilent: boolPtr(true),
 				Vfloat:  floatPtr(4.56),
 				Vdata:   interfacePtr([]byte("data")),
 			},

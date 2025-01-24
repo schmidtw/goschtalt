@@ -168,6 +168,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"reflect"
 	"sort"
 	"strconv"
@@ -428,6 +429,7 @@ func (d *Decoder) Decode(input interface{}) error {
 }
 
 // Decodes an unknown data type into a specific reflection value.
+// nolint:funlen
 func (d *Decoder) decode(name string, input interface{}, outVal reflect.Value) error {
 	var inputVal reflect.Value
 	if input != nil {
@@ -637,7 +639,13 @@ func (d *Decoder) decodeInt(name string, data interface{}, val reflect.Value) er
 	case dataKind == reflect.Int:
 		val.SetInt(dataVal.Int())
 	case dataKind == reflect.Uint:
-		val.SetInt(int64(dataVal.Uint()))
+		if math.MaxInt64 < dataVal.Uint() {
+			return errors.Join(
+				ErrDecoding,
+				fmt.Errorf("cannot parse '%s', %d overflows int", name, dataVal.Uint()),
+			)
+		}
+		val.SetInt(int64(dataVal.Uint())) // nolint:gosec
 	case dataKind == reflect.Float32:
 		val.SetInt(int64(dataVal.Float()))
 	case dataKind == reflect.Bool && d.config.WeaklyTypedInput:
@@ -956,7 +964,8 @@ func (d *Decoder) decodeMapFromMap(name string, dataVal reflect.Value, val refle
 	return nil
 }
 
-func (d *Decoder) decodeMapFromStruct(name string, dataVal reflect.Value, val reflect.Value, valMap reflect.Value) error {
+// nolint:all
+func (d *Decoder) decodeMapFromStruct(_ string, dataVal reflect.Value, val reflect.Value, valMap reflect.Value) error {
 	typ := dataVal.Type()
 	for i := 0; i < typ.NumField(); i++ {
 		// Get the StructField first since this is a cheap operation. If the
@@ -1340,6 +1349,7 @@ func (d *Decoder) decodeStruct(name string, data interface{}, val reflect.Value)
 	}
 }
 
+// nolint:funlen,gocognit
 func (d *Decoder) decodeStructFromMap(name string, dataVal, val reflect.Value) error {
 	dataValType := dataVal.Type()
 	if kind := dataValType.Key().Kind(); kind != reflect.String && kind != reflect.Interface {
