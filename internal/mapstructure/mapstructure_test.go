@@ -2273,13 +2273,8 @@ func TestInvalidType(t *testing.T) {
 		t.Fatal("error should exist")
 	}
 
-	derr, ok := err.(*Error)
-	if !ok {
-		t.Fatalf("error should be kind of Error, instead: %#v", err)
-	}
-
-	if derr.Errors[0] !=
-		"'Vstring' expected type 'string', got unconvertible type 'int', value: '42'" {
+	if !strings.Contains(err.Error(),
+		"'Vstring' expected type 'string', got unconvertible type 'int', value: '42'") {
 		t.Errorf("got unexpected error: %s", err)
 	}
 
@@ -2292,12 +2287,7 @@ func TestInvalidType(t *testing.T) {
 		t.Fatal("error should exist")
 	}
 
-	derr, ok = err.(*Error)
-	if !ok {
-		t.Fatalf("error should be kind of Error, instead: %#v", err)
-	}
-
-	if derr.Errors[0] != "cannot parse 'Vuint', -42 overflows uint" {
+	if !strings.Contains(err.Error(), "cannot parse 'Vuint', -42 overflows uint") {
 		t.Errorf("got unexpected error: %s", err)
 	}
 
@@ -2310,12 +2300,7 @@ func TestInvalidType(t *testing.T) {
 		t.Fatal("error should exist")
 	}
 
-	derr, ok = err.(*Error)
-	if !ok {
-		t.Fatalf("error should be kind of Error, instead: %#v", err)
-	}
-
-	if derr.Errors[0] != "cannot parse 'Vuint', -42.000000 overflows uint" {
+	if !strings.Contains(err.Error(), "cannot parse 'Vuint', -42.000000 overflows uint") {
 		t.Errorf("got unexpected error: %s", err)
 	}
 }
@@ -2458,7 +2443,7 @@ func TestNonPtrValue(t *testing.T) {
 		t.Fatal("error should exist")
 	}
 
-	if err.Error() != "result must be a pointer" {
+	if !strings.Contains(err.Error(), "result must be a pointer") {
 		t.Errorf("got unexpected error: %s", err)
 	}
 }
