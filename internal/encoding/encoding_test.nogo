@@ -1,0 +1,57 @@
+// SPDX-FileCopyrightText: 2025 Weston Schmidt <weston_schmidt@alumni.purdue.edu>
+// SPDX-License-Identifier: Apache-2.0
+
+package encoding
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestExpandComments(t *testing.T) {
+	tests := []struct {
+		name     string
+		comments []string
+		expected []string
+	}{
+		{
+			name: "empty comments",
+		}, {
+			name:     "single line comment",
+			comments: []string{"This is a comment"},
+			expected: []string{"This is a comment"},
+		}, {
+			name:     "multiple lines comment",
+			comments: []string{"Line 1\nLine 2"},
+			expected: []string{"Line 1", "Line 2"},
+		}, {
+			name:     "multiple lines with trailing spaces comments",
+			comments: []string{"Line 1   \nLine 2\t"},
+			expected: []string{"Line 1", "Line 2"},
+		}, {
+			name:     "multiple lines with empty lines",
+			comments: []string{"Line 1\n\nLine 2\n"},
+			expected: []string{"Line 1", "", "Line 2", ""},
+		}, {
+			name:     "multiple lines with space only lines",
+			comments: []string{"Line 1\n\t\nLine 2\n   "},
+			expected: []string{"Line 1", "", "Line 2", ""},
+		}, {
+			name:     "spaces preceding words",
+			comments: []string{"   Line 1\n   Line 2"},
+			expected: []string{"   Line 1", "   Line 2"},
+		}, {
+			name:     "spaces all over",
+			comments: []string{"\tLine 1\t\n   Line 2 \t "},
+			expected: []string{"\tLine 1", "   Line 2"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := ExpandComments(tt.comments)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}

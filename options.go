@@ -15,6 +15,7 @@ import (
 	"github.com/goschtalt/goschtalt/internal/print"
 	"github.com/goschtalt/goschtalt/internal/strs"
 	"github.com/goschtalt/goschtalt/pkg/decoder"
+	"github.com/goschtalt/goschtalt/pkg/doc"
 	"github.com/goschtalt/goschtalt/pkg/encoder"
 )
 
@@ -48,6 +49,7 @@ type options struct {
 	keyDelimiter       string
 	sorter             RecordSorter
 	hasher             Hasher
+	doc                doc.Object
 
 	// Codecs where there can be many.
 	decoders *codecRegistry[decoder.Decoder]
@@ -930,6 +932,67 @@ func (m optionsOption) ignoreDefaults() bool {
 
 func (m optionsOption) String() string {
 	return m.text
+}
+
+// AddDocs provides a way to add documentation to the configuration.  The
+// documentation is added to the configuration tree and is used by [Marshal]
+// to generate documentation for the configuration.
+//
+// The documentation is expected to be a tree of [doc.Object]s, which start from
+// the root and work their way down to the different configuration objects.
+//
+// Each time AddDocs is called, the documentation tree is appended to the
+// existing documentation tree.  This allows for documenting multiple different
+// root objects without needing to merge them together.  No merging of the
+// documentation is done.
+func AddDocs(tree doc.Object) Option {
+	err := doc.Validate(tree)
+	if err != nil {
+		return WithError(
+			fmt.Errorf("%w, AddDocs tree is invalid: %s", ErrInvalidInput, err),
+		)
+	}
+	return &addDocsOption{
+		tree: tree,
+	}
+}
+
+// AddDocsJSON provides a way to add documentation to the configuration from a
+// JSON byte slice.  This is a convenience function that parses the JSON
+// into a [doc.Object] and then calls [AddDocs] with the resulting tree.
+// The JSON is expected to be a valid [doc.Object] tree, which starts from the
+// root and works its way down to the different configuration objects.
+func AddDocsJSON(text []byte) Option {
+	tree, err := doc.FromJSON(text)
+	if err != nil {
+		return WithError(
+			fmt.Errorf("%w, AddDocsJSON tree is invalid: %s", ErrInvalidInput, err),
+		)
+	}
+	return &addDocsOption{
+		tree: tree,
+	}
+}
+
+type addDocsOption struct {
+	tree doc.Object
+}
+
+func (a addDocsOption) apply(opts *options) error {
+	opts.doc.Type = doc.TYPE_MAP
+	next, err := opts.doc.Merge(a.tree)
+	if err != nil {
+		return fmt.Errorf("%w, AddDocs tree is invalid: %s", ErrInvalidInput, err)
+	}
+	opts.doc = next
+	return nil
+}
+
+func (_ addDocsOption) ignoreDefaults() bool {
+	return false
+}
+func (a addDocsOption) String() string {
+	return print.P("AddDocs", print.Obj(a.tree))
 }
 
 // StdCfgLayout takes a fairly opinionated view of where configuration files are
